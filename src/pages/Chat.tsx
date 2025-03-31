@@ -1,9 +1,12 @@
-import { useState } from "react";
+
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Send, Phone, Video, Info, Search, PaperclipIcon } from "lucide-react";
+import { Send, Phone, Video, Info, Search, PaperclipIcon, MoreVertical, Clock } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
 
 // Dummy data for chat messages
 const dummyChats = [
@@ -123,6 +126,15 @@ const Chat = () => {
   const [selectedChat, setSelectedChat] = useState(dummyChats[0]);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState(dummyMessages);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,29 +153,34 @@ const Chat = () => {
   };
 
   return (
-    <Card className="h-[calc(100vh-120px)] border-gold/10 rounded-xl overflow-hidden shadow-lg backdrop-blur-sm">
+    <Card className="h-[calc(100vh-120px)] border-none rounded-xl overflow-hidden shadow-2xl bg-card/95">
       <div className="flex h-full">
         {/* Chat List Sidebar */}
-        <div className="w-1/3 border-r border-gold/10 flex flex-col bg-card/70">
-          <CardHeader className="px-4 py-4 border-b border-gold/10 bg-gradient-to-r from-gold/5 to-transparent">
-            <h2 className="text-xl font-bold">Conversations</h2>
-            <div className="relative mt-2">
+        <div className="w-1/3 md:w-1/4 border-r border-gold/10 flex flex-col">
+          <CardHeader className="px-4 py-3 border-b border-gold/10 bg-card/90 shadow-sm">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold gold-gradient-text">Messages</h2>
+              <Button variant="ghost" size="icon" className="rounded-full hover:bg-gold/5">
+                <MoreVertical className="h-5 w-5 text-gold/70" />
+              </Button>
+            </div>
+            <div className="relative mt-3">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input 
                 placeholder="Search conversations..." 
-                className="pl-10 bg-background/50 border-gold/10 focus-visible:ring-gold/30"
+                className="pl-10 bg-background/50 border-gold/10 focus-visible:ring-gold/30 rounded-full"
               />
             </div>
           </CardHeader>
           
-          <div className="overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gold/10">
+          <ScrollArea className="flex-1">
             {dummyChats.map((chat) => (
               <div 
                 key={chat.id}
-                className={`p-4 border-b border-gold/5 cursor-pointer transition-colors ${
+                className={`p-3 cursor-pointer transition-all ${
                   selectedChat.id === chat.id 
-                    ? 'bg-gold/5 hover:bg-gold/10' 
-                    : 'hover:bg-card/90'
+                    ? 'bg-gold/5 hover:bg-gold/10 border-l-2 border-gold' 
+                    : 'hover:bg-card/90 border-l-2 border-transparent'
                 }`}
                 onClick={() => setSelectedChat(chat)}
               >
@@ -179,8 +196,11 @@ const Chat = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-center mb-1">
-                      <h3 className="font-medium truncate">{chat.name}</h3>
-                      <span className="text-xs text-foreground/60 whitespace-nowrap ml-2">{chat.time}</span>
+                      <h3 className={`font-medium truncate ${selectedChat.id === chat.id ? 'text-gold' : ''}`}>{chat.name}</h3>
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-3 w-3 text-foreground/60" />
+                        <span className="text-xs text-foreground/60 whitespace-nowrap">{chat.time}</span>
+                      </div>
                     </div>
                     <p className="text-sm text-foreground/70 truncate">{chat.lastMessage}</p>
                     <p className="text-xs text-foreground/60 mt-1">{chat.role}</p>
@@ -193,20 +213,20 @@ const Chat = () => {
                 </div>
               </div>
             ))}
-          </div>
+          </ScrollArea>
         </div>
         
         {/* Chat Area */}
-        <div className="w-2/3 flex flex-col bg-gradient-to-br from-background/50 to-card/20">
+        <div className="w-2/3 md:w-3/4 flex flex-col bg-gradient-to-br from-background/70 to-background/90">
           {/* Chat Header */}
-          <CardHeader className="px-6 py-4 border-b border-gold/10 bg-card/40 backdrop-blur-sm flex-row items-center justify-between">
+          <CardHeader className="px-6 py-3 border-b border-gold/10 bg-card/40 backdrop-blur-sm flex-row items-center justify-between shadow-sm">
             <div className="flex items-center gap-3">
-              <Avatar className="h-12 w-12 border border-gold/10">
+              <Avatar className="h-10 w-10 border border-gold/10">
                 <AvatarImage src={selectedChat.avatar} />
                 <AvatarFallback className="bg-gold/10 text-gold">{selectedChat.name.charAt(0)}</AvatarFallback>
               </Avatar>
               <div>
-                <h3 className="font-semibold text-lg">{selectedChat.name}</h3>
+                <h3 className="font-semibold text-lg gold-gradient-text">{selectedChat.name}</h3>
                 <div className="flex items-center gap-2 text-sm text-foreground/60">
                   <span className={`h-2 w-2 rounded-full ${selectedChat.online ? 'bg-green-500' : 'bg-foreground/30'}`}></span>
                   <span>{selectedChat.online ? 'Online' : 'Offline'}</span>
@@ -215,75 +235,88 @@ const Chat = () => {
                 </div>
               </div>
             </div>
-            <div className="flex gap-1">
-              <Button variant="ghost" size="icon" className="rounded-full hover:bg-card/60 h-9 w-9">
-                <Phone className="h-4 w-4" />
+            <div className="flex gap-2">
+              <Button variant="outline" size="icon" className="rounded-full h-9 w-9 bg-gold/5 border-gold/20 hover:bg-gold/10 hover:border-gold/30">
+                <Phone className="h-4 w-4 text-gold" />
               </Button>
-              <Button variant="ghost" size="icon" className="rounded-full hover:bg-card/60 h-9 w-9">
-                <Video className="h-4 w-4" />
+              <Button variant="outline" size="icon" className="rounded-full h-9 w-9 bg-gold/5 border-gold/20 hover:bg-gold/10 hover:border-gold/30">
+                <Video className="h-4 w-4 text-gold" />
               </Button>
-              <Button variant="ghost" size="icon" className="rounded-full hover:bg-card/60 h-9 w-9">
-                <Info className="h-4 w-4" />
+              <Button variant="outline" size="icon" className="rounded-full h-9 w-9 bg-gold/5 border-gold/20 hover:bg-gold/10 hover:border-gold/30">
+                <Info className="h-4 w-4 text-gold" />
               </Button>
             </div>
           </CardHeader>
           
           {/* Messages Area */}
-          <CardContent className="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-thin scrollbar-thumb-gold/10">
-            {messages.map((msg, index) => {
-              // Check if this is the first message or if the previous message was from a different sender
-              const isFirstMessage = index === 0 || messages[index - 1].isMe !== msg.isMe;
-              
-              return (
-                <div key={msg.id} className={`flex ${msg.isMe ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`flex ${msg.isMe ? 'flex-row-reverse' : 'flex-row'} gap-2 max-w-[75%]`}>
-                    {!msg.isMe && isFirstMessage && (
-                      <Avatar className="h-8 w-8 mt-1">
-                        <AvatarImage src={selectedChat.avatar} />
-                        <AvatarFallback className="bg-gold/10 text-gold">{selectedChat.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                    )}
-                    {!msg.isMe && !isFirstMessage && <div className="w-8"></div>}
-                    <div>
-                      <div 
-                        className={`py-2.5 px-3.5 rounded-2xl ${
-                          msg.isMe 
-                            ? 'bg-gold/20 text-foreground rounded-tr-none' 
-                            : 'bg-card/80 border border-gold/5 rounded-tl-none'
-                        }`}
-                      >
-                        <p className="text-sm">{msg.content}</p>
+          <ScrollArea className="flex-1 px-6 py-4">
+            <div className="space-y-4 min-h-[calc(100%-80px)]">
+              {messages.map((msg, index) => {
+                // Check if this is the first message or if the previous message was from a different sender
+                const isFirstMessage = index === 0 || messages[index - 1].isMe !== msg.isMe;
+                // Group messages from the same sender
+                const isLastInGroup = index === messages.length - 1 || messages[index + 1].isMe !== msg.isMe;
+                
+                return (
+                  <div key={msg.id} className={`flex ${msg.isMe ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`flex ${msg.isMe ? 'flex-row-reverse' : 'flex-row'} gap-2 max-w-[75%]`}>
+                      {!msg.isMe && isFirstMessage && (
+                        <Avatar className="h-8 w-8 mt-1">
+                          <AvatarImage src={selectedChat.avatar} />
+                          <AvatarFallback className="bg-gold/10 text-gold">{selectedChat.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                      )}
+                      {!msg.isMe && !isFirstMessage && <div className="w-8"></div>}
+                      <div>
+                        <div 
+                          className={`py-2.5 px-3.5 rounded-2xl ${
+                            msg.isMe 
+                              ? 'bg-gold/20 text-foreground rounded-br-none shadow-sm' 
+                              : 'bg-card/80 border border-gold/5 rounded-bl-none shadow-sm'
+                          } ${isFirstMessage ? 'mt-2' : 'mt-1'}`}
+                        >
+                          <p className="text-sm">{msg.content}</p>
+                        </div>
+                        {isLastInGroup && (
+                          <p className={`text-xs text-foreground/60 mt-1 px-1 ${msg.isMe ? 'text-right' : 'text-left'}`}>
+                            {msg.time}
+                          </p>
+                        )}
                       </div>
-                      <p className="text-xs text-foreground/60 mt-1 px-1 flex justify-end">
-                        {msg.time}
-                      </p>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </CardContent>
+                );
+              })}
+              <div ref={messagesEndRef} />
+            </div>
+          </ScrollArea>
           
-          {/* Message Input - Adjusted to stay at the bottom */}
+          {/* Message Input */}
           <CardFooter className="p-4 border-t border-gold/10 bg-card/40 backdrop-blur-sm mt-auto">
-            <form onSubmit={handleSendMessage} className="flex gap-2 w-full">
+            <form onSubmit={handleSendMessage} className="flex gap-2 w-full items-end">
               <Button 
                 type="button" 
                 variant="ghost" 
                 size="icon" 
-                className="rounded-full h-10 w-10 hover:bg-gold/10"
+                className="rounded-full h-10 w-10 hover:bg-gold/10 flex-shrink-0"
               >
                 <PaperclipIcon className="h-5 w-5 text-foreground/70" />
               </Button>
-              <Input 
+              <Textarea 
                 placeholder="Type a message..." 
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                className="bg-background/50 border-gold/10 focus-visible:ring-gold/30 rounded-full"
+                className="bg-background/50 border-gold/10 focus-visible:ring-gold/30 rounded-lg min-h-[44px] max-h-[120px] resize-none"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage(e);
+                  }
+                }}
               />
               <Button 
                 type="submit" 
-                className="bg-gold hover:bg-gold/90 text-black rounded-full h-10 w-10 px-0 flex items-center justify-center"
+                className="bg-gold hover:bg-gold/90 text-black rounded-full h-10 w-10 px-0 flex items-center justify-center flex-shrink-0"
               >
                 <Send className="h-4 w-4" />
               </Button>
