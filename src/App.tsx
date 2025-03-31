@@ -33,51 +33,11 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
 import ContentModeration from "./pages/admin/ContentModeration";
-
-// Create placeholder admin pages for new items in the menu
-interface AdminPageProps {
-  children: React.ReactNode;
-}
-
-const JobManagement: React.FC<AdminPageProps> = ({ children }) => (
-  <div className="space-y-6">
-    <h1 className="text-3xl font-bold gold-gradient-text">Job Management</h1>
-    <p className="text-muted-foreground">Manage job listings and applications.</p>
-    {children}
-  </div>
-);
-
-const EventManagement: React.FC<AdminPageProps> = ({ children }) => (
-  <div className="space-y-6">
-    <h1 className="text-3xl font-bold gold-gradient-text">Event Management</h1>
-    <p className="text-muted-foreground">Create and manage industry events.</p>
-    {children}
-  </div>
-);
-
-const Analytics: React.FC<AdminPageProps> = ({ children }) => (
-  <div className="space-y-6">
-    <h1 className="text-3xl font-bold gold-gradient-text">Analytics</h1>
-    <p className="text-muted-foreground">View platform statistics and insights.</p>
-    {children}
-  </div>
-);
-
-const AdminNotifications: React.FC<AdminPageProps> = ({ children }) => (
-  <div className="space-y-6">
-    <h1 className="text-3xl font-bold gold-gradient-text">Notifications Management</h1>
-    <p className="text-muted-foreground">Send and manage system notifications.</p>
-    {children}
-  </div>
-);
-
-const AdminSettings: React.FC<AdminPageProps> = ({ children }) => (
-  <div className="space-y-6">
-    <h1 className="text-3xl font-bold gold-gradient-text">Admin Settings</h1>
-    <p className="text-muted-foreground">Configure admin panel settings.</p>
-    {children}
-  </div>
-);
+import JobManagement from "./pages/admin/JobManagement";
+import EventManagement from "./pages/admin/EventManagement";
+import Analytics from "./pages/admin/Analytics";
+import AdminNotifications from "./pages/admin/AdminNotifications";
+import AdminSettings from "./pages/admin/AdminSettings";
 
 const queryClient = new QueryClient();
 
@@ -149,12 +109,7 @@ const App = () => (
                 element={
                   <PrivateRoute>
                     <AdminRouteGuard>
-                      <JobManagement>
-                        {/* Content for Job Management */}
-                        <div className="bg-card rounded-lg p-6 mt-4">
-                          <p>Job management features will be implemented here.</p>
-                        </div>
-                      </JobManagement>
+                      <JobManagement />
                     </AdminRouteGuard>
                   </PrivateRoute>
                 } 
@@ -164,12 +119,7 @@ const App = () => (
                 element={
                   <PrivateRoute>
                     <AdminRouteGuard>
-                      <EventManagement>
-                        {/* Content for Event Management */}
-                        <div className="bg-card rounded-lg p-6 mt-4">
-                          <p>Event management features will be implemented here.</p>
-                        </div>
-                      </EventManagement>
+                      <EventManagement />
                     </AdminRouteGuard>
                   </PrivateRoute>
                 } 
@@ -179,12 +129,7 @@ const App = () => (
                 element={
                   <PrivateRoute>
                     <AdminRouteGuard>
-                      <Analytics>
-                        {/* Content for Analytics */}
-                        <div className="bg-card rounded-lg p-6 mt-4">
-                          <p>Analytics dashboard will be implemented here.</p>
-                        </div>
-                      </Analytics>
+                      <Analytics />
                     </AdminRouteGuard>
                   </PrivateRoute>
                 } 
@@ -194,12 +139,7 @@ const App = () => (
                 element={
                   <PrivateRoute>
                     <AdminRouteGuard>
-                      <AdminNotifications>
-                        {/* Content for Admin Notifications */}
-                        <div className="bg-card rounded-lg p-6 mt-4">
-                          <p>Notification management features will be implemented here.</p>
-                        </div>
-                      </AdminNotifications>
+                      <AdminNotifications />
                     </AdminRouteGuard>
                   </PrivateRoute>
                 } 
@@ -209,12 +149,7 @@ const App = () => (
                 element={
                   <PrivateRoute>
                     <AdminRouteGuard>
-                      <AdminSettings>
-                        {/* Content for Admin Settings */}
-                        <div className="bg-card rounded-lg p-6 mt-4">
-                          <p>Admin settings configuration will be implemented here.</p>
-                        </div>
-                      </AdminSettings>
+                      <AdminSettings />
                     </AdminRouteGuard>
                   </PrivateRoute>
                 } 
