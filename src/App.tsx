@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -148,7 +149,12 @@ const App = () => (
                 element={
                   <PrivateRoute>
                     <AdminRouteGuard>
-                      <JobManagement />
+                      <JobManagement>
+                        {/* Content for Job Management */}
+                        <div className="bg-card rounded-lg p-6 mt-4">
+                          <p>Job management features will be implemented here.</p>
+                        </div>
+                      </JobManagement>
                     </AdminRouteGuard>
                   </PrivateRoute>
                 } 
@@ -158,7 +164,12 @@ const App = () => (
                 element={
                   <PrivateRoute>
                     <AdminRouteGuard>
-                      <EventManagement />
+                      <EventManagement>
+                        {/* Content for Event Management */}
+                        <div className="bg-card rounded-lg p-6 mt-4">
+                          <p>Event management features will be implemented here.</p>
+                        </div>
+                      </EventManagement>
                     </AdminRouteGuard>
                   </PrivateRoute>
                 } 
@@ -168,7 +179,12 @@ const App = () => (
                 element={
                   <PrivateRoute>
                     <AdminRouteGuard>
-                      <Analytics />
+                      <Analytics>
+                        {/* Content for Analytics */}
+                        <div className="bg-card rounded-lg p-6 mt-4">
+                          <p>Analytics dashboard will be implemented here.</p>
+                        </div>
+                      </Analytics>
                     </AdminRouteGuard>
                   </PrivateRoute>
                 } 
@@ -178,7 +194,12 @@ const App = () => (
                 element={
                   <PrivateRoute>
                     <AdminRouteGuard>
-                      <AdminNotifications />
+                      <AdminNotifications>
+                        {/* Content for Admin Notifications */}
+                        <div className="bg-card rounded-lg p-6 mt-4">
+                          <p>Notification management features will be implemented here.</p>
+                        </div>
+                      </AdminNotifications>
                     </AdminRouteGuard>
                   </PrivateRoute>
                 } 
@@ -188,7 +209,12 @@ const App = () => (
                 element={
                   <PrivateRoute>
                     <AdminRouteGuard>
-                      <AdminSettings />
+                      <AdminSettings>
+                        {/* Content for Admin Settings */}
+                        <div className="bg-card rounded-lg p-6 mt-4">
+                          <p>Admin settings configuration will be implemented here.</p>
+                        </div>
+                      </AdminSettings>
                     </AdminRouteGuard>
                   </PrivateRoute>
                 } 
