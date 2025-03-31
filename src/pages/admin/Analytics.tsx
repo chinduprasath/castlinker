@@ -8,10 +8,19 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
-  BarChart, 
-  LineChart, 
-  PieChart, 
-  AreaChart 
+  BarChart as RechartsBarChart, 
+  LineChart as RechartsLineChart, 
+  PieChart as RechartsPieChart, 
+  AreaChart as RechartsAreaChart,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  Area,
+  Bar,
+  Pie,
+  Cell
 } from "recharts";
 import {
   Activity,
@@ -62,6 +71,9 @@ const jobCategoriesData = [
   { name: "Crew", value: 278 },
   { name: "Other", value: 189 },
 ];
+
+// Colors for pie charts
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A28CFF', '#FF6B6B'];
 
 const Analytics = () => {
   return (
@@ -159,7 +171,7 @@ const Analytics = () => {
             </CardHeader>
             <CardContent>
               <div className="h-[300px] w-full">
-                <AreaChart
+                <RechartsAreaChart
                   width={500}
                   height={300}
                   data={userActivityData}
@@ -181,7 +193,7 @@ const Analytics = () => {
                   <CartesianGrid strokeDasharray="3 3" />
                   <Tooltip />
                   <Area type="monotone" dataKey="value" stroke="#8884d8" fillOpacity={1} fill="url(#colorUv)" />
-                </AreaChart>
+                </RechartsAreaChart>
               </div>
             </CardContent>
           </Card>
@@ -202,7 +214,7 @@ const Analytics = () => {
             </CardHeader>
             <CardContent>
               <div className="h-[300px] w-full">
-                <BarChart
+                <RechartsBarChart
                   width={500}
                   height={300}
                   data={jobsData}
@@ -220,7 +232,7 @@ const Analytics = () => {
                   <Legend />
                   <Bar dataKey="posted" fill="#8884d8" />
                   <Bar dataKey="applications" fill="#82ca9d" />
-                </BarChart>
+                </RechartsBarChart>
               </div>
             </CardContent>
           </Card>
@@ -236,7 +248,7 @@ const Analytics = () => {
             </CardHeader>
             <CardContent>
               <div className="h-[300px] w-full flex items-center justify-center">
-                <PieChart width={400} height={300}>
+                <RechartsPieChart width={400} height={300}>
                   <Pie
                     data={userDemographicsData}
                     cx="50%"
@@ -252,7 +264,7 @@ const Analytics = () => {
                     ))}
                   </Pie>
                   <Tooltip />
-                </PieChart>
+                </RechartsPieChart>
               </div>
             </CardContent>
           </Card>
@@ -265,7 +277,7 @@ const Analytics = () => {
             </CardHeader>
             <CardContent>
               <div className="h-[300px] w-full flex items-center justify-center">
-                <PieChart width={400} height={300}>
+                <RechartsPieChart width={400} height={300}>
                   <Pie
                     data={jobCategoriesData}
                     cx="50%"
@@ -281,7 +293,7 @@ const Analytics = () => {
                     ))}
                   </Pie>
                   <Tooltip />
-                </PieChart>
+                </RechartsPieChart>
               </div>
             </CardContent>
           </Card>
@@ -290,21 +302,5 @@ const Analytics = () => {
     </AdminLayout>
   );
 };
-
-// Colors for pie charts
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A28CFF', '#FF6B6B'];
-
-// Recharts components
-const {
-  CartesianGrid,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Legend,
-  Area,
-  Bar,
-  Pie,
-  Cell
-} = require('recharts');
 
 export default Analytics;
