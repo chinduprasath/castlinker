@@ -1,0 +1,98 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 13% 13%;
+    --foreground: 60 30% 98%;
+
+    --card: 220 13% 18%;
+    --card-foreground: 60 30% 98%;
+
+    --popover: 220 13% 13%;
+    --popover-foreground: 60 30% 98%;
+
+    --primary: 46 100% 50%;
+    --primary-foreground: 240 10% 3.9%;
+
+    --secondary: 240 4% 18%;
+    --secondary-foreground: 60 30% 98%;
+
+    --muted: 240 4% 20%;
+    --muted-foreground: 240 5% 64.9%;
+
+    --accent: 46 100% 50%;
+    --accent-foreground: 240 10% 3.9%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 60 30% 98%;
+
+    --border: 240 4% 25%;
+    --input: 240 4% 25%;
+    --ring: 46 100% 50%;
+
+    --radius: 0.5rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-cinematic text-foreground font-montserrat bg-film-grain;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-playfair;
+  }
+}
+
+@layer components {
+  .film-strip {
+    position: relative;
+  }
+  .film-strip::before,
+  .film-strip::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 15px;
+    background-image: url("data:image/svg+xml,%3Csvg width='78' height='20' viewBox='0 0 78 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='10' height='20' fill='%23000000'/%3E%3Crect x='13' width='10' height='20' fill='%23000000'/%3E%3Crect x='26' width='10' height='20' fill='%23000000'/%3E%3Crect x='39' width='10' height='20' fill='%23000000'/%3E%3Crect x='52' width='10' height='20' fill='%23000000'/%3E%3Crect x='65' width='10' height='20' fill='%23000000'/%3E%3C/svg%3E");
+    background-repeat: repeat-x;
+    z-index: 10;
+  }
+  .film-strip::before {
+    top: 0;
+  }
+  .film-strip::after {
+    bottom: 0;
+  }
+  
+  .gold-gradient-text {
+    @apply bg-gradient-to-r from-gold-light via-gold to-gold-dark bg-clip-text text-transparent;
+  }
+  
+  .hero-card {
+    @apply rounded-xl overflow-hidden shadow-lg bg-card-gradient backdrop-blur-sm border border-gold/10;
+  }
+
+  .role-card {
+    @apply flex flex-col items-center p-6 rounded-xl border border-gold/10 bg-card-gradient hover:border-gold/30 transition-all cursor-pointer;
+  }
+
+  .feature-card {
+    @apply rounded-xl overflow-hidden shadow-lg bg-card-gradient backdrop-blur-sm border border-gold/10 p-6 flex flex-col;
+  }
+}
+
+.font-montserrat {
+  font-family: 'Montserrat', sans-serif;
+}
+
+.font-playfair {
+  font-family: 'Playfair Display', serif;
+}
