@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -25,6 +26,13 @@ import Billing from "./pages/Billing";
 import Help from "./pages/Help";
 import { AuthProvider } from "./contexts/AuthContext";
 import PrivateRoute from "./components/auth/PrivateRoute";
+import AdminRouteGuard from "./components/admin/AdminRouteGuard";
+
+// Admin pages
+import AdminLogin from "./pages/AdminLogin";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import UserManagement from "./pages/admin/UserManagement";
+import ContentModeration from "./pages/admin/ContentModeration";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +55,7 @@ const App = () => (
               <Route path="/contact" element={<Contact />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/help" element={<Help />} />
+              <Route path="/admin/login" element={<AdminLogin />} />
               
               {/* Protected Routes */}
               <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
@@ -58,6 +67,38 @@ const App = () => (
               <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
               <Route path="/notifications" element={<PrivateRoute><Notifications /></PrivateRoute>} />
               <Route path="/billing" element={<PrivateRoute><Billing /></PrivateRoute>} />
+              
+              {/* Admin Routes */}
+              <Route 
+                path="/admin/dashboard" 
+                element={
+                  <PrivateRoute>
+                    <AdminRouteGuard>
+                      <AdminDashboard />
+                    </AdminRouteGuard>
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/admin/users" 
+                element={
+                  <PrivateRoute>
+                    <AdminRouteGuard requiredPermission="user_view">
+                      <UserManagement />
+                    </AdminRouteGuard>
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/admin/content" 
+                element={
+                  <PrivateRoute>
+                    <AdminRouteGuard requiredPermission="content_view">
+                      <ContentModeration />
+                    </AdminRouteGuard>
+                  </PrivateRoute>
+                } 
+              />
               
               {/* Catch-all Route */}
               <Route path="*" element={<NotFound />} />
