@@ -42,7 +42,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
             <main 
               className={`
                 flex-1 transition-all duration-300 ease-in-out px-4 py-4
-                ${sidebarCollapsed ? 'ml-[90px]' : 'ml-[10px]'}
+                ${sidebarCollapsed ? 'ml-[-90px]' : 'ml-[10px]'}
               `}
             >
               {children}
