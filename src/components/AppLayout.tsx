@@ -41,8 +41,8 @@ const AppLayout = ({ children }: AppLayoutProps) => {
             <DashboardSidebar onToggle={toggleSidebar} isCollapsed={sidebarCollapsed} />
             <main 
               className={`
-                flex-1 transition-all duration-300 ease-in-out p-6
-                ${sidebarCollapsed ? 'ml-[70px]' : 'ml-[250px]'}
+                flex-1 transition-all duration-300 ease-in-out px-4 py-4
+                ${sidebarCollapsed ? 'ml-[60px]' : 'ml-[240px]'}
               `}
             >
               {children}
