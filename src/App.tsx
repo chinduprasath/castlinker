@@ -34,6 +34,52 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
 import ContentModeration from "./pages/admin/ContentModeration";
 
+// Create placeholder admin pages for new items in the menu
+const JobManagement = () => (
+  <AdminDashboard>
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold gold-gradient-text">Job Management</h1>
+      <p className="text-muted-foreground">Manage job listings and applications.</p>
+    </div>
+  </AdminDashboard>
+);
+
+const EventManagement = () => (
+  <AdminDashboard>
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold gold-gradient-text">Event Management</h1>
+      <p className="text-muted-foreground">Create and manage industry events.</p>
+    </div>
+  </AdminDashboard>
+);
+
+const Analytics = () => (
+  <AdminDashboard>
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold gold-gradient-text">Analytics</h1>
+      <p className="text-muted-foreground">View platform statistics and insights.</p>
+    </div>
+  </AdminDashboard>
+);
+
+const AdminNotifications = () => (
+  <AdminDashboard>
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold gold-gradient-text">Notifications Management</h1>
+      <p className="text-muted-foreground">Send and manage system notifications.</p>
+    </div>
+  </AdminDashboard>
+);
+
+const AdminSettings = () => (
+  <AdminDashboard>
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold gold-gradient-text">Admin Settings</h1>
+      <p className="text-muted-foreground">Configure admin panel settings.</p>
+    </div>
+  </AdminDashboard>
+);
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -95,6 +141,56 @@ const App = () => (
                   <PrivateRoute>
                     <AdminRouteGuard requiredPermission="content_view">
                       <ContentModeration />
+                    </AdminRouteGuard>
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/admin/jobs" 
+                element={
+                  <PrivateRoute>
+                    <AdminRouteGuard>
+                      <JobManagement />
+                    </AdminRouteGuard>
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/admin/events" 
+                element={
+                  <PrivateRoute>
+                    <AdminRouteGuard>
+                      <EventManagement />
+                    </AdminRouteGuard>
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/admin/analytics" 
+                element={
+                  <PrivateRoute>
+                    <AdminRouteGuard>
+                      <Analytics />
+                    </AdminRouteGuard>
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/admin/notifications" 
+                element={
+                  <PrivateRoute>
+                    <AdminRouteGuard>
+                      <AdminNotifications />
+                    </AdminRouteGuard>
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/admin/settings" 
+                element={
+                  <PrivateRoute>
+                    <AdminRouteGuard>
+                      <AdminSettings />
                     </AdminRouteGuard>
                   </PrivateRoute>
                 } 

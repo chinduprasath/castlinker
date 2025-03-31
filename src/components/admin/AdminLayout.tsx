@@ -75,7 +75,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         {/* Admin Sidebar */}
         <div 
           className={`${
-            collapsed ? "w-20" : "w-64"
+            collapsed ? "w-16" : "w-60"
           } bg-card h-full border-r border-gold/10 transition-all duration-300 ease-in-out fixed left-0 top-0 z-50`}
         >
           <div className="flex flex-col h-full">
@@ -151,10 +151,10 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         {/* Main Content */}
         <main
           className={`flex-1 overflow-auto transition-all duration-300 ease-in-out ${
-            collapsed ? "ml-20" : "ml-64"
+            collapsed ? "ml-16" : "ml-60"
           }`}
         >
-          <div className="p-6">{children}</div>
+          <div className="p-4">{children}</div>
         </main>
       </div>
     </div>
