@@ -66,6 +66,7 @@ export const accountMenuItems: MenuItem[] = [
     path: "/notifications"
   },
   {
+<<<<<<< HEAD
     icon: Shield,
     text: "Privacy",
     path: "/privacy"
@@ -79,5 +80,10 @@ export const accountMenuItems: MenuItem[] = [
     icon: HelpCircle, 
     text: "Help",
     path: "/help"
+=======
+    icon: CreditCard,
+    text: "Billing",
+    path: "/billing"
+>>>>>>> 4ee9c98 (modified files)
   }
 ];

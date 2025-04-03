@@ -15,8 +15,12 @@ import {
   MessageCircle,
   TrendingUp,
   ArrowRight,
+<<<<<<< HEAD
   CheckCircle2,
   Bell
+=======
+  CheckCircle2
+>>>>>>> 4ee9c98 (modified files)
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -41,6 +45,7 @@ const Dashboard = () => {
               Here's your activity summary and upcoming opportunities
             </p>
           </div>
+<<<<<<< HEAD
           <div className="hidden sm:flex items-center gap-2">
             <Button variant="outline" size="sm" className="border-gold/20 text-foreground/80 gap-1">
               <Bell className="h-4 w-4 text-gold" />
@@ -52,6 +57,8 @@ const Dashboard = () => {
               <ArrowRight className="h-3.5 w-3.5 ml-1" />
             </Button>
           </div>
+=======
+>>>>>>> 4ee9c98 (modified files)
         </div>
       </div>
 

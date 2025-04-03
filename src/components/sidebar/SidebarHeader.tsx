@@ -1,7 +1,12 @@
+<<<<<<< HEAD
 
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+=======
+import { Link } from 'react-router-dom';
+import { Shield } from 'lucide-react';
+>>>>>>> 4ee9c98 (modified files)
 import { SidebarHeader as BaseSidebarHeader } from "@/components/ui/sidebar";
 
 interface SidebarHeaderProps {
@@ -11,6 +16,7 @@ interface SidebarHeaderProps {
 
 const SidebarHeader = ({ isCollapsed, onToggle }: SidebarHeaderProps) => {
   return (
+<<<<<<< HEAD
     <BaseSidebarHeader className="relative pb-4 border-b border-gold/10">
       <div className={`flex items-center justify-between px-4 py-4`}>
         <Link to="/dashboard" className="flex items-center">
@@ -33,6 +39,24 @@ const SidebarHeader = ({ isCollapsed, onToggle }: SidebarHeaderProps) => {
             <ChevronLeft className="h-5 w-5" />
           }
         </Button>
+=======
+    <BaseSidebarHeader className="relative py-3 mb-2 border-b border-gold/10">
+      <div className="flex items-center justify-between px-4">
+        {!isCollapsed && (
+          <Link to="/dashboard" className="flex items-center">
+            <Shield className="h-5 w-5 text-gold mr-2" />
+            <span className="text-2xl font-bold gold-gradient-text">CastLinker</span>
+          </Link>
+        )}
+        
+        {isCollapsed && (
+          <div className="mx-auto">
+            <Link to="/dashboard">
+              <Shield className="h-8 w-8 text-gold" />
+            </Link>
+          </div>
+        )}
+>>>>>>> 4ee9c98 (modified files)
       </div>
     </BaseSidebarHeader>
   );
