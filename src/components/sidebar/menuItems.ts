@@ -1,15 +1,11 @@
+
 import { 
   Home, 
   Film, 
   Users, 
   Book, 
-  MessageSquare, 
-  User, 
-  Settings,
-  Bell,
-  Shield,
-  CreditCard,
-  HelpCircle
+  MessageSquare,
+  Bell
 } from 'lucide-react';
 
 export type MenuItem = {
@@ -43,41 +39,16 @@ export const mainMenuItems: MenuItem[] = [
     icon: MessageSquare,
     text: "Messages",
     path: "/chat"
+  },
+  {
+    icon: Bell,
+    text: "Notifications",
+    path: "/notifications"
   }
 ];
 
 // Public pages removed from sidebar
 export const pageMenuItems: MenuItem[] = [];
 
-export const accountMenuItems: MenuItem[] = [
-  {
-    icon: User,
-    text: "Profile",
-    path: "/profile"
-  },
-  {
-    icon: Settings,
-    text: "Settings",
-    path: "/settings"
-  },
-  {
-    icon: Bell,
-    text: "Notifications",
-    path: "/notifications"
-  },
-  {
-    icon: Shield,
-    text: "Privacy",
-    path: "/privacy"
-  },
-  {
-    icon: CreditCard,
-    text: "Billing",
-    path: "/billing"
-  },
-  {
-    icon: HelpCircle, 
-    text: "Help",
-    path: "/help"
-  }
-];
+// Account menu items have been moved to the TopBar dropdown
+export const accountMenuItems: MenuItem[] = [];

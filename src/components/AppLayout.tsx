@@ -5,6 +5,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import Navbar from '@/components/Navbar';
 import DashboardSidebar from '@/components/DashboardSidebar';
 import { useAuth } from '@/contexts/AuthContext';
+import TopBar from '@/components/TopBar';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -26,6 +27,8 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   const showNavbar = (location.pathname === '/' || isPublicPage) && !user;
   // Show sidebar when logged in and not on a public page and not on admin pages
   const showSidebar = user && !isPublicPage && !isAdminPage;
+  // Show topbar when user is logged in and not on admin pages
+  const showTopBar = user && !isAdminPage;
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
@@ -39,18 +42,17 @@ const AppLayout = ({ children }: AppLayoutProps) => {
         <SidebarProvider defaultOpen={!sidebarCollapsed}>
           <div className="flex min-h-screen w-full">
             <DashboardSidebar onToggle={toggleSidebar} isCollapsed={sidebarCollapsed} />
-            <main 
-              className={`
-                flex-1 transition-all duration-300 ease-in-out px-4 py-4
-                ${sidebarCollapsed ? 'ml-[-90px]' : 'ml-[10px]'}
-              `}
-            >
-              {children}
-            </main>
+            <div className="flex-1 transition-all duration-300 ease-in-out">
+              {showTopBar && <TopBar />}
+              <main className="px-4 py-4">
+                {children}
+              </main>
+            </div>
           </div>
         </SidebarProvider>
       ) : (
         <div>
+          {showTopBar && <TopBar />}
           {children}
         </div>
       )}
