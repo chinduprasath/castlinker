@@ -1,11 +1,6 @@
-<<<<<<< HEAD
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-=======
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
->>>>>>> 4ee9c98 (modified files)
 import { useAuth } from "@/contexts/AuthContext";
 import { 
   LayoutDashboard, 
@@ -19,7 +14,6 @@ import {
   LogOut,
   Menu,
   X,
-<<<<<<< HEAD
   MessagesSquare
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -27,16 +21,6 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/components/ui/use-toast";
 import { Separator } from "@/components/ui/separator";
-=======
-  MessagesSquare,
-  ChevronLeft,
-  ChevronRight
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { useToast } from "@/components/ui/use-toast";
-import AdminTopBar from "./AdminTopBar";
->>>>>>> 4ee9c98 (modified files)
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -97,7 +81,6 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           <div className="flex flex-col h-full">
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-gold/10">
-<<<<<<< HEAD
               <div className="flex items-center">
                 {!collapsed && (
                   <span className="text-xl font-bold gold-gradient-text mr-2">CastLinker</span>
@@ -130,21 +113,6 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                   </div>
                 )}
               </div>
-=======
-              {!collapsed && (
-                <Link to="/admin/dashboard" className="flex items-center gap-2">
-                  <Shield className="h-5 w-5 text-gold" />
-                  <span className="text-xl font-bold gold-gradient-text">CastLinker</span>
-                </Link>
-              )}
-              {collapsed && (
-                <div className="mx-auto">
-                  <Link to="/admin/dashboard">
-                    <Shield className="h-8 w-8 text-gold" />
-                  </Link>
-                </div>
-              )}
->>>>>>> 4ee9c98 (modified files)
             </div>
 
             {/* Navigation */}
@@ -180,43 +148,11 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           </div>
         </div>
 
-<<<<<<< HEAD
-=======
-        {/* Collapse/Expand Button */}
-        <div 
-          className={`
-            fixed z-50
-            ${collapsed ? 'left-[60px]' : 'left-[236px]'}
-            top-[80px]
-          `}
-        >
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-7 w-7 rounded-full border border-gold bg-background shadow-md hover:bg-gold/10"
-            onClick={toggleSidebar}
-          >
-            {collapsed ? (
-              <ChevronRight className="h-3.5 w-3.5 text-gold" />
-            ) : (
-              <ChevronLeft className="h-3.5 w-3.5 text-gold" />
-            )}
-          </Button>
-        </div>
-
-        {/* Top Bar */}
-        <AdminTopBar />
-
->>>>>>> 4ee9c98 (modified files)
         {/* Main Content */}
         <main
           className={`flex-1 overflow-auto transition-all duration-300 ease-in-out ${
             collapsed ? "ml-16" : "ml-60"
-<<<<<<< HEAD
           }`}
-=======
-          } mt-16`}
->>>>>>> 4ee9c98 (modified files)
         >
           <div className="p-4">{children}</div>
         </main>

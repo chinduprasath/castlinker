@@ -47,33 +47,7 @@ const Index = () => {
     <div className="min-h-screen bg-cinematic text-foreground">
       {/* Navigation for non-logged in users */}
       <nav className="border-b border-gold/10 p-4 flex justify-between items-center bg-background/30 backdrop-blur-md">
-<<<<<<< HEAD
         <div className="text-2xl font-bold gold-gradient-text">CastLinker</div>
-=======
-        <div className="flex items-center">
-          <div className="text-2xl font-bold gold-gradient-text">CastLinker</div>
-          <div className="hidden md:flex ml-10 space-x-6">
-            <Button variant="link" onClick={() => navigate('/about')} className="text-foreground/80 hover:text-gold">
-              About
-            </Button>
-            <Button variant="link" onClick={() => navigate('/features')} className="text-foreground/80 hover:text-gold">
-              Features
-            </Button>
-            <Button variant="link" onClick={() => navigate('/pricing')} className="text-foreground/80 hover:text-gold">
-              Pricing
-            </Button>
-            <Button variant="link" onClick={() => navigate('/talent-directory')} className="text-foreground/80 hover:text-gold">
-              Talent Directory
-            </Button>
-            <Button variant="link" onClick={() => navigate('/industry-hub')} className="text-foreground/80 hover:text-gold">
-              Industry Hub
-            </Button>
-            <Button variant="link" onClick={() => navigate('/contact')} className="text-foreground/80 hover:text-gold">
-              Contact
-            </Button>
-          </div>
-        </div>
->>>>>>> 4ee9c98 (modified files)
         <div className="space-x-2">
           <Button variant="outline" onClick={() => navigate('/login')} className="border-gold/30 text-gold hover:bg-gold/10">
             Log In
