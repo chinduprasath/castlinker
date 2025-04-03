@@ -25,7 +25,8 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Shield } from "lucide-react";
+import { Shield, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -40,10 +41,11 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const SignupForm = () => {
-  const { signup } = useAuth();
+  const { signup, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -62,6 +64,10 @@ const SignupForm = () => {
     
     try {
       await signup(data.email, data.password, data.name, data.role);
+      toast({
+        title: "Account created!",
+        description: "You can now login with your credentials",
+      });
       navigate("/dashboard");
     } catch (error) {
       if (error instanceof Error) {
@@ -199,9 +205,16 @@ const SignupForm = () => {
           <Button 
             type="submit" 
             className="w-full bg-gold hover:bg-gold/90 text-black font-medium"
-            disabled={isLoading}
+            disabled={isLoading || authLoading}
           >
-            {isLoading ? "Creating account..." : "Create Account"}
+            {isLoading || authLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating account...
+              </>
+            ) : (
+              "Create Account"
+            )}
           </Button>
         </form>
       </Form>

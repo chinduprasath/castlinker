@@ -2,6 +2,7 @@
 import { createContext, useState, useContext, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User as SupabaseUser } from '@supabase/supabase-js';
+import { useToast } from '@/hooks/use-toast';
 
 // Define User interface
 export interface User {
@@ -57,9 +58,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   // Check for existing session on mount
   useEffect(() => {
+    // First set up the auth state listener to prevent missing auth events
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        const formattedUser = formatUser(session?.user || null);
+        setUser(formattedUser);
+        setIsLoading(false);
+        
+        if (event === 'SIGNED_IN' && formattedUser) {
+          toast({
+            title: "Welcome back!",
+            description: `You are logged in as ${formattedUser.name}`,
+          });
+        }
+        
+        if (event === 'SIGNED_OUT') {
+          toast({
+            title: "Signed out",
+            description: "You have been logged out successfully",
+          });
+        }
+      }
+    );
+
+    // Then check for existing session
     const checkSession = async () => {
       try {
         const { data, error } = await supabase.auth.getSession();
@@ -78,18 +104,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     checkSession();
 
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setUser(formatUser(session?.user || null));
-        setIsLoading(false);
-      }
-    );
-
     return () => {
       subscription?.unsubscribe();
     };
-  }, []);
+  }, [toast]);
 
   const login = async (email: string, password: string, rememberMe: boolean): Promise<void> => {
     try {
@@ -110,6 +128,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     } catch (error: any) {
       setError(error.message || 'Failed to login');
+      toast({
+        title: "Login failed",
+        description: error.message || "Check your credentials and try again",
+        variant: "destructive",
+      });
       throw error;
     } finally {
       setIsLoading(false);
@@ -135,9 +158,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       if (error) throw error;
       
-      // Note: User will be set by the onAuthStateChange listener
+      if (data.user) {
+        toast({
+          title: "Account created successfully!",
+          description: "Welcome to CastLinker!",
+        });
+      }
     } catch (error: any) {
       setError(error.message || 'Failed to create account');
+      toast({
+        title: "Signup failed",
+        description: error.message || "Please try again with different credentials",
+        variant: "destructive",
+      });
       throw error;
     } finally {
       setIsLoading(false);
@@ -145,11 +178,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const logout = async () => {
+    setIsLoading(true);
     try {
       await supabase.auth.signOut();
       localStorage.removeItem('rememberLogin');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error signing out:', error);
+      toast({
+        title: "Error signing out",
+        description: error.message || "An error occurred while logging out",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
