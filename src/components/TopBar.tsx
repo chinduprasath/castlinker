@@ -1,126 +1,136 @@
 
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   Search, 
   Bell, 
-  ChevronDown,
-  User,
-  Settings,
-  Shield,
-  CreditCard,
-  HelpCircle,
-  LogOut
+  User, 
+  Settings, 
+  Shield, 
+  LogOut, 
+  CreditCard, 
+  HelpCircle, 
+  ChevronDown
 } from 'lucide-react';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { useAuth } from '@/contexts/AuthContext';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from './ui/button';
-import { useNavigate } from 'react-router-dom';
+} from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
 
 const TopBar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
-
-  const handleLogout = async () => {
-    await logout();
-    navigate('/');
-  };
-
+  const [notifications, setNotifications] = useState(3); // Mock notification count
+  
   if (!user) return null;
-
+  
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+  
   const initials = user.name
     ? user.name
         .split(' ')
         .map((n: string) => n[0])
         .join('')
     : '?';
-
+  
   return (
-    <div className="h-16 border-b border-gold/15 bg-background/95 backdrop-blur-sm sticky top-0 z-10 w-full px-4">
-      <div className="flex items-center justify-between h-full">
-        <div className="flex items-center gap-4 w-[40%]">
-          <div className={`relative w-full max-w-md transition-all duration-200 ${isSearchFocused ? 'w-full' : 'w-[90%]'}`}>
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input 
-              type="text" 
-              placeholder="Search..." 
-              className="pl-10 bg-muted/50 border-none h-9"
-              onFocus={() => setIsSearchFocused(true)}
-              onBlur={() => setIsSearchFocused(false)}
+    <div className="w-full border-b border-gold/10 bg-background/90 backdrop-blur-sm">
+      <div className="flex h-16 items-center justify-between px-6">
+        {/* Search Bar */}
+        <div className="w-1/3 hidden md:block">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search..."
+              className="w-full bg-background/60 pl-9 focus-visible:ring-gold/30"
             />
           </div>
         </div>
-
-        <div className="flex items-center gap-2">
+        
+        {/* Mobile spacing */}
+        <div className="md:hidden flex-1"></div>
+        
+        {/* Right Side Actions */}
+        <div className="flex items-center gap-4">
+          {/* Notifications */}
           <Button 
             variant="ghost" 
             size="icon" 
-            className="relative rounded-full h-9 w-9 text-muted-foreground hover:text-gold"
+            className="relative text-muted-foreground hover:text-foreground"
+            onClick={() => navigate('/notifications')}
           >
             <Bell className="h-5 w-5" />
-            <span className="absolute top-1 right-1.5 h-2 w-2 rounded-full bg-red-500"></span>
+            {notifications > 0 && (
+              <Badge 
+                variant="destructive" 
+                className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px]"
+              >
+                {notifications}
+              </Badge>
+            )}
           </Button>
-
+          
+          {/* User Profile Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2 pl-2 pr-1 hover:bg-muted/60">
+              <Button variant="ghost" className="h-9 gap-2 px-2">
                 <Avatar className="h-8 w-8 border border-gold/20">
                   <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="bg-gold/10 text-gold text-xs">
+                  <AvatarFallback className="bg-gold/10 text-gold">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
-                <div className="hidden md:flex flex-col items-start">
-                  <span className="text-sm font-medium">{user.name}</span>
+                <div className="flex flex-col items-start text-left">
+                  <span className="text-sm font-medium leading-none">{user.name}</span>
                   <span className="text-xs text-muted-foreground">{user.role}</span>
                 </div>
-                <ChevronDown className="h-4 w-4 text-muted-foreground ml-1" />
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 bg-background border border-gold/10">
+            <DropdownMenuContent className="w-56" align="end">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              <DropdownMenuSeparator className="bg-gold/10" />
-              
-              <DropdownMenuItem className="cursor-pointer hover:bg-gold/10" onClick={() => navigate('/profile')}>
-                <User className="mr-2 h-4 w-4" />
-                <span>Profile</span>
-              </DropdownMenuItem>
-              
-              <DropdownMenuItem className="cursor-pointer hover:bg-gold/10" onClick={() => navigate('/settings')}>
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Settings</span>
-              </DropdownMenuItem>
-              
-              <DropdownMenuItem className="cursor-pointer hover:bg-gold/10" onClick={() => navigate('/privacy')}>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                <DropdownMenuItem onClick={() => navigate('/profile')}>
+                  <User className="mr-2 h-4 w-4" />
+                  Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/settings')}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/billing')}>
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  Billing
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate('/privacy')}>
                 <Shield className="mr-2 h-4 w-4" />
-                <span>Privacy</span>
+                Privacy
               </DropdownMenuItem>
-              
-              <DropdownMenuItem className="cursor-pointer hover:bg-gold/10" onClick={() => navigate('/billing')}>
-                <CreditCard className="mr-2 h-4 w-4" />
-                <span>Billing</span>
-              </DropdownMenuItem>
-              
-              <DropdownMenuItem className="cursor-pointer hover:bg-gold/10" onClick={() => navigate('/help')}>
+              <DropdownMenuItem onClick={() => navigate('/help')}>
                 <HelpCircle className="mr-2 h-4 w-4" />
-                <span>Help</span>
+                Help & Support
               </DropdownMenuItem>
-              
-              <DropdownMenuSeparator className="bg-gold/10" />
-              
-              <DropdownMenuItem className="cursor-pointer text-red-500 hover:bg-red-500/10" onClick={handleLogout}>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout} className="text-red-500 focus:text-red-500">
                 <LogOut className="mr-2 h-4 w-4" />
-                <span>Logout</span>
+                Logout
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

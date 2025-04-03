@@ -1,6 +1,6 @@
 
-import { useAuth } from "@/contexts/AuthContext";
-import { hasPermission } from "@/lib/adminPermissions";
+import { useAuth } from '@/contexts/AuthContext';
+import { hasPermission } from '@/lib/adminPermissions';
 import { useEffect, useState } from "react";
 
 type Role = 'super_admin' | 'moderator' | 'content_manager' | 'recruiter';

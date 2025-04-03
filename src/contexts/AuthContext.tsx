@@ -1,4 +1,7 @@
+
 import { createContext, useState, useContext, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { User as SupabaseUser } from '@supabase/supabase-js';
 
 // Define User interface
 export interface User {
@@ -35,24 +38,57 @@ export const useAuth = () => {
   return useContext(AuthContext);
 };
 
+// Convert Supabase user to our User format
+const formatUser = (supabaseUser: SupabaseUser | null): User | null => {
+  if (!supabaseUser) return null;
+  
+  return {
+    id: supabaseUser.id,
+    name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || '',
+    email: supabaseUser.email || '',
+    role: supabaseUser.user_metadata?.role || 'Actor',
+    avatar: supabaseUser.user_metadata?.avatar_url || '/images/avatar.png',
+    isLoggedIn: true
+  };
+};
+
 // Auth Provider component
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load user from localStorage on mount
+  // Check for existing session on mount
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
+    const checkSession = async () => {
       try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
-        console.error('Failed to parse user from localStorage', e);
-        localStorage.removeItem('user');
+        const { data, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        
+        if (data.session) {
+          const formattedUser = formatUser(data.session.user);
+          setUser(formattedUser);
+        }
+      } catch (err) {
+        console.error('Error checking auth session:', err);
+      } finally {
+        setIsLoading(false);
       }
-    }
-    setIsLoading(false);
+    };
+
+    checkSession();
+
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(formatUser(session?.user || null));
+        setIsLoading(false);
+      }
+    );
+
+    return () => {
+      subscription?.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string, rememberMe: boolean): Promise<void> => {
@@ -60,46 +96,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsLoading(true);
       setError(null);
       
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // In a real app, you would validate credentials against a backend API
-      // For this demo, we're only checking if the email follows a valid format
-      if (!email.includes('@')) {
-        throw new Error('Invalid email format');
-      }
-      
-      // For demonstration, we're accepting any non-empty password
-      if (!password.trim()) {
-        throw new Error('Password cannot be empty');
-      }
-      
-      // Create user object
-      const userData: User = {
-        id: Date.now().toString(),
-        name: email.split('@')[0], // Use part of email as name for demo
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        role: "Actor", // Default role
-        avatar: "/images/avatar.png", // Default avatar
-        isLoggedIn: true
-      };
+        password,
+      });
       
-      // Save to localStorage
-      localStorage.setItem('user', JSON.stringify(userData));
+      if (error) throw error;
       
       if (rememberMe) {
         localStorage.setItem('rememberLogin', 'true');
       } else {
         localStorage.removeItem('rememberLogin');
       }
-      
-      setUser(userData);
-    } catch (error) {
-      if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError('Failed to login');
-      }
+    } catch (error: any) {
+      setError(error.message || 'Failed to login');
       throw error;
     } finally {
       setIsLoading(false);
@@ -111,52 +121,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsLoading(true);
       setError(null);
       
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Validate inputs
-      if (!name.trim()) {
-        throw new Error('Name is required');
-      }
-      
-      if (!email.includes('@')) {
-        throw new Error('Invalid email format');
-      }
-      
-      if (password.length < 6) {
-        throw new Error('Password must be at least 6 characters');
-      }
-      
-      // Create user object
-      const userData: User = {
-        id: Date.now().toString(),
-        name,
+      const { data, error } = await supabase.auth.signUp({
         email,
-        role: role || "Actor", // Use provided role or default to Actor
-        avatar: "/images/avatar.png", // Default avatar
-        isLoggedIn: true
-      };
+        password,
+        options: {
+          data: {
+            name,
+            role: role || "Actor",
+            avatar_url: "/images/avatar.png"
+          }
+        }
+      });
       
-      // Save to localStorage
-      localStorage.setItem('user', JSON.stringify(userData));
+      if (error) throw error;
       
-      setUser(userData);
-    } catch (error) {
-      if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError('Failed to create account');
-      }
+      // Note: User will be set by the onAuthStateChange listener
+    } catch (error: any) {
+      setError(error.message || 'Failed to create account');
       throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('rememberLogin');
-    setUser(null);
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+      localStorage.removeItem('rememberLogin');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
 
   const value = {
@@ -175,4 +169,4 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-export default AuthContext; 
+export default AuthContext;
