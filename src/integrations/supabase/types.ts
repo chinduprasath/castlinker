@@ -129,6 +129,186 @@ export type Database = {
         }
         Relationships: []
       }
+      industry_courses: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          hours: number | null
+          id: string
+          image: string | null
+          instructor: string
+          is_featured: boolean | null
+          lessons: number | null
+          level: string | null
+          rating: number | null
+          reviews: number | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          hours?: number | null
+          id?: string
+          image?: string | null
+          instructor: string
+          is_featured?: boolean | null
+          lessons?: number | null
+          level?: string | null
+          rating?: number | null
+          reviews?: number | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          hours?: number | null
+          id?: string
+          image?: string | null
+          instructor?: string
+          is_featured?: boolean | null
+          lessons?: number | null
+          level?: string | null
+          rating?: number | null
+          reviews?: number | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      industry_events: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          date: string
+          description: string
+          id: string
+          image: string | null
+          is_featured: boolean | null
+          location: string | null
+          time: string | null
+          title: string
+          type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          date: string
+          description: string
+          id?: string
+          image?: string | null
+          is_featured?: boolean | null
+          location?: string | null
+          time?: string | null
+          title: string
+          type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          date?: string
+          description?: string
+          id?: string
+          image?: string | null
+          is_featured?: boolean | null
+          location?: string | null
+          time?: string | null
+          title?: string
+          type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      industry_news: {
+        Row: {
+          author_avatar: string | null
+          author_id: string | null
+          author_name: string | null
+          category: string | null
+          content: string
+          created_at: string | null
+          date: string | null
+          excerpt: string
+          id: string
+          image: string | null
+          is_featured: boolean | null
+          read_time: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          author_avatar?: string | null
+          author_id?: string | null
+          author_name?: string | null
+          category?: string | null
+          content: string
+          created_at?: string | null
+          date?: string | null
+          excerpt: string
+          id?: string
+          image?: string | null
+          is_featured?: boolean | null
+          read_time?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          author_avatar?: string | null
+          author_id?: string | null
+          author_name?: string | null
+          category?: string | null
+          content?: string
+          created_at?: string | null
+          date?: string | null
+          excerpt?: string
+          id?: string
+          image?: string | null
+          is_featured?: boolean | null
+          read_time?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      industry_resources: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          downloads: number | null
+          file_url: string | null
+          id: string
+          image: string | null
+          title: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          downloads?: number | null
+          file_url?: string | null
+          id?: string
+          image?: string | null
+          title: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          downloads?: number | null
+          file_url?: string | null
+          id?: string
+          image?: string | null
+          title?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       job_applications: {
         Row: {
           additional_files: string[] | null
@@ -279,6 +459,96 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      talent_messages: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string
+          read: boolean | null
+          recipient_id: string
+          sender_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message: string
+          read?: boolean | null
+          recipient_id: string
+          sender_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string
+          read?: boolean | null
+          recipient_id?: string
+          sender_id?: string
+        }
+        Relationships: []
+      }
+      talent_profiles: {
+        Row: {
+          avatar: string | null
+          bio: string | null
+          created_at: string | null
+          experience: number | null
+          featured_in: string[] | null
+          id: string
+          is_available: boolean | null
+          is_premium: boolean | null
+          is_verified: boolean | null
+          languages: string[] | null
+          location: string
+          name: string
+          rating: number | null
+          reviews: number | null
+          role: string
+          skills: string[] | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          avatar?: string | null
+          bio?: string | null
+          created_at?: string | null
+          experience?: number | null
+          featured_in?: string[] | null
+          id?: string
+          is_available?: boolean | null
+          is_premium?: boolean | null
+          is_verified?: boolean | null
+          languages?: string[] | null
+          location: string
+          name: string
+          rating?: number | null
+          reviews?: number | null
+          role: string
+          skills?: string[] | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          avatar?: string | null
+          bio?: string | null
+          created_at?: string | null
+          experience?: number | null
+          featured_in?: string[] | null
+          id?: string
+          is_available?: boolean | null
+          is_premium?: boolean | null
+          is_verified?: boolean | null
+          languages?: string[] | null
+          location?: string
+          name?: string
+          rating?: number | null
+          reviews?: number | null
+          role?: string
+          skills?: string[] | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {
