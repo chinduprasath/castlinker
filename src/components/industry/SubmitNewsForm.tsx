@@ -43,7 +43,7 @@ const formSchema = z.object({
 type SubmitNewsFormProps = {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: Omit<NewsItem, 'id' | 'author' | 'date'>) => Promise<{ success: boolean }>;
+  onSubmit: (data: Omit<NewsItem, 'id' | 'date' | 'author_name' | 'author_avatar'>) => Promise<{ success: boolean }>;
 };
 
 const newsCategories = [
@@ -83,7 +83,7 @@ export function SubmitNewsForm({ isOpen, onClose, onSubmit }: SubmitNewsFormProp
         content: values.content,
         category: values.category,
         image: values.image,
-        readTime: values.readTime
+        read_time: values.readTime // Changed readTime to read_time
       });
       
       if (success) {

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -184,7 +183,7 @@ export const useIndustryHub = () => {
             author_name: user.name || 'Anonymous',
             author_avatar: user.avatar || '/placeholder.svg',
             category: data.category,
-            read_time: `${Math.ceil(data.content.length / 1000)} min`,
+            read_time: data.read_time || `${Math.ceil(data.content.length / 1000)} min read`,
             image: data.image || 'https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=1000',
             is_featured: false
           };
@@ -226,6 +225,20 @@ export const useIndustryHub = () => {
           break;
           
         case 'resource':
+          // Check if this is an increment download request
+          if (data.incrementDownload && data.id) {
+            setResources(prev =>
+              prev.map(resource =>
+                resource.id === data.id
+                  ? { ...resource, downloads: resource.downloads + 1 }
+                  : resource
+              )
+            );
+            
+            return { success: true };
+          }
+          
+          // Otherwise create a new resource
           const newResourceItem: ResourceItem = {
             id: `temp-${Date.now()}`,
             title: data.title,
@@ -250,47 +263,6 @@ export const useIndustryHub = () => {
       toast({
         title: 'Submission Failed',
         description: 'There was an error submitting your content',
-        variant: 'destructive',
-      });
-      return { success: false };
-    }
-  };
-
-  // Download a resource
-  const downloadResource = async (resourceId: string) => {
-    try {
-      // In a real implementation, we would update download count in Supabase
-      // For now, we'll simulate success and update the local state
-      
-      setResources(prev =>
-        prev.map(resource =>
-          resource.id === resourceId
-            ? { ...resource, downloads: resource.downloads + 1 }
-            : resource
-        )
-      );
-      
-      // Get the resource's file_url
-      const resource = resources.find(r => r.id === resourceId);
-      
-      if (!resource) {
-        throw new Error('Resource not found');
-      }
-      
-      // In a real implementation, we would return a downloadable URL
-      // For demonstration, we'll just show a success toast
-      
-      toast({
-        title: 'Download Started',
-        description: `Downloading ${resource.title}`,
-      });
-      
-      return { success: true, url: resource.file_url };
-    } catch (error) {
-      console.error('Error downloading resource:', error);
-      toast({
-        title: 'Download Failed',
-        description: 'There was an error downloading the resource',
         variant: 'destructive',
       });
       return { success: false };
@@ -336,7 +308,7 @@ export const useIndustryHub = () => {
     setSearchQuery,
     setActiveTab,
     submitContent,
-    downloadResource,
+    downloadResource: async () => {},
     subscribeToNewsletter,
     refreshData: fetchIndustryData
   };

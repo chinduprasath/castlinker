@@ -78,7 +78,7 @@ export function SubmitResourceForm({ isOpen, onClose, onSubmit }: SubmitResource
         title: values.title,
         description: values.description,
         type: values.type,
-        fileUrl: values.fileUrl,
+        file_url: values.fileUrl, // Changed fileUrl to file_url
         image: values.image
       });
       

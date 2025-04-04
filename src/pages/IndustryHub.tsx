@@ -36,19 +36,22 @@ const IndustryHub = () => {
   
   const {
     news,
-    featuredNews,
     events,
-    featuredEvent,
     courses,
-    featuredCourse,
     resources,
     isLoading,
-    submitNews,
-    submitEvent,
-    submitCourse,
-    submitResource,
-    incrementResourceDownloads
+    searchQuery,
+    activeTab: hubActiveTab,
+    setSearchQuery,
+    setActiveTab: setHubActiveTab,
+    submitContent,
+    refreshData
   } = useIndustryHub();
+  
+  // Create featured items by finding any item with is_featured=true, or default to first item
+  const featuredNews = news.find(item => item.is_featured) || (news.length > 0 ? news[0] : null);
+  const featuredEvent = events.find(item => item.is_featured) || (events.length > 0 ? events[0] : null);
+  const featuredCourse = courses.find(item => item.is_featured) || (courses.length > 0 ? courses[0] : null);
 
   // Filter functions based on search term
   const filteredNews = news.filter(item => 
@@ -111,10 +114,20 @@ const IndustryHub = () => {
 
   // Handle resource download
   const handleDownload = async (resource: typeof resources[0]) => {
-    // If there's a file URL, increment the download count and open the URL
-    if (resource.fileUrl) {
-      await incrementResourceDownloads(resource.id);
-      window.open(resource.fileUrl, '_blank', 'noopener,noreferrer');
+    // If there's a file URL, open the URL
+    if (resource.file_url) {
+      // Submit content to increment download count
+      await submitContent({
+        type: 'resource',
+        data: { id: resource.id, incrementDownload: true }
+      });
+      
+      window.open(resource.file_url, '_blank', 'noopener,noreferrer');
+      
+      toast({
+        title: "Download Started",
+        description: `Downloading ${resource.title}`
+      });
     } else {
       toast({
         title: "Resource Unavailable",
@@ -122,6 +135,35 @@ const IndustryHub = () => {
         variant: "destructive"
       });
     }
+  };
+
+  // Submit handlers for different content types
+  const submitNews = async (data: any) => {
+    return submitContent({
+      type: 'news',
+      data
+    });
+  };
+  
+  const submitEvent = async (data: any) => {
+    return submitContent({
+      type: 'event',
+      data
+    });
+  };
+  
+  const submitCourse = async (data: any) => {
+    return submitContent({
+      type: 'course',
+      data
+    });
+  };
+  
+  const submitResource = async (data: any) => {
+    return submitContent({
+      type: 'resource',
+      data
+    });
   };
 
   return (
@@ -196,7 +238,7 @@ const IndustryHub = () => {
         <TabsContent value="news">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Featured Article */}
-            {isLoading.news ? (
+            {isLoading ? (
               <div className="lg:col-span-3 bg-card border border-gold/10 rounded-xl overflow-hidden shadow-lg">
                 <div className="grid grid-cols-1 lg:grid-cols-2">
                   <Skeleton className="h-64 lg:h-auto" />
@@ -216,7 +258,7 @@ const IndustryHub = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-2">
                   <div 
                     className="h-64 lg:h-auto bg-cover bg-center" 
-                    style={{ backgroundImage: `url(${featuredNews.image || "https://images.unsplash.com/photo-1493804714600-6edb1cd93080?q=80&w=1000"})` }}
+                    style={{ backgroundImage: `url(${featuredNews.image || "https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=1000"})` }}
                   ></div>
                   <div className="p-6">
                     <div className="flex items-center gap-2 mb-4">
@@ -232,14 +274,14 @@ const IndustryHub = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
-                          <AvatarImage src={featuredNews.author.avatar} />
-                          <AvatarFallback>{featuredNews.author.name.charAt(0)}</AvatarFallback>
+                          <AvatarImage src={featuredNews.author_avatar} />
+                          <AvatarFallback>{featuredNews.author_name.charAt(0)}</AvatarFallback>
                         </Avatar>
-                        <span className="text-sm">By {featuredNews.author.name}</span>
+                        <span className="text-sm">By {featuredNews.author_name}</span>
                       </div>
                       <div className="flex items-center gap-1 text-sm text-foreground/60">
                         <Clock className="h-4 w-4" />
-                        <span>{featuredNews.readTime || "10 min read"}</span>
+                        <span>{featuredNews.read_time || "10 min read"}</span>
                       </div>
                     </div>
                   </div>
@@ -252,7 +294,7 @@ const IndustryHub = () => {
             )}
               
             {/* Regular News Items */}
-            {isLoading.news ? (
+            {isLoading ? (
               Array(3).fill(0).map((_, i) => (
                 <Card key={i} className="bg-card border-gold/10 overflow-hidden shadow-lg">
                   <Skeleton className="h-48" />
@@ -284,14 +326,14 @@ const IndustryHub = () => {
                   <CardFooter className="flex justify-between">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-6 w-6">
-                        <AvatarImage src={item.author.avatar} />
-                        <AvatarFallback>{item.author.name.charAt(0)}</AvatarFallback>
+                        <AvatarImage src={item.author_avatar} />
+                        <AvatarFallback>{item.author_name.charAt(0)}</AvatarFallback>
                       </Avatar>
-                      <span className="text-xs">{item.author.name}</span>
+                      <span className="text-xs">{item.author_name}</span>
                     </div>
                     <div className="flex items-center gap-1 text-xs text-foreground/60">
                       <Clock className="h-3 w-3" />
-                      <span>{item.readTime || "5 min read"}</span>
+                      <span>{item.read_time || "5 min read"}</span>
                     </div>
                   </CardFooter>
                 </Card>
@@ -324,7 +366,7 @@ const IndustryHub = () => {
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {/* Featured Event */}
-              {isLoading.events ? (
+              {isLoading ? (
                 <div className="lg:col-span-2 bg-card border border-gold/10 rounded-xl overflow-hidden shadow-lg">
                   <div className="grid grid-cols-1 lg:grid-cols-5">
                     <Skeleton className="h-64 lg:h-auto lg:col-span-2" />
@@ -388,7 +430,7 @@ const IndustryHub = () => {
               
             <h3 className="text-xl font-bold mb-4">Upcoming Events</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {isLoading.events ? (
+              {isLoading ? (
                 Array(3).fill(0).map((_, i) => (
                   <Card key={i} className="bg-card border-gold/10 overflow-hidden shadow-lg">
                     <Skeleton className="h-40" />
@@ -466,7 +508,7 @@ const IndustryHub = () => {
           <div className="space-y-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Featured Course */}
-              {isLoading.courses ? (
+              {isLoading ? (
                 <div className="lg:col-span-2 bg-card border border-gold/10 rounded-xl overflow-hidden shadow-lg">
                   <div className="grid grid-cols-1 lg:grid-cols-5">
                     <Skeleton className="h-64 lg:h-auto lg:col-span-2" />
@@ -538,85 +580,85 @@ const IndustryHub = () => {
                   <p>No featured courses available</p>
                 </div>
               )}
+            </div>
               
-              <h3 className="text-xl font-bold mb-4">Popular Courses</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {isLoading.courses ? (
-                  Array(3).fill(0).map((_, i) => (
-                    <Card key={i} className="bg-card border-gold/10 overflow-hidden shadow-lg">
-                      <Skeleton className="h-40" />
-                      <CardHeader>
-                        <Skeleton className="h-6 w-full" />
-                        <Skeleton className="h-5 w-3/4" />
-                      </CardHeader>
-                      <CardContent className="space-y-2">
-                        <Skeleton className="h-5 w-full" />
-                        <Skeleton className="h-5 w-24" />
-                      </CardContent>
-                      <CardFooter>
-                        <Skeleton className="h-10 w-full" />
-                      </CardFooter>
-                    </Card>
-                  ))
-                ) : filteredCourses.length > 0 ? (
-                  filteredCourses.map((course) => (
-                    <Card key={course.id} className="bg-card border-gold/10 overflow-hidden shadow-lg">
-                      <div 
-                        className="h-40 bg-cover bg-center relative" 
-                        style={{ backgroundImage: `url(${course.image || "https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?q=80&w=1000"})` }}
-                      >
-                        <div className="absolute inset-0 bg-gradient-to-t from-cinematic to-transparent"></div>
-                        <div className="absolute bottom-3 left-3 flex items-center gap-1 bg-cinematic-dark/70 px-2 py-1 rounded-full">
-                          <Play className="h-3 w-3 text-gold" />
-                          <span className="text-xs">{course.lessons || 24} lessons</span>
-                        </div>
+            <h3 className="text-xl font-bold mb-4">Popular Courses</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {isLoading ? (
+                Array(3).fill(0).map((_, i) => (
+                  <Card key={i} className="bg-card border-gold/10 overflow-hidden shadow-lg">
+                    <Skeleton className="h-40" />
+                    <CardHeader>
+                      <Skeleton className="h-6 w-full" />
+                      <Skeleton className="h-5 w-3/4" />
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <Skeleton className="h-5 w-full" />
+                      <Skeleton className="h-5 w-24" />
+                    </CardContent>
+                    <CardFooter>
+                      <Skeleton className="h-10 w-full" />
+                    </CardFooter>
+                  </Card>
+                ))
+              ) : filteredCourses.length > 0 ? (
+                filteredCourses.map((course) => (
+                  <Card key={course.id} className="bg-card border-gold/10 overflow-hidden shadow-lg">
+                    <div 
+                      className="h-40 bg-cover bg-center relative" 
+                      style={{ backgroundImage: `url(${course.image || "https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?q=80&w=1000"})` }}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-t from-cinematic to-transparent"></div>
+                      <div className="absolute bottom-3 left-3 flex items-center gap-1 bg-cinematic-dark/70 px-2 py-1 rounded-full">
+                        <Play className="h-3 w-3 text-gold" />
+                        <span className="text-xs">{course.lessons || 24} lessons</span>
                       </div>
-                      <CardHeader>
-                        <CardTitle className="text-lg">{course.title}</CardTitle>
-                        <CardDescription>By {course.instructor}</CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1">
-                            <Star className="h-3 w-3 text-gold" />
-                            <span className="text-sm">{course.rating || 4.8} ({course.reviews || 156})</span>
-                          </div>
-                          <span className="text-sm">{course.hours || 8.5} hours</span>
+                    </div>
+                    <CardHeader>
+                      <CardTitle className="text-lg">{course.title}</CardTitle>
+                      <CardDescription>By {course.instructor}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1">
+                          <Star className="h-3 w-3 text-gold" />
+                          <span className="text-sm">{course.rating || 4.8} ({course.reviews || 156})</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full text-xs font-medium">
-                            {course.level || "Intermediate"}
-                          </span>
-                        </div>
-                      </CardContent>
-                      <CardFooter>
-                        <Button className="w-full bg-gold hover:bg-gold-dark text-cinematic">
-                          Enroll Now
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  ))
-                ) : (
-                  <div className="col-span-3 bg-card border border-gold/10 rounded-xl p-6 text-center">
-                    <p>No courses found matching your search criteria</p>
-                  </div>
-                )}
-              </div>
+                        <span className="text-sm">{course.hours || 8.5} hours</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full text-xs font-medium">
+                          {course.level || "Intermediate"}
+                        </span>
+                      </div>
+                    </CardContent>
+                    <CardFooter>
+                      <Button className="w-full bg-gold hover:bg-gold-dark text-cinematic">
+                        Enroll Now
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                ))
+              ) : (
+                <div className="col-span-3 bg-card border border-gold/10 rounded-xl p-6 text-center">
+                  <p>No courses found matching your search criteria</p>
+                </div>
+              )}
+            </div>
               
-              <div className="text-center mt-8">
-                <Button 
-                  variant="outline" 
-                  className="border-gold/30 hover:border-gold mr-4"
-                  onClick={() => setDialogOpen(prev => ({ ...prev, courses: true }))}
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Submit Course
-                </Button>
-                <Button variant="outline" className="border-gold/30 hover:border-gold">
-                  Browse All Courses
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </div>
+            <div className="text-center mt-8">
+              <Button 
+                variant="outline" 
+                className="border-gold/30 hover:border-gold mr-4"
+                onClick={() => setDialogOpen(prev => ({ ...prev, courses: true }))}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Submit Course
+              </Button>
+              <Button variant="outline" className="border-gold/30 hover:border-gold">
+                Browse All Courses
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
             </div>
           </div>
         </TabsContent>
@@ -652,7 +694,7 @@ const IndustryHub = () => {
               
             <h3 className="text-xl font-bold mb-4">Popular Downloads</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {isLoading.resources ? (
+              {isLoading ? (
                 Array(3).fill(0).map((_, i) => (
                   <Card key={i} className="bg-card border-gold/10 overflow-hidden shadow-lg">
                     <Skeleton className="h-40" />

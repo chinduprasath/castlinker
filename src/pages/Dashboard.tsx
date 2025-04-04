@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,18 +27,24 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { dashboardData } from "@/utils/dummyData";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const firstName = user?.name?.split(' ')[0] || 'Actor';
   const [stats, setStats] = useState(dashboardData.stats);
-  const [recentOpportunities, setRecentOpportunities] = useState(dashboardData.recentOpportunities);
+  const [recentOpportunities, setRecentOpportunities] = useState(() => {
+    return dashboardData.recentOpportunities.map(job => ({
+      ...job,
+      applied: false
+    }));
+  });
   const [recentMessages, setRecentMessages] = useState(dashboardData.recentMessages);
   const [upcomingEvents, setUpcomingEvents] = useState(dashboardData.upcomingEvents);
   const [loading, setLoading] = useState(true);
 
-  // Simulate data loading
   useEffect(() => {
     const timer = setTimeout(() => {
       setLoading(false);
@@ -48,22 +53,19 @@ const Dashboard = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Simulated real-time updates for engagement
   useEffect(() => {
     const interval = setInterval(() => {
-      // Occasionally increase profile views to simulate activity
       if (Math.random() > 0.7) {
         setStats(prev => ({
           ...prev,
           profileViews: prev.profileViews + 1
         }));
       }
-    }, 30000); // Every 30 seconds
+    }, 30000);
     
     return () => clearInterval(interval);
   }, []);
 
-  // Navigation handlers
   const handleNavigateToJobs = () => {
     navigate('/jobs');
   };
@@ -77,21 +79,18 @@ const Dashboard = () => {
   };
   
   const handleNavigateToCalendar = () => {
-    // This would go to a calendar page if it existed
     toast({
       title: "Coming Soon",
       description: "Calendar functionality will be available soon"
     });
   };
 
-  // Handler for applying to a job
   const handleApplyToJob = (jobId: number) => {
     const updatedOpportunities = recentOpportunities.map(job => 
       job.id === jobId ? { ...job, applied: true } : job
     );
     setRecentOpportunities(updatedOpportunities);
     
-    // Increment applications count
     setStats(prev => ({
       ...prev, 
       applications: prev.applications + 1
@@ -100,7 +99,6 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-4 pr-1">
-      {/* Header Section */}
       <div className="flex flex-col space-y-1">
         <div className="flex items-center justify-between">
           <div>
@@ -136,9 +134,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Applications Card */}
         {loading ? (
           <Card className="border-gold/10 shadow-lg bg-card/60 backdrop-blur-sm">
             <CardHeader className="pb-2 pt-4 px-4">
@@ -180,7 +176,6 @@ const Dashboard = () => {
           </Card>
         )}
         
-        {/* Profile Views Card */}
         {loading ? (
           <Card className="border-green-500/10 shadow-lg bg-card/60 backdrop-blur-sm">
             <CardHeader className="pb-2 pt-4 px-4">
@@ -222,7 +217,6 @@ const Dashboard = () => {
           </Card>
         )}
         
-        {/* Callbacks Card */}
         {loading ? (
           <Card className="border-blue-500/10 shadow-lg bg-card/60 backdrop-blur-sm">
             <CardHeader className="pb-2 pt-4 px-4">
@@ -264,7 +258,6 @@ const Dashboard = () => {
           </Card>
         )}
         
-        {/* Activity Score Card */}
         {loading ? (
           <Card className="border-purple-500/10 shadow-lg bg-card/60 backdrop-blur-sm">
             <CardHeader className="pb-2 pt-4 px-4">
@@ -306,9 +299,7 @@ const Dashboard = () => {
         )}
       </div>
 
-      {/* Main Content Section */}
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
-        {/* Opportunities Section */}
         <Card className="border-gold/10 lg:col-span-2 shadow-lg bg-card/60 backdrop-blur-sm overflow-hidden">
           <CardHeader className="px-4 py-4 border-b border-border/10 bg-gradient-to-r from-gold/5 to-transparent">
             <div className="flex items-center justify-between">
@@ -423,9 +414,7 @@ const Dashboard = () => {
           </CardContent>
         </Card>
         
-        {/* Recent Messages & Schedule */}
         <div className="space-y-4">
-          {/* Recent Messages */}
           <Card className="border-blue-500/10 shadow-lg bg-card/60 backdrop-blur-sm overflow-hidden">
             <CardHeader className="px-4 py-4 border-b border-border/10 bg-gradient-to-r from-blue-500/5 to-transparent">
               <div className="flex items-center justify-between">
@@ -492,7 +481,6 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Calendar Events */}
           <Card className="border-gold/10 shadow-lg bg-card/60 backdrop-blur-sm overflow-hidden">
             <CardHeader className="px-4 py-4 border-b border-border/10 bg-gradient-to-r from-gold/5 to-transparent">
               <div className="flex items-center justify-between">
