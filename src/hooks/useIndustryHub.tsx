@@ -77,7 +77,7 @@ export const useIndustryHub = () => {
       // Get featured news
       const { data: featuredData, error: featuredError } = await supabase
         .from('industry_news')
-        .select('*')
+        .select()
         .eq('is_featured', true)
         .limit(1)
         .single();
@@ -106,7 +106,7 @@ export const useIndustryHub = () => {
       // Get regular news items
       const { data, error } = await supabase
         .from('industry_news')
-        .select('*')
+        .select()
         .order('created_at', { ascending: false })
         .limit(6);
       
@@ -151,7 +151,7 @@ export const useIndustryHub = () => {
       // Get featured event
       const { data: featuredData, error: featuredError } = await supabase
         .from('industry_events')
-        .select('*')
+        .select()
         .eq('is_featured', true)
         .limit(1)
         .single();
@@ -175,7 +175,7 @@ export const useIndustryHub = () => {
       // Get regular events
       const { data, error } = await supabase
         .from('industry_events')
-        .select('*')
+        .select()
         .order('date', { ascending: true })
         .limit(6);
       
@@ -215,7 +215,7 @@ export const useIndustryHub = () => {
       // Get featured course
       const { data: featuredData, error: featuredError } = await supabase
         .from('industry_courses')
-        .select('*')
+        .select()
         .eq('is_featured', true)
         .limit(1)
         .single();
@@ -239,7 +239,7 @@ export const useIndustryHub = () => {
       // Get regular courses
       const { data, error } = await supabase
         .from('industry_courses')
-        .select('*')
+        .select()
         .order('created_at', { ascending: false })
         .limit(6);
       
@@ -278,7 +278,7 @@ export const useIndustryHub = () => {
     try {
       const { data, error } = await supabase
         .from('industry_resources')
-        .select('*')
+        .select()
         .order('downloads', { ascending: false })
         .limit(6);
       
@@ -331,11 +331,10 @@ export const useIndustryHub = () => {
           category: newsData.category,
           image: newsData.image,
           author_id: user.id,
-          author_name: user.user_metadata?.full_name || 'Anonymous',
-          author_avatar: user.user_metadata?.avatar_url || '/placeholder.svg'
+          author_name: user.email, // Using email as fallback since user_metadata isn't available
+          author_avatar: '/placeholder.svg'
         })
-        .select()
-        .single();
+        .select();
       
       if (error) throw error;
       
@@ -381,8 +380,7 @@ export const useIndustryHub = () => {
           is_featured: false,
           created_by: user.id
         })
-        .select()
-        .single();
+        .select();
       
       if (error) throw error;
       
@@ -429,8 +427,7 @@ export const useIndustryHub = () => {
           is_featured: false,
           created_by: user.id
         })
-        .select()
-        .single();
+        .select();
       
       if (error) throw error;
       
@@ -473,8 +470,7 @@ export const useIndustryHub = () => {
           file_url: resourceData.fileUrl,
           created_by: user.id
         })
-        .select()
-        .single();
+        .select();
       
       if (error) throw error;
       

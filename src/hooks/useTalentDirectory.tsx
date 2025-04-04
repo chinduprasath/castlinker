@@ -59,51 +59,10 @@ export const useTalentDirectory = () => {
   const fetchProfiles = async () => {
     setIsLoading(true);
     try {
-      let query = supabase
+      // Use a typed query to avoid type issues
+      const { data, error } = await supabase
         .from('talent_profiles')
         .select('*');
-      
-      // Apply filters
-      if (filters.searchTerm) {
-        query = query.or(`name.ilike.%${filters.searchTerm}%,role.ilike.%${filters.searchTerm}%,bio.ilike.%${filters.searchTerm}%`);
-      }
-      
-      if (filters.selectedRoles.length > 0) {
-        query = query.in('role', filters.selectedRoles);
-      }
-      
-      if (filters.selectedLocations.length > 0) {
-        query = query.in('location', filters.selectedLocations);
-      }
-      
-      if (filters.experienceRange[0] > 0 || filters.experienceRange[1] < 20) {
-        query = query
-          .gte('experience', filters.experienceRange[0])
-          .lte('experience', filters.experienceRange[1]);
-      }
-      
-      if (filters.verifiedOnly) {
-        query = query.eq('is_verified', true);
-      }
-      
-      if (filters.availableOnly) {
-        query = query.eq('is_available', true);
-      }
-      
-      // Apply sorting
-      switch (filters.sortBy) {
-        case 'rating':
-          query = query.order('rating', { ascending: false });
-          break;
-        case 'experience':
-          query = query.order('experience', { ascending: false });
-          break;
-        case 'reviews':
-          query = query.order('reviews', { ascending: false });
-          break;
-      }
-      
-      const { data, error } = await query;
       
       if (error) throw error;
       
@@ -127,7 +86,64 @@ export const useTalentDirectory = () => {
           featuredIn: item.featured_in || []
         }));
         
-        setProfiles(formattedProfiles);
+        // Apply filters in JavaScript for now
+        let filteredProfiles = [...formattedProfiles];
+        
+        // Apply search filter
+        if (filters.searchTerm) {
+          const term = filters.searchTerm.toLowerCase();
+          filteredProfiles = filteredProfiles.filter(profile => 
+            profile.name.toLowerCase().includes(term) ||
+            profile.role.toLowerCase().includes(term) ||
+            profile.bio.toLowerCase().includes(term)
+          );
+        }
+        
+        // Apply role filter
+        if (filters.selectedRoles.length > 0) {
+          filteredProfiles = filteredProfiles.filter(profile => 
+            filters.selectedRoles.includes(profile.role)
+          );
+        }
+        
+        // Apply location filter
+        if (filters.selectedLocations.length > 0) {
+          filteredProfiles = filteredProfiles.filter(profile => 
+            filters.selectedLocations.includes(profile.location)
+          );
+        }
+        
+        // Apply experience range filter
+        filteredProfiles = filteredProfiles.filter(profile => 
+          profile.experience >= filters.experienceRange[0] && 
+          profile.experience <= filters.experienceRange[1]
+        );
+        
+        // Apply verified only filter
+        if (filters.verifiedOnly) {
+          filteredProfiles = filteredProfiles.filter(profile => profile.isVerified);
+        }
+        
+        // Apply available only filter
+        if (filters.availableOnly) {
+          filteredProfiles = filteredProfiles.filter(profile => profile.isAvailable);
+        }
+        
+        // Apply sorting
+        filteredProfiles.sort((a, b) => {
+          switch (filters.sortBy) {
+            case 'rating':
+              return b.rating - a.rating;
+            case 'experience':
+              return b.experience - a.experience;
+            case 'reviews':
+              return b.reviews - a.reviews;
+            default:
+              return 0;
+          }
+        });
+        
+        setProfiles(filteredProfiles);
       }
     } catch (error) {
       console.error('Error fetching talent profiles:', error);
@@ -170,9 +186,7 @@ export const useTalentDirectory = () => {
           sender_id: user.id,
           recipient_id: profileData.user_id,
           message
-        })
-        .select()
-        .single();
+        });
       
       if (error) throw error;
       

@@ -3,13 +3,69 @@ import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Job } from "@/hooks/useJobsData";
+import { Job, JobType, LocationType, RoleCategory } from "@/hooks/useJobsData";
 import AboutSection from "./AboutSection";
 import PortfolioSection from "./PortfolioSection";
 import SkillsSection from "./SkillsSection";
 import ExperienceSection from "./ExperienceSection";
 import SavedJobsSection from "./SavedJobsSection";
 import ApplicationsSection from "./ApplicationsSection";
+
+// Type for raw job data from database
+interface RawJobData {
+  id: string;
+  title: string;
+  company: string;
+  company_logo?: string;
+  description: string;
+  requirements?: string[];
+  responsibilities?: string[];
+  job_type: string;
+  role_category: string;
+  experience_level?: string;
+  salary_min?: number;
+  salary_max?: number;
+  salary_currency?: string;
+  salary_period?: string;
+  location: string;
+  location_type: string;
+  tags?: string[];
+  application_deadline?: string;
+  application_url?: string;
+  application_email?: string;
+  is_featured?: boolean;
+  is_verified?: boolean;
+  created_at?: string;
+  status?: string;
+}
+
+// Convert raw job data to Job type
+const mapRawJobToJob = (rawJob: RawJobData): Job => ({
+  id: rawJob.id,
+  title: rawJob.title,
+  company: rawJob.company,
+  company_logo: rawJob.company_logo,
+  description: rawJob.description,
+  requirements: rawJob.requirements,
+  responsibilities: rawJob.responsibilities,
+  job_type: rawJob.job_type as JobType,
+  role_category: rawJob.role_category as RoleCategory,
+  experience_level: rawJob.experience_level,
+  salary_min: rawJob.salary_min,
+  salary_max: rawJob.salary_max,
+  salary_currency: rawJob.salary_currency,
+  salary_period: rawJob.salary_period,
+  location: rawJob.location,
+  location_type: rawJob.location_type as LocationType,
+  tags: rawJob.tags,
+  application_deadline: rawJob.application_deadline,
+  application_url: rawJob.application_url,
+  application_email: rawJob.application_email,
+  is_featured: rawJob.is_featured,
+  is_verified: rawJob.is_verified,
+  created_at: rawJob.created_at,
+  status: rawJob.status
+});
 
 const ProfileTabs = () => {
   const [activeTab, setActiveTab] = useState("about");
@@ -51,7 +107,8 @@ const ProfileTabs = () => {
         
         if (jobsError) throw jobsError;
         
-        setSavedJobs(jobsData || []);
+        const typedJobs = (jobsData || []).map(mapRawJobToJob);
+        setSavedJobs(typedJobs);
       } else {
         setSavedJobs([]);
       }
@@ -86,7 +143,8 @@ const ProfileTabs = () => {
         
         if (jobsError) throw jobsError;
         
-        setAppliedJobs(jobsData || []);
+        const typedJobs = (jobsData || []).map(mapRawJobToJob);
+        setAppliedJobs(typedJobs);
       } else {
         setAppliedJobs([]);
       }

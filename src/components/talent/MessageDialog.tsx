@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/form';
 import { MessageCircle } from 'lucide-react';
 import { TalentProfile } from '@/hooks/useTalentDirectory';
+import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
   message: z.string().min(10, "Message must be at least 10 characters"),
@@ -37,6 +38,7 @@ type MessageDialogProps = {
 
 export function MessageDialog({ isOpen, onClose, profile, onSendMessage }: MessageDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -55,8 +57,19 @@ export function MessageDialog({ isOpen, onClose, profile, onSendMessage }: Messa
       
       if (success) {
         form.reset();
+        toast({
+          title: "Message sent",
+          description: `Your message to ${profile.name} has been sent successfully.`,
+        });
         onClose();
       }
+    } catch (error) {
+      console.error("Error sending message:", error);
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
