@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -132,6 +131,10 @@ const JobFilters = ({ onFilterChange, onResetFilters }: JobFiltersProps) => {
     setMaxSalary((salaryRange[1] * 1000).toString());
   }, [salaryRange]);
 
+  const handleSliderChange = (value: number[]) => {
+    setSalaryRange([value[0], value[1]] as [number, number]);
+  };
+
   return (
     <Card className="bg-card-gradient border-gold/10 sticky top-24">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -233,7 +236,7 @@ const JobFilters = ({ onFilterChange, onResetFilters }: JobFiltersProps) => {
               min={0}
               step={5}
               className="my-4"
-              onValueChange={setSalaryRange}
+              onValueChange={handleSliderChange}
             />
             <div className="grid grid-cols-2 gap-2 mt-2">
               <div>
@@ -320,7 +323,7 @@ const JobFilters = ({ onFilterChange, onResetFilters }: JobFiltersProps) => {
 };
 
 // Helper component for the salary input
-const Input = ({ className, ...props }) => {
+const Input = ({ className, ...props }: any) => {
   return (
     <input
       className={`w-full px-3 py-1 rounded-md focus:outline-none focus:ring-1 focus:ring-gold ${className}`}

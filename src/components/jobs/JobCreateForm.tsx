@@ -139,10 +139,11 @@ const JobCreateForm = ({ isOpen, onClose, onJobCreated }: JobCreateFormProps) =>
         status: "active"
       };
 
-      const { data, error } = await supabase
+      // Cast to any to bypass TypeScript errors with the database schema
+      const { data, error } = await (supabase
         .from('film_jobs')
         .insert(jobData)
-        .select();
+        .select() as any);
 
       if (error) throw error;
 

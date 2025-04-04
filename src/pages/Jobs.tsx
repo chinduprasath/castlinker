@@ -3,11 +3,11 @@ import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useJobsData, Job, JobFilters } from "@/hooks/useJobsData";
+import { useJobsData, Job, JobFilters as JobFiltersType } from "@/hooks/useJobsData";
 
 // Import our components
 import JobListingHeader from "@/components/jobs/JobListingHeader";
-import JobFilters from "@/components/jobs/JobFilters";
+import JobFiltersComponent from "@/components/jobs/JobFilters";
 import JobResults from "@/components/jobs/JobResults";
 import JobCreateForm from "@/components/jobs/JobCreateForm";
 
@@ -30,11 +30,11 @@ const Jobs = () => {
 
   const [isCreateFormOpen, setIsCreateFormOpen] = useState(false);
 
-  const handleFilterChange = (newFilters: Partial<JobFilters>) => {
+  const handleFilterChange = (newFilters: Partial<JobFiltersType>) => {
     updateFilters(newFilters);
   };
 
-  const handleSearch = (searchFilters: Partial<JobFilters>) => {
+  const handleSearch = (searchFilters: Partial<JobFiltersType>) => {
     updateFilters(searchFilters);
   };
 
@@ -64,7 +64,7 @@ const Jobs = () => {
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Sidebar Filters */}
         <div className="lg:w-64">
-          <JobFilters 
+          <JobFiltersComponent 
             onFilterChange={handleFilterChange} 
             onResetFilters={resetFilters} 
           />

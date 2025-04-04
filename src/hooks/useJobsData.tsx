@@ -68,14 +68,15 @@ export const useJobsData = () => {
   const fetchJobs = async () => {
     setIsLoading(true);
     try {
-      let query = supabase.from('film_jobs').select('*', { count: 'exact' });
+      // Note: Explicitly type this as any to avoid TS errors with the database schema
+      let query = supabase.from('film_jobs').select('*', { count: 'exact' }) as any;
 
       // Apply filters
       if (filters.search && filters.search.trim() !== '') {
         // Use the search_film_jobs function for text search
         const { data, error, count } = await supabase.rpc('search_film_jobs', {
           search_term: filters.search
-        });
+        }) as any;
         
         if (error) throw error;
         setJobs(data || []);
@@ -184,14 +185,14 @@ export const useJobsData = () => {
     }
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase
         .from('saved_jobs')
         .select('job_id')
-        .eq('user_id', user.id);
+        .eq('user_id', user.id) as any);
 
       if (error) throw error;
       
-      const savedJobIds = data.map(record => record.job_id);
+      const savedJobIds = data.map((record: any) => record.job_id);
       setSavedJobs(savedJobIds);
     } catch (error: any) {
       console.error('Error fetching saved jobs:', error);
@@ -222,11 +223,11 @@ export const useJobsData = () => {
     try {
       if (savedJobs.includes(jobId)) {
         // Delete from saved jobs
-        const { error } = await supabase
+        const { error } = await (supabase
           .from('saved_jobs')
           .delete()
           .eq('user_id', user.id)
-          .eq('job_id', jobId);
+          .eq('job_id', jobId) as any);
 
         if (error) throw error;
         
@@ -237,12 +238,12 @@ export const useJobsData = () => {
         });
       } else {
         // Add to saved jobs
-        const { error } = await supabase
+        const { error } = await (supabase
           .from('saved_jobs')
           .insert({
             user_id: user.id,
             job_id: jobId
-          });
+          }) as any);
 
         if (error) throw error;
         
@@ -278,13 +279,13 @@ export const useJobsData = () => {
     }
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase
         .from('job_applications')
         .insert({
           user_id: user.id,
           job_id: jobId,
           ...application
-        });
+        }) as any);
 
       if (error) throw error;
       
