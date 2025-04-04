@@ -24,6 +24,7 @@ import {
 import { MessageCircle } from 'lucide-react';
 import { TalentProfile } from '@/hooks/useTalentDirectory';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 const formSchema = z.object({
   message: z.string().min(10, "Message must be at least 10 characters"),
@@ -39,6 +40,7 @@ type MessageDialogProps = {
 export function MessageDialog({ isOpen, onClose, profile, onSendMessage }: MessageDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -48,7 +50,14 @@ export function MessageDialog({ isOpen, onClose, profile, onSendMessage }: Messa
   });
 
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
-    if (!profile) return;
+    if (!profile || !user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to send messages",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setIsSubmitting(true);
     
@@ -62,6 +71,8 @@ export function MessageDialog({ isOpen, onClose, profile, onSendMessage }: Messa
           description: `Your message to ${profile.name} has been sent successfully.`,
         });
         onClose();
+      } else {
+        throw new Error("Failed to send message");
       }
     } catch (error) {
       console.error("Error sending message:", error);
