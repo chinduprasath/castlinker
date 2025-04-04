@@ -25,6 +25,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 
 type ChatInputProps = {
   onSendMessage: (content: string, attachments?: File[]) => Promise<boolean>;
@@ -37,6 +39,7 @@ export function ChatInput({ onSendMessage, onTyping, disabled = false }: ChatInp
   const [attachments, setAttachments] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   // Handle text input changes
   const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
@@ -59,6 +62,33 @@ export function ChatInput({ onSendMessage, onTyping, disabled = false }: ChatInp
       }
     } finally {
       setIsSubmitting(false);
+    }
+  };
+  
+  // Handle emoji selection
+  const handleEmojiClick = (emojiData: EmojiClickData) => {
+    // Insert emoji at current cursor position
+    if (textareaRef.current) {
+      const start = textareaRef.current.selectionStart;
+      const end = textareaRef.current.selectionEnd;
+      const newMessage = 
+        message.substring(0, start) + 
+        emojiData.emoji + 
+        message.substring(end);
+      
+      setMessage(newMessage);
+      
+      // Set cursor position after the inserted emoji
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.selectionStart = start + emojiData.emoji.length;
+          textareaRef.current.selectionEnd = start + emojiData.emoji.length;
+          textareaRef.current.focus();
+        }
+      }, 10);
+    } else {
+      // If textarea ref not available, just append to end
+      setMessage(prev => prev + emojiData.emoji);
     }
   };
   
@@ -176,6 +206,7 @@ export function ChatInput({ onSendMessage, onTyping, disabled = false }: ChatInp
         
         {/* Message input */}
         <Textarea 
+          ref={textareaRef}
           placeholder="Type a message..." 
           value={message}
           onChange={handleChange}
@@ -190,24 +221,31 @@ export function ChatInput({ onSendMessage, onTyping, disabled = false }: ChatInp
         />
         
         {/* Emoji button */}
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button 
-                type="button" 
-                variant="ghost" 
-                size="icon" 
-                className="rounded-full h-10 w-10 hover:bg-gold/10 flex-shrink-0"
-                disabled={disabled}
-              >
-                <Smile className="h-5 w-5 text-foreground/70" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top">
-              <p>Add emoji</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button 
+              type="button" 
+              variant="ghost" 
+              size="icon" 
+              className="rounded-full h-10 w-10 hover:bg-gold/10 flex-shrink-0"
+              disabled={disabled}
+            >
+              <Smile className="h-5 w-5 text-foreground/70" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent side="top" align="end" className="p-0 w-auto border-gold/10">
+            <EmojiPicker
+              onEmojiClick={handleEmojiClick}
+              skinTonesDisabled
+              searchDisabled={false}
+              width={300}
+              height={400}
+              previewConfig={{
+                showPreview: false
+              }}
+            />
+          </PopoverContent>
+        </Popover>
         
         {/* Send button */}
         <Button 

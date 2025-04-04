@@ -1,22 +1,28 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { 
+  industryNews,
+  industryEvents,
+  industryCourses,
+  industryResources
+} from '@/utils/dummyData';
 
+// Type definitions
 export type NewsItem = {
   id: string;
   title: string;
   excerpt: string;
   content: string;
   date: string;
-  readTime?: string;
-  category?: string;
-  image?: string;
-  author: {
-    name: string;
-    avatar: string;
-  };
+  author_name: string;
+  author_avatar: string;
+  category: string;
+  read_time: string;
+  image: string;
+  is_featured?: boolean;
 };
 
 export type EventItem = {
@@ -24,529 +30,314 @@ export type EventItem = {
   title: string;
   description: string;
   date: string;
-  time?: string;
-  type?: string;
-  location?: string;
-  image?: string;
-  isFeatured?: boolean;
+  time: string;
+  location: string;
+  type: string;
+  image: string;
+  is_featured?: boolean;
 };
 
 export type CourseItem = {
   id: string;
   title: string;
   instructor: string;
-  lessons?: number;
-  hours?: number;
-  level?: string;
-  rating?: number;
-  reviews?: number;
-  image?: string;
+  lessons: number;
+  hours: number;
+  level: string;
+  rating: number;
+  reviews: number;
+  image: string;
+  is_featured?: boolean;
 };
 
 export type ResourceItem = {
   id: string;
   title: string;
   type: string;
-  downloads?: number;
-  image?: string;
-  fileUrl?: string;
+  downloads: number;
+  image: string;
+  file_url: string;
+};
+
+export type IndustrySubmission = {
+  type: 'news' | 'event' | 'course' | 'resource';
+  data: any;
 };
 
 export const useIndustryHub = () => {
+  const [news, setNews] = useState<NewsItem[]>([]);
+  const [events, setEvents] = useState<EventItem[]>([]);
+  const [courses, setCourses] = useState<CourseItem[]>([]);
+  const [resources, setResources] = useState<ResourceItem[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('news');
+  const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
-  
-  const [news, setNews] = useState<NewsItem[]>([]);
-  const [featuredNews, setFeaturedNews] = useState<NewsItem | null>(null);
-  const [events, setEvents] = useState<EventItem[]>([]);
-  const [featuredEvent, setFeaturedEvent] = useState<EventItem | null>(null);
-  const [courses, setCourses] = useState<CourseItem[]>([]);
-  const [featuredCourse, setFeaturedCourse] = useState<CourseItem | null>(null);
-  const [resources, setResources] = useState<ResourceItem[]>([]);
-  const [isLoading, setIsLoading] = useState({
-    news: false,
-    events: false,
-    courses: false,
-    resources: false
-  });
 
-  // Fetch news and insights
-  const fetchNews = async () => {
-    setIsLoading(prev => ({ ...prev, news: true }));
+  // Fetch all industry data
+  const fetchIndustryData = useCallback(async () => {
+    setIsLoading(true);
     try {
-      // Get featured news
-      const { data: featuredData, error: featuredError } = await supabase
+      // Use dummy data directly
+      setNews(industryNews);
+      setEvents(industryEvents);
+      setCourses(industryCourses);
+      setResources(industryResources);
+      
+      // In a real implementation, we would fetch from Supabase
+      // Example of how this would work with a real database:
+      /*
+      const { data: newsData, error: newsError } = await supabase
         .from('industry_news')
-        .select()
-        .eq('is_featured', true)
-        .limit(1)
-        .single();
-      
-      if (featuredError && featuredError.code !== 'PGRST116') {
-        console.error('Error fetching featured news:', featuredError);
-      } else if (featuredData) {
-        setFeaturedNews({
-          id: featuredData.id,
-          title: featuredData.title,
-          excerpt: featuredData.excerpt,
-          content: featuredData.content,
-          date: new Date(featuredData.date).toLocaleDateString('en-US', { 
-            year: 'numeric', month: 'long', day: 'numeric' 
-          }),
-          readTime: featuredData.read_time,
-          category: featuredData.category,
-          image: featuredData.image,
-          author: {
-            name: featuredData.author_name || 'Unknown Author',
-            avatar: featuredData.author_avatar || '/placeholder.svg'
-          }
-        });
-      }
-      
-      // Get regular news items
-      const { data, error } = await supabase
-        .from('industry_news')
-        .select()
-        .order('created_at', { ascending: false })
-        .limit(6);
-      
-      if (error) throw error;
-      
-      if (data) {
-        const formattedNews = data.map(item => ({
-          id: item.id,
-          title: item.title,
-          excerpt: item.excerpt,
-          content: item.content,
-          date: new Date(item.date).toLocaleDateString('en-US', { 
-            year: 'numeric', month: 'long', day: 'numeric' 
-          }),
-          readTime: item.read_time,
-          category: item.category,
-          image: item.image,
-          author: {
-            name: item.author_name || 'Unknown Author',
-            avatar: item.author_avatar || '/placeholder.svg'
-          }
-        }));
+        .select('*')
+        .order('date', { ascending: false });
         
-        setNews(formattedNews);
-      }
+      if (newsError) throw newsError;
+      setNews(newsData);
+      
+      // Similar implementations for other data types
+      */
+      
     } catch (error) {
-      console.error('Error fetching news:', error);
+      console.error('Error fetching industry data:', error);
       toast({
-        title: "Error",
-        description: "Failed to load news data",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to load industry data',
+        variant: 'destructive',
       });
     } finally {
-      setIsLoading(prev => ({ ...prev, news: false }));
+      setIsLoading(false);
     }
-  };
+  }, [toast]);
 
-  // Fetch events
-  const fetchEvents = async () => {
-    setIsLoading(prev => ({ ...prev, events: true }));
-    try {
-      // Get featured event
-      const { data: featuredData, error: featuredError } = await supabase
-        .from('industry_events')
-        .select()
-        .eq('is_featured', true)
-        .limit(1)
-        .single();
-      
-      if (featuredError && featuredError.code !== 'PGRST116') {
-        console.error('Error fetching featured event:', featuredError);
-      } else if (featuredData) {
-        setFeaturedEvent({
-          id: featuredData.id,
-          title: featuredData.title,
-          description: featuredData.description,
-          date: featuredData.date,
-          time: featuredData.time,
-          type: featuredData.type,
-          location: featuredData.location,
-          image: featuredData.image,
-          isFeatured: true
-        });
-      }
-      
-      // Get regular events
-      const { data, error } = await supabase
-        .from('industry_events')
-        .select()
-        .order('date', { ascending: true })
-        .limit(6);
-      
-      if (error) throw error;
-      
-      if (data) {
-        const formattedEvents = data.map(item => ({
-          id: item.id,
-          title: item.title,
-          description: item.description,
-          date: item.date,
-          time: item.time,
-          type: item.type,
-          location: item.location,
-          image: item.image,
-          isFeatured: item.is_featured
-        }));
-        
-        setEvents(formattedEvents);
-      }
-    } catch (error) {
-      console.error('Error fetching events:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load events data",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(prev => ({ ...prev, events: false }));
-    }
-  };
-
-  // Fetch courses
-  const fetchCourses = async () => {
-    setIsLoading(prev => ({ ...prev, courses: true }));
-    try {
-      // Get featured course
-      const { data: featuredData, error: featuredError } = await supabase
-        .from('industry_courses')
-        .select()
-        .eq('is_featured', true)
-        .limit(1)
-        .single();
-      
-      if (featuredError && featuredError.code !== 'PGRST116') {
-        console.error('Error fetching featured course:', featuredError);
-      } else if (featuredData) {
-        setFeaturedCourse({
-          id: featuredData.id,
-          title: featuredData.title,
-          instructor: featuredData.instructor,
-          lessons: featuredData.lessons,
-          hours: Number(featuredData.hours),
-          level: featuredData.level,
-          rating: Number(featuredData.rating),
-          reviews: featuredData.reviews,
-          image: featuredData.image
-        });
-      }
-      
-      // Get regular courses
-      const { data, error } = await supabase
-        .from('industry_courses')
-        .select()
-        .order('created_at', { ascending: false })
-        .limit(6);
-      
-      if (error) throw error;
-      
-      if (data) {
-        const formattedCourses = data.map(item => ({
-          id: item.id,
-          title: item.title,
-          instructor: item.instructor,
-          lessons: item.lessons,
-          hours: Number(item.hours),
-          level: item.level,
-          rating: Number(item.rating),
-          reviews: item.reviews,
-          image: item.image
-        }));
-        
-        setCourses(formattedCourses);
-      }
-    } catch (error) {
-      console.error('Error fetching courses:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load courses data",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(prev => ({ ...prev, courses: false }));
-    }
-  };
-
-  // Fetch resources
-  const fetchResources = async () => {
-    setIsLoading(prev => ({ ...prev, resources: true }));
-    try {
-      const { data, error } = await supabase
-        .from('industry_resources')
-        .select()
-        .order('downloads', { ascending: false })
-        .limit(6);
-      
-      if (error) throw error;
-      
-      if (data) {
-        const formattedResources = data.map(item => ({
-          id: item.id,
-          title: item.title,
-          type: item.type,
-          downloads: item.downloads,
-          image: item.image,
-          fileUrl: item.file_url
-        }));
-        
-        setResources(formattedResources);
-      }
-    } catch (error) {
-      console.error('Error fetching resources:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load resources data",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(prev => ({ ...prev, resources: false }));
-    }
-  };
-
-  // Submission functions
-  const submitNews = async (newsData: Omit<NewsItem, 'id' | 'author'>) => {
-    if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "You must be logged in to submit news",
-        variant: "destructive"
-      });
-      return { success: false };
-    }
-    
-    try {
-      const { data, error } = await supabase
-        .from('industry_news')
-        .insert({
-          title: newsData.title,
-          excerpt: newsData.excerpt,
-          content: newsData.content,
-          date: new Date().toISOString(),
-          read_time: newsData.readTime,
-          category: newsData.category,
-          image: newsData.image,
-          author_id: user.id,
-          author_name: user.email, // Using email as fallback since user_metadata isn't available
-          author_avatar: '/placeholder.svg'
-        })
-        .select();
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Success",
-        description: "Your news has been submitted",
-      });
-      
-      await fetchNews();
-      return { success: true, data };
-    } catch (error) {
-      console.error('Error submitting news:', error);
-      toast({
-        title: "Error",
-        description: "Failed to submit news",
-        variant: "destructive"
-      });
-      return { success: false };
-    }
-  };
-
-  const submitEvent = async (eventData: Omit<EventItem, 'id'>) => {
-    if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "You must be logged in to submit an event",
-        variant: "destructive"
-      });
-      return { success: false };
-    }
-    
-    try {
-      const { data, error } = await supabase
-        .from('industry_events')
-        .insert({
-          title: eventData.title,
-          description: eventData.description,
-          date: eventData.date,
-          time: eventData.time,
-          type: eventData.type,
-          location: eventData.location,
-          image: eventData.image,
-          is_featured: false,
-          created_by: user.id
-        })
-        .select();
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Success",
-        description: "Your event has been submitted",
-      });
-      
-      await fetchEvents();
-      return { success: true, data };
-    } catch (error) {
-      console.error('Error submitting event:', error);
-      toast({
-        title: "Error",
-        description: "Failed to submit event",
-        variant: "destructive"
-      });
-      return { success: false };
-    }
-  };
-
-  const submitCourse = async (courseData: Omit<CourseItem, 'id'>) => {
-    if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "You must be logged in to submit a course",
-        variant: "destructive"
-      });
-      return { success: false };
-    }
-    
-    try {
-      const { data, error } = await supabase
-        .from('industry_courses')
-        .insert({
-          title: courseData.title,
-          instructor: courseData.instructor,
-          lessons: courseData.lessons,
-          hours: courseData.hours,
-          level: courseData.level,
-          rating: courseData.rating || 0,
-          reviews: courseData.reviews || 0,
-          image: courseData.image,
-          is_featured: false,
-          created_by: user.id
-        })
-        .select();
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Success",
-        description: "Your course has been submitted",
-      });
-      
-      await fetchCourses();
-      return { success: true, data };
-    } catch (error) {
-      console.error('Error submitting course:', error);
-      toast({
-        title: "Error",
-        description: "Failed to submit course",
-        variant: "destructive"
-      });
-      return { success: false };
-    }
-  };
-
-  const submitResource = async (resourceData: Omit<ResourceItem, 'id' | 'downloads'>) => {
-    if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "You must be logged in to submit a resource",
-        variant: "destructive"
-      });
-      return { success: false };
-    }
-    
-    try {
-      const { data, error } = await supabase
-        .from('industry_resources')
-        .insert({
-          title: resourceData.title,
-          type: resourceData.type,
-          downloads: 0,
-          image: resourceData.image,
-          file_url: resourceData.fileUrl,
-          created_by: user.id
-        })
-        .select();
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Success",
-        description: "Your resource has been submitted",
-      });
-      
-      await fetchResources();
-      return { success: true, data };
-    } catch (error) {
-      console.error('Error submitting resource:', error);
-      toast({
-        title: "Error",
-        description: "Failed to submit resource",
-        variant: "destructive"
-      });
-      return { success: false };
-    }
-  };
-
-  const incrementResourceDownloads = async (resourceId: string) => {
-    try {
-      // Get current download count
-      const { data: resource, error: fetchError } = await supabase
-        .from('industry_resources')
-        .select('downloads')
-        .eq('id', resourceId)
-        .single();
-      
-      if (fetchError) throw fetchError;
-      
-      // Increment download count
-      const { error: updateError } = await supabase
-        .from('industry_resources')
-        .update({ downloads: (resource.downloads || 0) + 1 })
-        .eq('id', resourceId);
-      
-      if (updateError) throw updateError;
-      
-      // Refresh resources
-      await fetchResources();
-      return true;
-    } catch (error) {
-      console.error('Error incrementing download count:', error);
-      return false;
-    }
-  };
-
-  // Load data on initial render
   useEffect(() => {
-    fetchNews();
-    fetchEvents();
-    fetchCourses();
-    fetchResources();
-  }, []);
+    fetchIndustryData();
+  }, [fetchIndustryData]);
+
+  // Filter news based on search query
+  const filteredNews = searchQuery
+    ? news.filter(
+        item =>
+          item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.category.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : news;
+
+  // Filter events based on search query
+  const filteredEvents = searchQuery
+    ? events.filter(
+        item =>
+          item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.type.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : events;
+
+  // Filter courses based on search query
+  const filteredCourses = searchQuery
+    ? courses.filter(
+        item =>
+          item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.instructor.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.level.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : courses;
+
+  // Filter resources based on search query
+  const filteredResources = searchQuery
+    ? resources.filter(
+        item =>
+          item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.type.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : resources;
+
+  // Submit new content
+  const submitContent = async (submission: IndustrySubmission) => {
+    if (!user) {
+      toast({
+        title: 'Authentication Required',
+        description: 'You must be logged in to submit content',
+        variant: 'destructive',
+      });
+      return { success: false };
+    }
+
+    try {
+      const { type, data } = submission;
+
+      // In a real implementation, we would insert into Supabase
+      // For now, we'll simulate success and update the local state
+      
+      switch (type) {
+        case 'news':
+          const newNewsItem: NewsItem = {
+            id: `temp-${Date.now()}`,
+            title: data.title,
+            excerpt: data.excerpt,
+            content: data.content,
+            date: new Date().toISOString(),
+            author_name: user.name || 'Anonymous',
+            author_avatar: user.avatar || '/placeholder.svg',
+            category: data.category,
+            read_time: `${Math.ceil(data.content.length / 1000)} min`,
+            image: data.image || 'https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=1000',
+            is_featured: false
+          };
+          
+          setNews(prev => [newNewsItem, ...prev]);
+          break;
+          
+        case 'event':
+          const newEventItem: EventItem = {
+            id: `temp-${Date.now()}`,
+            title: data.title,
+            description: data.description,
+            date: data.date,
+            time: data.time,
+            location: data.location,
+            type: data.type,
+            image: data.image || 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?q=80&w=1000',
+            is_featured: false
+          };
+          
+          setEvents(prev => [newEventItem, ...prev]);
+          break;
+          
+        case 'course':
+          const newCourseItem: CourseItem = {
+            id: `temp-${Date.now()}`,
+            title: data.title,
+            instructor: data.instructor,
+            lessons: parseInt(data.lessons) || 0,
+            hours: parseFloat(data.hours) || 0,
+            level: data.level,
+            rating: 0,
+            reviews: 0,
+            image: data.image || 'https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?q=80&w=1000',
+            is_featured: false
+          };
+          
+          setCourses(prev => [newCourseItem, ...prev]);
+          break;
+          
+        case 'resource':
+          const newResourceItem: ResourceItem = {
+            id: `temp-${Date.now()}`,
+            title: data.title,
+            type: data.type,
+            downloads: 0,
+            image: data.image || 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?q=80&w=1000',
+            file_url: data.file_url || '/placeholder.svg'
+          };
+          
+          setResources(prev => [newResourceItem, ...prev]);
+          break;
+      }
+
+      toast({
+        title: 'Submission Successful',
+        description: 'Your content has been submitted successfully',
+      });
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Error submitting content:', error);
+      toast({
+        title: 'Submission Failed',
+        description: 'There was an error submitting your content',
+        variant: 'destructive',
+      });
+      return { success: false };
+    }
+  };
+
+  // Download a resource
+  const downloadResource = async (resourceId: string) => {
+    try {
+      // In a real implementation, we would update download count in Supabase
+      // For now, we'll simulate success and update the local state
+      
+      setResources(prev =>
+        prev.map(resource =>
+          resource.id === resourceId
+            ? { ...resource, downloads: resource.downloads + 1 }
+            : resource
+        )
+      );
+      
+      // Get the resource's file_url
+      const resource = resources.find(r => r.id === resourceId);
+      
+      if (!resource) {
+        throw new Error('Resource not found');
+      }
+      
+      // In a real implementation, we would return a downloadable URL
+      // For demonstration, we'll just show a success toast
+      
+      toast({
+        title: 'Download Started',
+        description: `Downloading ${resource.title}`,
+      });
+      
+      return { success: true, url: resource.file_url };
+    } catch (error) {
+      console.error('Error downloading resource:', error);
+      toast({
+        title: 'Download Failed',
+        description: 'There was an error downloading the resource',
+        variant: 'destructive',
+      });
+      return { success: false };
+    }
+  };
+
+  // Subscribe to newsletter
+  const subscribeToNewsletter = async (email: string) => {
+    try {
+      // In a real implementation, we would store the email in Supabase
+      // For now, we'll simulate success
+      
+      toast({
+        title: 'Subscription Successful',
+        description: 'You have been subscribed to our newsletter',
+      });
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Error subscribing to newsletter:', error);
+      toast({
+        title: 'Subscription Failed',
+        description: 'There was an error subscribing to the newsletter',
+        variant: 'destructive',
+      });
+      return { success: false };
+    }
+  };
 
   return {
-    news,
-    featuredNews,
-    events,
-    featuredEvent,
-    courses,
-    featuredCourse,
-    resources,
+    // Data
+    news: filteredNews,
+    events: filteredEvents,
+    courses: filteredCourses,
+    resources: filteredResources,
+    
+    // State
     isLoading,
-    submitNews,
-    submitEvent,
-    submitCourse,
-    submitResource,
-    incrementResourceDownloads,
-    refetch: {
-      news: fetchNews,
-      events: fetchEvents,
-      courses: fetchCourses,
-      resources: fetchResources
-    }
+    searchQuery,
+    activeTab,
+    
+    // Actions
+    setSearchQuery,
+    setActiveTab,
+    submitContent,
+    downloadResource,
+    subscribeToNewsletter,
+    refreshData: fetchIndustryData
   };
 };
