@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -13,9 +13,11 @@ interface JobDetailProps {
   onToggleSave: (jobId: string) => void;
   onApply: () => void;
   trigger?: React.ReactNode;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-const JobDetail = ({ job, isSaved, onToggleSave, onApply, trigger }: JobDetailProps) => {
+const JobDetail = ({ job, isSaved, onToggleSave, onApply, trigger, isOpen, onClose }: JobDetailProps) => {
   const [activeTab, setActiveTab] = useState("details");
   
   const formatSalary = () => {
@@ -34,12 +36,17 @@ const JobDetail = ({ job, isSaved, onToggleSave, onApply, trigger }: JobDetailPr
       default: formattedPeriod = ""; // for flat rate
     }
     
+    const currencySymbol = currency === "USD" ? "$" : 
+                           currency === "EUR" ? "€" : 
+                           currency === "GBP" ? "£" : 
+                           currency === "INR" ? "₹" : currency;
+    
     if (job.salary_min && job.salary_max) {
-      return `${currency === "USD" ? "$" : ""}${job.salary_min.toLocaleString()} - ${currency === "USD" ? "$" : ""}${job.salary_max.toLocaleString()}${formattedPeriod}`;
+      return `${currencySymbol}${job.salary_min.toLocaleString()} - ${currencySymbol}${job.salary_max.toLocaleString()}${formattedPeriod}`;
     } else if (job.salary_min) {
-      return `${currency === "USD" ? "$" : ""}${job.salary_min.toLocaleString()}${formattedPeriod}+`;
+      return `${currencySymbol}${job.salary_min.toLocaleString()}${formattedPeriod}+`;
     } else if (job.salary_max) {
-      return `Up to ${currency === "USD" ? "$" : ""}${job.salary_max.toLocaleString()}${formattedPeriod}`;
+      return `Up to ${currencySymbol}${job.salary_max.toLocaleString()}${formattedPeriod}`;
     }
     
     return "Not specified";
@@ -70,10 +77,7 @@ const JobDetail = ({ job, isSaved, onToggleSave, onApply, trigger }: JobDetailPr
   };
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        {trigger || <Button variant="outline">View Details</Button>}
-      </DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">

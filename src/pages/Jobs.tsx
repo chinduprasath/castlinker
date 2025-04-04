@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useJobsData, Job, JobFilters as JobFiltersType } from "@/hooks/useJobsData";
+import { useJobsData, Job, JobFilters } from "@/hooks/useJobsData";
 
 // Import our components
 import JobListingHeader from "@/components/jobs/JobListingHeader";
@@ -30,11 +30,11 @@ const Jobs = () => {
 
   const [isCreateFormOpen, setIsCreateFormOpen] = useState(false);
 
-  const handleFilterChange = (newFilters: Partial<JobFiltersType>) => {
+  const handleFilterChange = (newFilters: Partial<JobFilters>) => {
     updateFilters(newFilters);
   };
 
-  const handleSearch = (searchFilters: Partial<JobFiltersType>) => {
+  const handleSearch = (searchFilters: Partial<JobFilters>) => {
     updateFilters(searchFilters);
   };
 

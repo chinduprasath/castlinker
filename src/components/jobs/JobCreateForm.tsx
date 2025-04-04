@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -136,14 +135,21 @@ const JobCreateForm = ({ isOpen, onClose, onJobCreated }: JobCreateFormProps) =>
         ...formData,
         created_by: user.id,
         application_deadline: deadlineDate?.toISOString(),
-        status: "active"
+        status: "active",
+        title: formData.title || "",
+        company: formData.company || "",
+        description: formData.description || "",
+        location: formData.location || "",
+        job_type: formData.job_type || "Full-time",
+        role_category: formData.role_category || "Acting",
+        location_type: formData.location_type || "On-site"
       };
 
       // Cast to any to bypass TypeScript errors with the database schema
-      const { data, error } = await (supabase
+      const { data, error } = await supabase
         .from('film_jobs')
         .insert(jobData)
-        .select() as any);
+        .select();
 
       if (error) throw error;
 
@@ -332,7 +338,7 @@ const JobCreateForm = ({ isOpen, onClose, onJobCreated }: JobCreateFormProps) =>
                   <SelectValue placeholder="Select currency" />
                 </SelectTrigger>
                 <SelectContent>
-                  {["USD", "EUR", "GBP", "CAD", "AUD"].map((currency) => (
+                  {["USD", "EUR", "GBP", "CAD", "AUD", "INR"].map((currency) => (
                     <SelectItem key={currency} value={currency}>{currency}</SelectItem>
                   ))}
                 </SelectContent>

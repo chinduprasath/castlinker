@@ -1,13 +1,101 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { Job } from "@/hooks/useJobsData";
 import AboutSection from "./AboutSection";
 import PortfolioSection from "./PortfolioSection";
 import SkillsSection from "./SkillsSection";
 import ExperienceSection from "./ExperienceSection";
+import SavedJobsSection from "./SavedJobsSection";
+import ApplicationsSection from "./ApplicationsSection";
 
 const ProfileTabs = () => {
   const [activeTab, setActiveTab] = useState("about");
+  const [savedJobs, setSavedJobs] = useState<Job[]>([]);
+  const [appliedJobs, setAppliedJobs] = useState<Job[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user && activeTab === "saved-jobs") {
+      fetchSavedJobs();
+    }
+    if (user && activeTab === "applications") {
+      fetchAppliedJobs();
+    }
+  }, [user, activeTab]);
+
+  const fetchSavedJobs = async () => {
+    if (!user) return;
+    setIsLoading(true);
+    
+    try {
+      // Get saved job IDs
+      const { data: savedData, error: savedError } = await supabase
+        .from('saved_jobs')
+        .select('job_id')
+        .eq('user_id', user.id);
+      
+      if (savedError) throw savedError;
+      
+      if (savedData && savedData.length > 0) {
+        const jobIds = savedData.map(item => item.job_id);
+        
+        // Fetch job details for saved jobs
+        const { data: jobsData, error: jobsError } = await supabase
+          .from('film_jobs')
+          .select('*')
+          .in('id', jobIds);
+        
+        if (jobsError) throw jobsError;
+        
+        setSavedJobs(jobsData || []);
+      } else {
+        setSavedJobs([]);
+      }
+    } catch (error) {
+      console.error('Error fetching saved jobs:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchAppliedJobs = async () => {
+    if (!user) return;
+    setIsLoading(true);
+    
+    try {
+      // Get applied job IDs
+      const { data: appliedData, error: appliedError } = await supabase
+        .from('job_applications')
+        .select('job_id')
+        .eq('user_id', user.id);
+      
+      if (appliedError) throw appliedError;
+      
+      if (appliedData && appliedData.length > 0) {
+        const jobIds = appliedData.map(item => item.job_id);
+        
+        // Fetch job details for applied jobs
+        const { data: jobsData, error: jobsError } = await supabase
+          .from('film_jobs')
+          .select('*')
+          .in('id', jobIds);
+        
+        if (jobsError) throw jobsError;
+        
+        setAppliedJobs(jobsData || []);
+      } else {
+        setAppliedJobs([]);
+      }
+    } catch (error) {
+      console.error('Error fetching applied jobs:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <Tabs defaultValue="about" className="mt-8" onValueChange={setActiveTab}>
@@ -40,6 +128,20 @@ const ProfileTabs = () => {
         >
           Experience
         </TabsTrigger>
+        <TabsTrigger 
+          value="saved-jobs" 
+          className={`${activeTab === 'saved-jobs' ? 'text-gold border-gold' : 'text-foreground/70 border-transparent'} 
+            border-b-2 rounded-none`}
+        >
+          Saved Jobs
+        </TabsTrigger>
+        <TabsTrigger 
+          value="applications" 
+          className={`${activeTab === 'applications' ? 'text-gold border-gold' : 'text-foreground/70 border-transparent'} 
+            border-b-2 rounded-none`}
+        >
+          Applications
+        </TabsTrigger>
       </TabsList>
       <TabsContent value="about" className="pt-6">
         <AboutSection />
@@ -52,6 +154,12 @@ const ProfileTabs = () => {
       </TabsContent>
       <TabsContent value="experience" className="pt-6">
         <ExperienceSection />
+      </TabsContent>
+      <TabsContent value="saved-jobs" className="pt-6">
+        <SavedJobsSection jobs={savedJobs} isLoading={isLoading} onRefresh={fetchSavedJobs} />
+      </TabsContent>
+      <TabsContent value="applications" className="pt-6">
+        <ApplicationsSection jobs={appliedJobs} isLoading={isLoading} onRefresh={fetchAppliedJobs} />
       </TabsContent>
     </Tabs>
   );

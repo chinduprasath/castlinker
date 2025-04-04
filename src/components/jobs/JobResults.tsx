@@ -276,7 +276,8 @@ const JobResults = ({
           isSaved={savedJobs.includes(selectedJob.id)}
           onToggleSave={onSaveJob}
           onApply={() => setIsApplicationOpen(true)}
-          trigger={null}
+          isOpen={isDetailOpen}
+          onClose={() => setIsDetailOpen(false)}
         />
       )}
       
