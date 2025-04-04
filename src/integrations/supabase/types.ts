@@ -39,6 +39,140 @@ export type Database = {
         }
         Relationships: []
       }
+      film_jobs: {
+        Row: {
+          application_deadline: string | null
+          application_email: string | null
+          application_url: string | null
+          company: string
+          company_logo: string | null
+          coordinates: unknown | null
+          created_at: string | null
+          created_by: string | null
+          description: string
+          experience_level: string | null
+          id: string
+          is_featured: boolean | null
+          is_verified: boolean | null
+          job_type: string
+          location: string
+          location_type: string
+          requirements: string[] | null
+          responsibilities: string[] | null
+          role_category: string
+          salary_currency: string | null
+          salary_max: number | null
+          salary_min: number | null
+          salary_period: string | null
+          status: string | null
+          tags: string[] | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          application_deadline?: string | null
+          application_email?: string | null
+          application_url?: string | null
+          company: string
+          company_logo?: string | null
+          coordinates?: unknown | null
+          created_at?: string | null
+          created_by?: string | null
+          description: string
+          experience_level?: string | null
+          id?: string
+          is_featured?: boolean | null
+          is_verified?: boolean | null
+          job_type: string
+          location: string
+          location_type: string
+          requirements?: string[] | null
+          responsibilities?: string[] | null
+          role_category: string
+          salary_currency?: string | null
+          salary_max?: number | null
+          salary_min?: number | null
+          salary_period?: string | null
+          status?: string | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          application_deadline?: string | null
+          application_email?: string | null
+          application_url?: string | null
+          company?: string
+          company_logo?: string | null
+          coordinates?: unknown | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string
+          experience_level?: string | null
+          id?: string
+          is_featured?: boolean | null
+          is_verified?: boolean | null
+          job_type?: string
+          location?: string
+          location_type?: string
+          requirements?: string[] | null
+          responsibilities?: string[] | null
+          role_category?: string
+          salary_currency?: string | null
+          salary_max?: number | null
+          salary_min?: number | null
+          salary_period?: string | null
+          status?: string | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      job_applications: {
+        Row: {
+          additional_files: string[] | null
+          cover_letter: string | null
+          created_at: string | null
+          id: string
+          job_id: string
+          resume_url: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          additional_files?: string[] | null
+          cover_letter?: string | null
+          created_at?: string | null
+          id?: string
+          job_id: string
+          resume_url?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          additional_files?: string[] | null
+          cover_letter?: string | null
+          created_at?: string | null
+          id?: string
+          job_id?: string
+          resume_url?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_applications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "film_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       jobs: {
         Row: {
           created_at: string | null
@@ -117,12 +251,74 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_jobs: {
+        Row: {
+          created_at: string | null
+          id: string
+          job_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          job_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          job_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_jobs_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "film_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      search_film_jobs: {
+        Args: {
+          search_term: string
+        }
+        Returns: {
+          application_deadline: string | null
+          application_email: string | null
+          application_url: string | null
+          company: string
+          company_logo: string | null
+          coordinates: unknown | null
+          created_at: string | null
+          created_by: string | null
+          description: string
+          experience_level: string | null
+          id: string
+          is_featured: boolean | null
+          is_verified: boolean | null
+          job_type: string
+          location: string
+          location_type: string
+          requirements: string[] | null
+          responsibilities: string[] | null
+          role_category: string
+          salary_currency: string | null
+          salary_max: number | null
+          salary_min: number | null
+          salary_period: string | null
+          status: string | null
+          tags: string[] | null
+          title: string
+          updated_at: string | null
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
