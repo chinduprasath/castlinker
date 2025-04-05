@@ -48,7 +48,7 @@ const TopBar = () => {
   
   return (
     <div className="w-full border-b border-gold/10 bg-background/90 backdrop-blur-sm">
-      <div className="flex h-16 items-center justify-between px-6">
+      <div className="flex h-16 items-center justify-between px-4">
         {/* Search Bar */}
         <div className="w-1/3 hidden md:block">
           <div className="relative">
