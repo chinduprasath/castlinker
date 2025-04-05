@@ -18,6 +18,7 @@ const ThemeToggle = ({ showTooltip = true, className = '' }: ThemeToggleProps) =
       size="icon" 
       onClick={toggleTheme}
       className={`rounded-xl border-gold/30 shadow-sm hover:bg-gold/10 ${className}`}
+      aria-label="Toggle theme"
     >
       {theme === 'dark' ? (
         <Sun className="h-[1.2rem] w-[1.2rem] text-gold transition-all" />

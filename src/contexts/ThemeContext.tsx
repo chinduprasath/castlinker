@@ -11,28 +11,28 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const [theme, setTheme] = useState<Theme>(() => {
-    // Check for saved theme in localStorage
-    const savedTheme = localStorage.getItem('theme') as Theme | null;
+  const [theme, setTheme] = useState<Theme>('dark'); // Default to dark to prevent flash
+
+  // Initialize theme from localStorage or system preference on mount
+  useEffect(() => {
+    const storedTheme = localStorage.getItem('theme') as Theme | null;
     
-    // Use saved theme or check system preference
-    if (savedTheme) {
-      return savedTheme;
+    if (storedTheme) {
+      setTheme(storedTheme);
+    } else {
+      // Check system preference
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      setTheme(prefersDark ? 'dark' : 'light');
+      localStorage.setItem('theme', prefersDark ? 'dark' : 'light');
     }
-    
-    // Check system preference
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  });
+  }, []);
 
   // Update theme class on document element
   useEffect(() => {
     const root = window.document.documentElement;
     
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
+    root.classList.remove('light', 'dark');
+    root.classList.add(theme);
 
     // Save to localStorage
     localStorage.setItem('theme', theme);
