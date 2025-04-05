@@ -25,6 +25,7 @@ import Privacy from "./pages/Privacy";
 import Billing from "./pages/Billing";
 import Help from "./pages/Help";
 import { AuthProvider } from "./contexts/AuthContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import PrivateRoute from "./components/auth/PrivateRoute";
 import AdminRouteGuard from "./components/admin/AdminRouteGuard";
 
@@ -44,123 +45,125 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <AppLayout>
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/features" element={<Features />} />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/privacy" element={<Privacy />} />
-              <Route path="/help" element={<Help />} />
-              <Route path="/admin/login" element={<AdminLogin />} />
-              
-              {/* Protected Routes */}
-              <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-              <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
-              <Route path="/jobs" element={<PrivateRoute><Jobs /></PrivateRoute>} />
-              <Route path="/chat" element={<PrivateRoute><Chat /></PrivateRoute>} />
-              <Route path="/industry-hub" element={<PrivateRoute><IndustryHub /></PrivateRoute>} />
-              <Route path="/talent-directory" element={<PrivateRoute><TalentDirectory /></PrivateRoute>} />
-              <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
-              <Route path="/notifications" element={<PrivateRoute><Notifications /></PrivateRoute>} />
-              <Route path="/billing" element={<PrivateRoute><Billing /></PrivateRoute>} />
-              
-              {/* Admin Routes */}
-              <Route 
-                path="/admin/dashboard" 
-                element={
-                  <PrivateRoute>
-                    <AdminRouteGuard>
-                      <AdminDashboard />
-                    </AdminRouteGuard>
-                  </PrivateRoute>
-                } 
-              />
-              <Route 
-                path="/admin/users" 
-                element={
-                  <PrivateRoute>
-                    <AdminRouteGuard requiredPermission="user_view">
-                      <UserManagement />
-                    </AdminRouteGuard>
-                  </PrivateRoute>
-                } 
-              />
-              <Route 
-                path="/admin/content" 
-                element={
-                  <PrivateRoute>
-                    <AdminRouteGuard requiredPermission="content_view">
-                      <ContentModeration />
-                    </AdminRouteGuard>
-                  </PrivateRoute>
-                } 
-              />
-              <Route 
-                path="/admin/jobs" 
-                element={
-                  <PrivateRoute>
-                    <AdminRouteGuard>
-                      <JobManagement />
-                    </AdminRouteGuard>
-                  </PrivateRoute>
-                } 
-              />
-              <Route 
-                path="/admin/events" 
-                element={
-                  <PrivateRoute>
-                    <AdminRouteGuard>
-                      <EventManagement />
-                    </AdminRouteGuard>
-                  </PrivateRoute>
-                } 
-              />
-              <Route 
-                path="/admin/analytics" 
-                element={
-                  <PrivateRoute>
-                    <AdminRouteGuard>
-                      <Analytics />
-                    </AdminRouteGuard>
-                  </PrivateRoute>
-                } 
-              />
-              <Route 
-                path="/admin/notifications" 
-                element={
-                  <PrivateRoute>
-                    <AdminRouteGuard>
-                      <AdminNotifications />
-                    </AdminRouteGuard>
-                  </PrivateRoute>
-                } 
-              />
-              <Route 
-                path="/admin/settings" 
-                element={
-                  <PrivateRoute>
-                    <AdminRouteGuard>
-                      <AdminSettings />
-                    </AdminRouteGuard>
-                  </PrivateRoute>
-                } 
-              />
-              
-              {/* Catch-all Route */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </AppLayout>
-        </AuthProvider>
-      </BrowserRouter>
+      <ThemeProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <AppLayout>
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<Index />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/features" element={<Features />} />
+                <Route path="/pricing" element={<Pricing />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/help" element={<Help />} />
+                <Route path="/admin/login" element={<AdminLogin />} />
+                
+                {/* Protected Routes */}
+                <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+                <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
+                <Route path="/jobs" element={<PrivateRoute><Jobs /></PrivateRoute>} />
+                <Route path="/chat" element={<PrivateRoute><Chat /></PrivateRoute>} />
+                <Route path="/industry-hub" element={<PrivateRoute><IndustryHub /></PrivateRoute>} />
+                <Route path="/talent-directory" element={<PrivateRoute><TalentDirectory /></PrivateRoute>} />
+                <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
+                <Route path="/notifications" element={<PrivateRoute><Notifications /></PrivateRoute>} />
+                <Route path="/billing" element={<PrivateRoute><Billing /></PrivateRoute>} />
+                
+                {/* Admin Routes */}
+                <Route 
+                  path="/admin/dashboard" 
+                  element={
+                    <PrivateRoute>
+                      <AdminRouteGuard>
+                        <AdminDashboard />
+                      </AdminRouteGuard>
+                    </PrivateRoute>
+                  } 
+                />
+                <Route 
+                  path="/admin/users" 
+                  element={
+                    <PrivateRoute>
+                      <AdminRouteGuard requiredPermission="user_view">
+                        <UserManagement />
+                      </AdminRouteGuard>
+                    </PrivateRoute>
+                  } 
+                />
+                <Route 
+                  path="/admin/content" 
+                  element={
+                    <PrivateRoute>
+                      <AdminRouteGuard requiredPermission="content_view">
+                        <ContentModeration />
+                      </AdminRouteGuard>
+                    </PrivateRoute>
+                  } 
+                />
+                <Route 
+                  path="/admin/jobs" 
+                  element={
+                    <PrivateRoute>
+                      <AdminRouteGuard>
+                        <JobManagement />
+                      </AdminRouteGuard>
+                    </PrivateRoute>
+                  } 
+                />
+                <Route 
+                  path="/admin/events" 
+                  element={
+                    <PrivateRoute>
+                      <AdminRouteGuard>
+                        <EventManagement />
+                      </AdminRouteGuard>
+                    </PrivateRoute>
+                  } 
+                />
+                <Route 
+                  path="/admin/analytics" 
+                  element={
+                    <PrivateRoute>
+                      <AdminRouteGuard>
+                        <Analytics />
+                      </AdminRouteGuard>
+                    </PrivateRoute>
+                  } 
+                />
+                <Route 
+                  path="/admin/notifications" 
+                  element={
+                    <PrivateRoute>
+                      <AdminRouteGuard>
+                        <AdminNotifications />
+                      </AdminRouteGuard>
+                    </PrivateRoute>
+                  } 
+                />
+                <Route 
+                  path="/admin/settings" 
+                  element={
+                    <PrivateRoute>
+                      <AdminRouteGuard>
+                        <AdminSettings />
+                      </AdminRouteGuard>
+                    </PrivateRoute>
+                  } 
+                />
+                
+                {/* Catch-all Route */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </AppLayout>
+          </AuthProvider>
+        </BrowserRouter>
+      </ThemeProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

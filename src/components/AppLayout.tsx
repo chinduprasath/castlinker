@@ -7,6 +7,7 @@ import DashboardSidebar from '@/components/DashboardSidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import TopBar from '@/components/TopBar';
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -17,6 +18,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   const location = useLocation();
   const { user } = useAuth();
   const isMobile = useIsMobile();
+  const { theme } = useTheme();
   
   // Public pages (don't need authentication and don't show sidebar)
   const publicPages = ['/', '/login', '/signup', '/about', '/features', '/pricing', '/contact', '/privacy', '/help'];
@@ -44,7 +46,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-background/95 text-foreground">
+    <div className={`min-h-screen bg-background text-foreground transition-colors duration-300`}>
       {showNavbar && <Navbar />}
       
       {showSidebar ? (

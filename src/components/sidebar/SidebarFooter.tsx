@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import ThemeToggle from '@/components/ThemeToggle';
 
 interface SidebarFooterProps {
   isCollapsed: boolean;
@@ -11,7 +12,7 @@ interface SidebarFooterProps {
 const SidebarFooter = ({ isCollapsed }: SidebarFooterProps) => {
   return (
     <div className="mt-auto px-4 py-3 border-t border-gold/10">
-      <div className={`flex ${isCollapsed ? 'justify-center' : 'justify-start'}`}>
+      <div className={`flex ${isCollapsed ? 'justify-center' : 'justify-between items-center'}`}>
         <TooltipProvider delayDuration={0}>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -25,6 +26,12 @@ const SidebarFooter = ({ isCollapsed }: SidebarFooterProps) => {
             <TooltipContent side="top">Help</TooltipContent>
           </Tooltip>
         </TooltipProvider>
+        
+        {!isCollapsed && (
+          <span className="text-xs text-muted-foreground">Theme</span>
+        )}
+        
+        <ThemeToggle showTooltip={isCollapsed} />
       </div>
     </div>
   );
