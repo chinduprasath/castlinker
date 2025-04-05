@@ -42,7 +42,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
         <SidebarProvider defaultOpen={!sidebarCollapsed}>
           <div className="flex min-h-screen w-full">
             <DashboardSidebar onToggle={toggleSidebar} isCollapsed={sidebarCollapsed} />
-            <div className="flex-1 transition-all duration-300 ease-in-out">
+            <div className={`flex-1 transition-all duration-300 ease-in-out ${sidebarCollapsed ? 'ml-[70px]' : 'ml-[250px]'}`}>
               {showTopBar && <TopBar />}
               <main className="px-4 py-4">
                 {children}

@@ -6,7 +6,7 @@ import SidebarProfile from '@/components/sidebar/SidebarProfile';
 import SidebarMenuItem from '@/components/sidebar/SidebarMenuItem';
 import SidebarMenuGroup from '@/components/sidebar/SidebarMenuGroup';
 import SidebarFooter from '@/components/sidebar/SidebarFooter';
-import { mainMenuItems, pageMenuItems, accountMenuItems } from '@/components/sidebar/menuItems';
+import { mainMenuItems, pageMenuItems } from '@/components/sidebar/menuItems';
 
 interface DashboardSidebarProps {
   onToggle?: () => void;
@@ -64,19 +64,6 @@ const DashboardSidebar = ({ onToggle, isCollapsed = false }: DashboardSidebarPro
               ))}
             </SidebarMenuGroup>
           )}
-          
-          <SidebarMenuGroup label="ACCOUNT" isCollapsed={isCollapsed}>
-            {accountMenuItems.map((item) => (
-              <SidebarMenuItem 
-                key={item.path}
-                icon={item.icon}
-                text={item.text}
-                path={item.path}
-                isActive={isActive(item.path)}
-                isCollapsed={isCollapsed}
-              />
-            ))}
-          </SidebarMenuGroup>
         </div>
 
         <SidebarFooter isCollapsed={isCollapsed} />

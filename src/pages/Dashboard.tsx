@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { 
   Activity, 
   Film, 
@@ -100,37 +99,15 @@ const Dashboard = () => {
   return (
     <div className="space-y-4 pr-1">
       <div className="flex flex-col space-y-1">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-gold to-gold-light">
-                Hello, {firstName}
-              </span>
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Here's your activity summary and upcoming opportunities
-            </p>
-          </div>
-          <div className="hidden sm:flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="border-gold/20 text-foreground/80 gap-1"
-              onClick={handleNavigateToNotifications}
-            >
-              <Bell className="h-4 w-4 text-gold" />
-              <span className="hidden md:inline">Notifications</span>
-            </Button>
-            <Button 
-              size="sm" 
-              className="bg-gold hover:bg-gold/90 text-black gap-1"
-              onClick={handleNavigateToJobs}
-            >
-              <Film className="h-4 w-4" />
-              <span>Browse Jobs</span>
-              <ArrowRight className="h-3.5 w-3.5 ml-1" />
-            </Button>
-          </div>
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-gold to-gold-light">
+              Hello, {firstName}
+            </span>
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Here's your activity summary and upcoming opportunities
+          </p>
         </div>
       </div>
 
