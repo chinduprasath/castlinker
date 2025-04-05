@@ -10,12 +10,12 @@ interface SidebarFooterProps {
 
 const SidebarFooter = ({ isCollapsed }: SidebarFooterProps) => {
   return (
-    <div className="mt-auto px-4 py-4 border-t border-gold/10">
+    <div className="mt-auto px-4 py-3 border-t border-gold/10">
       <div className={`flex ${isCollapsed ? 'justify-center' : 'justify-start'}`}>
         <TooltipProvider delayDuration={0}>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full h-8 w-8 text-muted-foreground hover:text-gold">
+              <Button variant="ghost" size="icon" className="rounded-xl h-9 w-9 text-muted-foreground hover:text-gold hover:bg-gold/10">
                 <Link to="/help">
                   <HelpCircle className="h-5 w-5" />
                   <span className="sr-only">Help</span>

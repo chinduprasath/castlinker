@@ -28,6 +28,7 @@ const DashboardSidebar = ({ onToggle, isCollapsed = false }: DashboardSidebarPro
         transition-all duration-300 ease-in-out
         bg-gradient-to-b from-background to-background/90
         backdrop-blur-lg shadow-xl
+        rounded-r-2xl
         ${isCollapsed ? 'w-[70px]' : 'w-[250px]'}
       `}
     >

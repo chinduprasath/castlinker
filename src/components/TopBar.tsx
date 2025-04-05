@@ -56,7 +56,7 @@ const TopBar = () => {
             <Input
               type="search"
               placeholder="Search..."
-              className="w-full bg-background/60 pl-9 focus-visible:ring-gold/30"
+              className="w-full bg-background/60 pl-9 focus-visible:ring-gold/30 rounded-xl"
             />
           </div>
         </div>
@@ -65,19 +65,19 @@ const TopBar = () => {
         <div className="md:hidden flex-1"></div>
         
         {/* Right Side Actions */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           {/* Notifications */}
           <Button 
             variant="ghost" 
             size="icon" 
-            className="relative text-muted-foreground hover:text-foreground"
+            className="relative text-muted-foreground hover:text-foreground rounded-xl"
             onClick={() => navigate('/notifications')}
           >
             <Bell className="h-5 w-5" />
             {notifications > 0 && (
               <Badge 
                 variant="destructive" 
-                className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px]"
+                className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px] rounded-full"
               >
                 {notifications}
               </Badge>
@@ -87,7 +87,7 @@ const TopBar = () => {
           {/* User Profile Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-9 gap-2 px-2">
+              <Button variant="ghost" className="h-9 gap-2 px-2 rounded-xl hover:bg-gold/5">
                 <Avatar className="h-8 w-8 border border-gold/20">
                   <AvatarImage src={user.avatar} alt={user.name} />
                   <AvatarFallback className="bg-gold/10 text-gold">
@@ -101,34 +101,34 @@ const TopBar = () => {
                 <ChevronDown className="h-4 w-4 text-muted-foreground" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end">
+            <DropdownMenuContent className="w-56 rounded-xl" align="end">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
-                <DropdownMenuItem onClick={() => navigate('/profile')}>
+                <DropdownMenuItem onClick={() => navigate('/profile')} className="rounded-lg">
                   <User className="mr-2 h-4 w-4" />
                   Profile
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/settings')}>
+                <DropdownMenuItem onClick={() => navigate('/settings')} className="rounded-lg">
                   <Settings className="mr-2 h-4 w-4" />
                   Settings
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/billing')}>
+                <DropdownMenuItem onClick={() => navigate('/billing')} className="rounded-lg">
                   <CreditCard className="mr-2 h-4 w-4" />
                   Billing
                 </DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate('/privacy')}>
+              <DropdownMenuItem onClick={() => navigate('/privacy')} className="rounded-lg">
                 <Shield className="mr-2 h-4 w-4" />
                 Privacy
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/help')}>
+              <DropdownMenuItem onClick={() => navigate('/help')} className="rounded-lg">
                 <HelpCircle className="mr-2 h-4 w-4" />
                 Help & Support
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout} className="text-red-500 focus:text-red-500">
+              <DropdownMenuItem onClick={handleLogout} className="text-red-500 focus:text-red-500 rounded-lg">
                 <LogOut className="mr-2 h-4 w-4" />
                 Logout
               </DropdownMenuItem>

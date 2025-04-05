@@ -1,6 +1,6 @@
 
 import { Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Menu } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SidebarHeader as BaseSidebarHeader } from "@/components/ui/sidebar";
 
@@ -11,7 +11,7 @@ interface SidebarHeaderProps {
 
 const SidebarHeader = ({ isCollapsed, onToggle }: SidebarHeaderProps) => {
   return (
-    <BaseSidebarHeader className="relative pb-4 border-b border-gold/10">
+    <BaseSidebarHeader className="relative pb-2 border-b border-gold/10">
       <div className={`flex items-center justify-between px-4 py-4`}>
         <Link to="/dashboard" className="flex items-center">
           {!isCollapsed && (
@@ -25,7 +25,7 @@ const SidebarHeader = ({ isCollapsed, onToggle }: SidebarHeaderProps) => {
         <Button 
           variant="outline" 
           size="icon" 
-          className="text-gold hover:bg-gold/10 hover:text-white border-gold/30 z-10"
+          className="text-gold hover:bg-gold/10 hover:text-white border-gold/30 rounded-xl shadow-sm"
           onClick={onToggle}
         >
           {isCollapsed ? 

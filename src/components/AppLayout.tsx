@@ -1,11 +1,12 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { SidebarProvider } from "@/components/ui/sidebar";
 import Navbar from '@/components/Navbar';
 import DashboardSidebar from '@/components/DashboardSidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import TopBar from '@/components/TopBar';
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -15,6 +16,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const location = useLocation();
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   
   // Public pages (don't need authentication and don't show sidebar)
   const publicPages = ['/', '/login', '/signup', '/about', '/features', '/pricing', '/contact', '/privacy', '/help'];
@@ -29,6 +31,13 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   const showSidebar = user && !isPublicPage && !isAdminPage;
   // Show topbar when user is logged in and not on admin pages
   const showTopBar = user && !isAdminPage;
+
+  // Auto collapse sidebar on mobile
+  useEffect(() => {
+    if (isMobile) {
+      setSidebarCollapsed(true);
+    }
+  }, [isMobile]);
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
