@@ -44,12 +44,12 @@ const UserManagement = () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('users_management')
-        .select('*') as { data: User[] | null; error: any };
+        .from('users_management' as any)
+        .select('*');
       
       if (error) throw error;
       
-      setUsers(data || []);
+      setUsers(data as User[] || []);
     } catch (error) {
       console.error("Error fetching users:", error);
       toast.error("Failed to load users. Please try again.");
@@ -77,7 +77,7 @@ const UserManagement = () => {
   const handleAddUser = async (userData: UserFormData) => {
     try {
       const { data, error } = await supabase
-        .from('users_management')
+        .from('users_management' as any)
         .insert([{
           name: userData.name,
           email: userData.email,
@@ -85,8 +85,8 @@ const UserManagement = () => {
           status: userData.status,
           verified: userData.verified,
           avatar_url: userData.avatar_url || null
-        }])
-        .select() as { data: User[] | null; error: any };
+        }] as any)
+        .select();
       
       if (error) throw error;
       
@@ -106,7 +106,7 @@ const UserManagement = () => {
     
     try {
       const { error } = await supabase
-        .from('users_management')
+        .from('users_management' as any)
         .update({
           name: userData.name,
           email: userData.email,
@@ -114,7 +114,7 @@ const UserManagement = () => {
           status: userData.status,
           verified: userData.verified,
           avatar_url: userData.avatar_url || null
-        })
+        } as any)
         .eq('id', currentUser.id);
       
       if (error) throw error;
@@ -133,8 +133,8 @@ const UserManagement = () => {
   const handleVerifyUser = async (user: User) => {
     try {
       const { error } = await supabase
-        .from('users_management')
-        .update({ verified: true })
+        .from('users_management' as any)
+        .update({ verified: true } as any)
         .eq('id', user.id);
       
       if (error) throw error;
@@ -154,8 +154,8 @@ const UserManagement = () => {
     
     try {
       const { error } = await supabase
-        .from('users_management')
-        .update({ status: newStatus })
+        .from('users_management' as any)
+        .update({ status: newStatus } as any)
         .eq('id', user.id);
       
       if (error) throw error;
@@ -175,7 +175,7 @@ const UserManagement = () => {
     
     try {
       const { error } = await supabase
-        .from('users_management')
+        .from('users_management' as any)
         .delete()
         .eq('id', currentUser.id);
       
@@ -193,7 +193,7 @@ const UserManagement = () => {
   const handleDeleteSelected = async () => {
     try {
       const { error } = await supabase
-        .from('users_management')
+        .from('users_management' as any)
         .delete()
         .in('id', selectedUsers);
       
