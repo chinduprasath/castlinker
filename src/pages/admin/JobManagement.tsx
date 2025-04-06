@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -42,22 +41,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-
-interface Job {
-  id: string;
-  title: string;
-  company: string;
-  job_type: string;
-  location: string;
-  created_at: string;
-  status: 'active' | 'draft' | 'closed' | 'expired';
-  is_featured: boolean;
-  is_verified: boolean;
-}
+import { AdminJob } from '@/lib/adminTypes';
 
 const JobManagement = () => {
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
+  const [jobs, setJobs] = useState<AdminJob[]>([]);
+  const [filteredJobs, setFilteredJobs] = useState<AdminJob[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -72,8 +60,13 @@ const JobManagement = () => {
         
         if (error) throw error;
         
-        setJobs(data || []);
-        setFilteredJobs(data || []);
+        const typedData = data.map(job => ({
+          ...job,
+          status: (job.status || 'active') as 'active' | 'draft' | 'closed' | 'expired'
+        }));
+        
+        setJobs(typedData);
+        setFilteredJobs(typedData);
       } catch (error) {
         console.error('Error fetching jobs:', error);
         toast({
@@ -90,7 +83,6 @@ const JobManagement = () => {
   }, [toast]);
 
   useEffect(() => {
-    // Filter jobs based on search term
     if (!searchTerm.trim()) {
       setFilteredJobs(jobs);
       return;
@@ -164,7 +156,6 @@ const JobManagement = () => {
   };
 
   const handleVerifyJob = (id: string) => {
-    // In a real implementation, this would update the job verification status in Supabase
     toast({
       title: "Job Verified",
       description: "The job has been verified and is now marked as trusted",

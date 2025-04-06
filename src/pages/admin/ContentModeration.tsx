@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -43,16 +42,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-
-interface ContentItem {
-  id: string;
-  content_type: string;
-  content_id: string;
-  title: string;
-  status: 'pending' | 'approved' | 'rejected' | 'resolved';
-  reported_at: string;
-  reason: string;
-}
+import { ContentItem } from '@/lib/adminTypes';
 
 const ContentModeration = () => {
   const [contentItems, setContentItems] = useState<ContentItem[]>([]);
@@ -72,8 +62,8 @@ const ContentModeration = () => {
         
         if (error) throw error;
         
-        setContentItems(data || []);
-        setFilteredItems(data || []);
+        setContentItems(data as ContentItem[]);
+        setFilteredItems(data as ContentItem[]);
       } catch (error) {
         console.error('Error fetching content:', error);
         toast({
@@ -90,10 +80,8 @@ const ContentModeration = () => {
   }, [toast]);
 
   useEffect(() => {
-    // Filter content based on search term and active tab
     let filtered = [...contentItems];
     
-    // Filter by search term
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(
@@ -104,7 +92,6 @@ const ContentModeration = () => {
       );
     }
     
-    // Filter by status tab
     if (activeTab !== 'all') {
       filtered = filtered.filter(item => item.status === activeTab);
     }
@@ -176,7 +163,6 @@ const ContentModeration = () => {
   };
 
   const handleApprove = (id: string) => {
-    // In a real implementation, this would update the content status in Supabase
     toast({
       title: "Content Approved",
       description: "The content has been approved and will remain visible",
@@ -184,7 +170,6 @@ const ContentModeration = () => {
   };
 
   const handleReject = (id: string) => {
-    // In a real implementation, this would update the content status in Supabase
     toast({
       title: "Content Rejected",
       description: "The content has been rejected and is now hidden",

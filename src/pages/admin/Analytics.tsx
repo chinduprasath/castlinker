@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -44,15 +43,7 @@ import {
   LineChart as LineChartIcon
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
-interface AnalyticsData {
-  date: string;
-  users_registered: number;
-  jobs_posted: number;
-  applications_submitted: number;
-  revenue: number;
-  page_views: number;
-}
+import { AnalyticsData } from '@/lib/adminTypes';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
@@ -78,7 +69,7 @@ const Analytics = () => {
           date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
         }));
         
-        setAnalyticsData(formattedData);
+        setAnalyticsData(formattedData as AnalyticsData[]);
       } catch (error) {
         console.error('Error fetching analytics:', error);
         toast({

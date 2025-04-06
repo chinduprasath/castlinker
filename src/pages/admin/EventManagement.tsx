@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -68,8 +67,8 @@ const EventManagement = () => {
         
         if (error) throw error;
         
-        setEvents(data || []);
-        setFilteredEvents(data || []);
+        setEvents(data as Event[]);
+        setFilteredEvents(data as Event[]);
       } catch (error) {
         console.error('Error fetching events:', error);
         toast({
@@ -86,7 +85,6 @@ const EventManagement = () => {
   }, [toast]);
 
   useEffect(() => {
-    // Filter events based on search term
     if (!searchTerm.trim()) {
       setFilteredEvents(events);
       return;
@@ -130,7 +128,6 @@ const EventManagement = () => {
       return <Badge className="bg-green-500 hover:bg-green-600">In Progress</Badge>;
     }
     
-    // Calculate days until event
     const daysUntil = Math.ceil((start.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
     
     if (daysUntil <= 7) {

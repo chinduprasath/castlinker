@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -30,23 +29,7 @@ import {
   ResponsiveContainer,
   Legend
 } from 'recharts';
-
-interface DashboardStats {
-  users_count: number;
-  active_jobs: number;
-  pending_applications: number;
-  new_users_today: number;
-  revenue_today: number;
-}
-
-interface AnalyticsData {
-  date: string;
-  users_registered: number;
-  jobs_posted: number;
-  applications_submitted: number;
-  revenue: number;
-  page_views: number;
-}
+import { DashboardStats, AnalyticsData } from '@/lib/adminTypes';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -80,8 +63,8 @@ const AdminDashboard = () => {
           date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
         }));
         
-        setStats(statsData);
-        setAnalyticsData(formattedData);
+        setStats(statsData as DashboardStats);
+        setAnalyticsData(formattedData as AnalyticsData[]);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
         toast({
