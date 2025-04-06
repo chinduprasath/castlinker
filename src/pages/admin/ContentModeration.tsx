@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -63,8 +62,8 @@ const ContentModeration = () => {
         
         if (error) throw error;
         
-        setContentItems(data as ContentItem[]);
-        setFilteredItems(data as ContentItem[]);
+        setContentItems(data as unknown as ContentItem[]);
+        setFilteredItems(data as unknown as ContentItem[]);
       } catch (error) {
         console.error('Error fetching content:', error);
         toast({

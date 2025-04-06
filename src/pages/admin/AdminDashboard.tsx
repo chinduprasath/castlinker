@@ -64,8 +64,8 @@ const AdminDashboard = () => {
           date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
         }));
         
-        setStats(statsData as DashboardStats);
-        setAnalyticsData(formattedData as AnalyticsData[]);
+        setStats(statsData as unknown as DashboardStats);
+        setAnalyticsData(formattedData as unknown as AnalyticsData[]);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
         toast({
