@@ -1,280 +1,274 @@
 
-import { useState } from "react";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle,
-  CardFooter 
-} from "@/components/ui/card";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import AdminLayout from '@/components/admin/AdminLayout';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
   TableHeader,
-  TableRow
+  TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Calendar, Search, Plus, Clock, Users, MapPin } from "lucide-react";
-import AdminLayout from "@/components/admin/AdminLayout";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { 
+  MoreHorizontal, 
+  Search, 
+  PlusCircle, 
+  Calendar, 
+  Pencil, 
+  Trash2, 
+  MapPin,
+  Clock,
+  CalendarPlus
+} from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/components/ui/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
+
+interface Event {
+  id: string;
+  title: string;
+  description: string;
+  start_date: string;
+  end_date: string;
+  created_by: string;
+}
 
 const EventManagement = () => {
-  const [searchQuery, setSearchQuery] = useState("");
-  
-  // Mock event data
-  const events = [
-    {
-      id: "EVT-2024-001",
-      title: "Annual Film Festival",
-      location: "Los Angeles Convention Center",
-      date: "2024-06-15",
-      time: "10:00 AM - 8:00 PM",
-      attendees: 450,
-      status: "upcoming"
-    },
-    {
-      id: "EVT-2024-002",
-      title: "Casting Director Workshop",
-      location: "New York Film Academy",
-      date: "2024-06-22",
-      time: "1:00 PM - 5:00 PM",
-      attendees: 75,
-      status: "upcoming"
-    },
-    {
-      id: "EVT-2024-003",
-      title: "Industry Networking Mixer",
-      location: "The Roosevelt Hotel, Hollywood",
-      date: "2024-05-30",
-      time: "7:00 PM - 10:00 PM",
-      attendees: 120,
-      status: "upcoming"
-    },
-    {
-      id: "EVT-2024-004",
-      title: "Screenwriting Competition",
-      location: "Online",
-      date: "2024-07-01",
-      time: "All Day",
-      attendees: 200,
-      status: "registration"
-    },
-    {
-      id: "EVT-2024-005",
-      title: "Makeup & SFX Workshop",
-      location: "Atlanta Film Studios",
-      date: "2024-05-10",
-      time: "9:00 AM - 4:00 PM",
-      attendees: 45,
-      status: "completed"
-    },
-  ];
+  const [events, setEvents] = useState<Event[]>([]);
+  const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
 
-  const filteredEvents = events.filter(event => 
-    event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    event.location.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('events')
+          .select('*')
+          .order('start_date', { ascending: true });
+        
+        if (error) throw error;
+        
+        setEvents(data || []);
+        setFilteredEvents(data || []);
+      } catch (error) {
+        console.error('Error fetching events:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load event data",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchEvents();
+  }, [toast]);
 
-  const getStatusBadge = (status: string) => {
-    switch(status) {
-      case "upcoming":
-        return <Badge className="bg-blue-500 hover:bg-blue-600">Upcoming</Badge>;
-      case "registration":
-        return <Badge className="bg-green-500 hover:bg-green-600">Registration Open</Badge>;
-      case "completed":
-        return <Badge className="bg-gray-500 hover:bg-gray-600">Completed</Badge>;
-      default:
-        return <Badge>{status}</Badge>;
+  useEffect(() => {
+    // Filter events based on search term
+    if (!searchTerm.trim()) {
+      setFilteredEvents(events);
+      return;
     }
+    
+    const term = searchTerm.toLowerCase();
+    const filtered = events.filter(
+      event => 
+        event.title.toLowerCase().includes(term) || 
+        event.description.toLowerCase().includes(term)
+    );
+    
+    setFilteredEvents(filtered);
+  }, [searchTerm, events]);
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
   };
 
-  // Featured events for cards
-  const upcomingEvents = events.filter(event => event.status === "upcoming");
-  const featuredEvent = upcomingEvents[0];
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getEventStatusBadge = (startDate: string, endDate: string) => {
+    const now = new Date();
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    if (now > end) {
+      return <Badge className="bg-slate-500 hover:bg-slate-600">Ended</Badge>;
+    }
+    
+    if (now >= start && now <= end) {
+      return <Badge className="bg-green-500 hover:bg-green-600">In Progress</Badge>;
+    }
+    
+    // Calculate days until event
+    const daysUntil = Math.ceil((start.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (daysUntil <= 7) {
+      return <Badge className="bg-amber-500 hover:bg-amber-600">Upcoming</Badge>;
+    }
+    
+    return <Badge variant="outline">Scheduled</Badge>;
+  };
 
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold gold-gradient-text">Event Management</h1>
-        <p className="text-muted-foreground">Create and manage industry events and gatherings.</p>
-        
-        <div className="flex flex-col gap-6">
-          {/* Dashboard cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">Total Events</CardTitle>
-                <CardDescription>All scheduled events</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <span className="text-3xl font-bold">{events.length}</span>
-                  <div className="p-2 bg-primary/10 rounded-full">
-                    <Calendar className="h-6 w-6 text-primary" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">Upcoming Events</CardTitle>
-                <CardDescription>Scheduled for the future</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <span className="text-3xl font-bold">
-                    {events.filter(event => event.status === "upcoming").length}
-                  </span>
-                  <div className="p-2 bg-blue-500/10 rounded-full">
-                    <Clock className="h-6 w-6 text-blue-500" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">Total Attendees</CardTitle>
-                <CardDescription>Across all events</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <span className="text-3xl font-bold">
-                    {events.reduce((acc, event) => acc + event.attendees, 0)}
-                  </span>
-                  <div className="p-2 bg-violet-500/10 rounded-full">
-                    <Users className="h-6 w-6 text-violet-500" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold gold-gradient-text">Event Management</h1>
+            <p className="text-muted-foreground">Manage industry events and workshops</p>
           </div>
-          
-          {/* Featured upcoming event */}
-          {featuredEvent && (
-            <Card className="bg-card shadow-md border border-gold/10">
-              <CardHeader>
-                <CardTitle>Featured Upcoming Event</CardTitle>
-                <CardDescription>The next major industry event</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col md:flex-row gap-4">
-                  <div className="bg-secondary/30 rounded-lg p-4 flex items-center justify-center md:w-1/3">
-                    <Calendar className="h-12 w-12 text-gold opacity-80" />
-                  </div>
-                  <div className="md:w-2/3">
-                    <h3 className="text-xl font-semibold mb-2">{featuredEvent.title}</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      <div className="flex items-center">
-                        <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                        <span className="text-sm">{featuredEvent.date}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
-                        <span className="text-sm">{featuredEvent.time}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
-                        <span className="text-sm">{featuredEvent.location}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <Users className="h-4 w-4 mr-2 text-muted-foreground" />
-                        <span className="text-sm">{featuredEvent.attendees} attendees</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter className="flex justify-end gap-2">
-                <Button variant="outline">Edit Event</Button>
-                <Button>View Details</Button>
-              </CardFooter>
-            </Card>
-          )}
-          
-          {/* Search and filters */}
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex flex-col md:flex-row gap-4 justify-between">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                  <Input 
-                    placeholder="Search events..." 
-                    className="pl-10"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Filter by Date
-                  </Button>
-                  <Button size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Event
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          {/* Events table */}
-          <Card>
-            <CardHeader>
-              <CardTitle>All Events</CardTitle>
-              <CardDescription>Manage industry events and workshops</CardDescription>
-            </CardHeader>
-            <CardContent>
+          <div className="flex gap-2">
+            <Button size="sm" className="gap-1">
+              <CalendarPlus className="h-4 w-4" />
+              <span>Add Event</span>
+            </Button>
+          </div>
+        </div>
+        
+        <Card className="border-gold/10 shadow-sm">
+          <CardHeader className="pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <CardTitle>Events</CardTitle>
+              <CardDescription>
+                {!isLoading && 
+                  `${filteredEvents.length} ${filteredEvents.length === 1 ? 'event' : 'events'} ${
+                    searchTerm ? 'found' : 'scheduled'
+                  }`
+                }
+              </CardDescription>
+            </div>
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search events..."
+                className="pl-9 bg-background/60 w-full"
+                value={searchTerm}
+                onChange={handleSearch}
+              />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Event ID</TableHead>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Location</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Time</TableHead>
+                    <TableHead>Event Name</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Attendees</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead>Start Date</TableHead>
+                    <TableHead>End Date</TableHead>
+                    <TableHead className="w-[80px] text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredEvents.length > 0 ? (
-                    filteredEvents.map((event) => (
-                      <TableRow key={event.id}>
-                        <TableCell className="font-mono text-xs">{event.id}</TableCell>
-                        <TableCell className="font-medium">{event.title}</TableCell>
-                        <TableCell>{event.location}</TableCell>
-                        <TableCell>{event.date}</TableCell>
-                        <TableCell>{event.time}</TableCell>
-                        <TableCell>{getStatusBadge(event.status)}</TableCell>
-                        <TableCell>{event.attendees}</TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button variant="outline" size="sm">Edit</Button>
-                            <Button variant="outline" size="sm">View</Button>
-                          </div>
-                        </TableCell>
+                  {isLoading ? (
+                    Array(5).fill(0).map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell><Skeleton className="h-5 w-36" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-28" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-28" /></TableCell>
+                        <TableCell><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
                       </TableRow>
                     ))
                   ) : (
-                    <TableRow>
-                      <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
-                        No events found. Try adjusting your search.
-                      </TableCell>
-                    </TableRow>
+                    filteredEvents.length > 0 ? (
+                      filteredEvents.map((event) => (
+                        <TableRow key={event.id}>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-4 w-4 text-muted-foreground mr-1" />
+                              {event.title}
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                              {event.description}
+                            </p>
+                          </TableCell>
+                          <TableCell>{getEventStatusBadge(event.start_date, event.end_date)}</TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {formatDate(event.start_date)}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {formatDate(event.end_date)}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex justify-end gap-1">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                    <span className="sr-only">Open menu</span>
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-40">
+                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem className="flex gap-2">
+                                    <Calendar className="h-4 w-4" />
+                                    <span>View</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem className="flex gap-2">
+                                    <Pencil className="h-4 w-4" />
+                                    <span>Edit</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem className="flex gap-2">
+                                    <MapPin className="h-4 w-4" />
+                                    <span>Location</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem className="flex gap-2 text-red-500 focus:text-red-500">
+                                    <Trash2 className="h-4 w-4" />
+                                    <span>Delete</span>
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                          No events found matching your search.
+                        </TableCell>
+                      </TableRow>
+                    )
                   )}
                 </TableBody>
               </Table>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </AdminLayout>
   );

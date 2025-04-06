@@ -1,328 +1,346 @@
 
-import { useState } from "react";
-import AdminLayout from "@/components/admin/AdminLayout";
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import AdminLayout from '@/components/admin/AdminLayout';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
-import { toast } from "@/components/ui/use-toast";
-import { AlertTriangle, Check, FileText, Flag, MessageSquare, Search, Trash, X } from "lucide-react";
+  AlertTriangle, 
+  CheckCircle, 
+  Clock, 
+  Filter, 
+  MoreHorizontal, 
+  Search, 
+  Trash2, 
+  ThumbsUp,
+  Eye,
+  Flag
+} from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/components/ui/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
-// Mock data for content moderation
-const mockReportedContent = [
-  {
-    id: "post-1",
-    title: "Unprofessional Behavior on Set",
-    type: "post",
-    author: "John Smith",
-    reportCount: 5,
-    date: "2023-09-15",
-    reason: "Inappropriate content",
-    excerpt: "This director was extremely unprofessional during the entire shoot...",
-    status: "pending"
-  },
-  {
-    id: "comment-1",
-    title: "Reply to Job Posting",
-    type: "comment",
-    author: "Emma Johnson",
-    reportCount: 3,
-    date: "2023-09-18", 
-    reason: "Spam/Scam",
-    excerpt: "Check out this website to get more auditions instantly...",
-    status: "pending"
-  },
-  {
-    id: "post-2",
-    title: "Fake Casting Call",
-    type: "post",
-    author: "Robert Davis",
-    reportCount: 12,
-    date: "2023-09-10",
-    reason: "Misleading information",
-    excerpt: "Casting call for major studio film. Send photos to personal email...",
-    status: "pending"
-  },
-  {
-    id: "job-1",
-    title: "Background Actors Needed",
-    type: "job",
-    author: "Central Casting",
-    reportCount: 2,
-    date: "2023-09-20",
-    reason: "Suspicious activity",
-    excerpt: "Looking for background actors for upcoming film. Payment in exposure...",
-    status: "pending"
-  }
-];
-
-const mockContentQueue = [
-  {
-    id: "post-3",
-    title: "Industry Workshop Announcement",
-    type: "post",
-    author: "Talent Academy",
-    date: "2023-09-21",
-    excerpt: "Join our exclusive workshop with top industry professionals...",
-    status: "pending"
-  },
-  {
-    id: "job-2",
-    title: "Lead Role in Indie Film",
-    type: "job",
-    author: "Independent Productions",
-    date: "2023-09-22",
-    excerpt: "Seeking actors for lead roles in independent feature film shooting in October...",
-    status: "pending"
-  },
-  {
-    id: "event-1",
-    title: "Networking Mixer for Film Professionals",
-    type: "event",
-    author: "Film Industry Network",
-    date: "2023-09-23",
-    excerpt: "Monthly networking event for actors, directors, and producers...",
-    status: "pending"
-  }
-];
+interface ContentItem {
+  id: string;
+  content_type: string;
+  content_id: string;
+  title: string;
+  status: 'pending' | 'approved' | 'rejected' | 'resolved';
+  reported_at: string;
+  reason: string;
+}
 
 const ContentModeration = () => {
-  const [reportedContent, setReportedContent] = useState(mockReportedContent);
-  const [contentQueue, setContentQueue] = useState(mockContentQueue);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [contentItems, setContentItems] = useState<ContentItem[]>([]);
+  const [filteredItems, setFilteredItems] = useState<ContentItem[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState('all');
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
 
-  const handleApprove = (id: string, contentType: "reported" | "queue") => {
-    if (contentType === "reported") {
-      setReportedContent(reportedContent.filter(item => item.id !== id));
-    } else {
-      setContentQueue(contentQueue.filter(item => item.id !== id));
+  useEffect(() => {
+    const fetchContent = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('content_moderation')
+          .select('*')
+          .order('reported_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        setContentItems(data || []);
+        setFilteredItems(data || []);
+      } catch (error) {
+        console.error('Error fetching content:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load content moderation data",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchContent();
+  }, [toast]);
+
+  useEffect(() => {
+    // Filter content based on search term and active tab
+    let filtered = [...contentItems];
+    
+    // Filter by search term
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(
+        item => 
+          item.title.toLowerCase().includes(term) || 
+          item.content_type.toLowerCase().includes(term) || 
+          item.reason?.toLowerCase().includes(term)
+      );
     }
     
-    toast({
-      title: "Content approved",
-      description: "The content has been approved and published.",
-      duration: 3000,
-    });
-  };
-
-  const handleReject = (id: string, contentType: "reported" | "queue") => {
-    if (contentType === "reported") {
-      setReportedContent(reportedContent.filter(item => item.id !== id));
-    } else {
-      setContentQueue(contentQueue.filter(item => item.id !== id));
+    // Filter by status tab
+    if (activeTab !== 'all') {
+      filtered = filtered.filter(item => item.status === activeTab);
     }
     
-    toast({
-      title: "Content rejected",
-      description: "The content has been rejected and removed.",
-      duration: 3000,
-    });
+    setFilteredItems(filtered);
+  }, [searchTerm, activeTab, contentItems]);
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
   };
 
-  const filteredReportedContent = reportedContent.filter(
-    item => item.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-           item.author.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+  };
 
-  const filteredContentQueue = contentQueue.filter(
-    item => item.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-           item.author.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case "post":
-        return <FileText className="h-4 w-4 text-blue-500" />;
-      case "comment":
-        return <MessageSquare className="h-4 w-4 text-green-500" />;
-      case "job":
-        return <FileText className="h-4 w-4 text-purple-500" />;
-      case "event":
-        return <FileText className="h-4 w-4 text-orange-500" />;
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return <Badge className="bg-amber-500 hover:bg-amber-600 flex items-center gap-1">
+          <Clock className="h-3 w-3" />
+          <span>Pending</span>
+        </Badge>;
+      case 'approved':
+        return <Badge className="bg-green-500 hover:bg-green-600 flex items-center gap-1">
+          <CheckCircle className="h-3 w-3" />
+          <span>Approved</span>
+        </Badge>;
+      case 'rejected':
+        return <Badge className="bg-red-500 hover:bg-red-600 flex items-center gap-1">
+          <Trash2 className="h-3 w-3" />
+          <span>Rejected</span>
+        </Badge>;
+      case 'resolved':
+        return <Badge className="bg-blue-500 hover:bg-blue-600 flex items-center gap-1">
+          <ThumbsUp className="h-3 w-3" />
+          <span>Resolved</span>
+        </Badge>;
       default:
-        return <FileText className="h-4 w-4" />;
+        return <Badge variant="outline">{status}</Badge>;
     }
+  };
+
+  const getContentTypeIcon = (type: string) => {
+    switch (type) {
+      case 'job_post':
+        return <Badge variant="outline" className="flex items-center gap-1">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+          </svg>
+          <span>Job Post</span>
+        </Badge>;
+      case 'profile':
+        return <Badge variant="outline" className="flex items-center gap-1">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/>
+          </svg>
+          <span>Profile</span>
+        </Badge>;
+      case 'forum_post':
+        return <Badge variant="outline" className="flex items-center gap-1">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          <span>Forum Post</span>
+        </Badge>;
+      default:
+        return <Badge variant="outline">{type}</Badge>;
+    }
+  };
+
+  const handleApprove = (id: string) => {
+    // In a real implementation, this would update the content status in Supabase
+    toast({
+      title: "Content Approved",
+      description: "The content has been approved and will remain visible",
+    });
+  };
+
+  const handleReject = (id: string) => {
+    // In a real implementation, this would update the content status in Supabase
+    toast({
+      title: "Content Rejected",
+      description: "The content has been rejected and is now hidden",
+      variant: "destructive",
+    });
   };
 
   return (
     <AdminLayout>
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold gold-gradient-text">Content Moderation</h1>
-            <p className="text-muted-foreground mt-1">Review, approve or reject user-generated content</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search content..."
-                className="w-64 pl-8"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <Button variant="outline" className="gap-1">
-              <Check className="h-4 w-4" /> Approve All
-            </Button>
+            <p className="text-muted-foreground">Review and moderate reported content</p>
           </div>
         </div>
-
-        <Tabs defaultValue="reported">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="reported" className="flex items-center gap-2">
-              <Flag className="h-4 w-4" /> Reported Content
-              <Badge variant="secondary" className="ml-1">{reportedContent.length}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="queue" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" /> Content Queue
-              <Badge variant="secondary" className="ml-1">{contentQueue.length}</Badge>
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="reported" className="mt-4">
-            <Card>
-              <CardHeader className="pb-2">
+        
+        <Card className="border-gold/10 shadow-sm">
+          <CardHeader className="pb-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
                 <CardTitle>Reported Content</CardTitle>
-                <CardDescription>Review content that has been flagged by users</CardDescription>
-              </CardHeader>
-              <CardContent className="p-0">
-                <ScrollArea className="h-[calc(100vh-300px)] w-full">
-                  <div className="divide-y divide-border">
-                    {filteredReportedContent.length > 0 ? (
-                      filteredReportedContent.map((item) => (
-                        <div key={item.id} className="p-4 hover:bg-muted/30">
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-start gap-2">
-                              <div className="mt-0.5">{getTypeIcon(item.type)}</div>
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <h3 className="font-medium">{item.title}</h3>
-                                  <Badge variant="outline" className="text-xs bg-red-500/10 text-red-500 border-red-500/20">
-                                    {item.reportCount} {item.reportCount === 1 ? 'report' : 'reports'}
-                                  </Badge>
-                                </div>
-                                <div className="flex items-center gap-3 mt-1">
-                                  <p className="text-xs text-muted-foreground">by {item.author}</p>
-                                  <p className="text-xs text-muted-foreground">posted {item.date}</p>
-                                  <p className="text-xs text-muted-foreground">reason: {item.reason}</p>
-                                </div>
-                                <p className="text-sm mt-2 text-muted-foreground">{item.excerpt}</p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                                onClick={() => handleReject(item.id, "reported")}
-                              >
-                                <Trash className="h-4 w-4 mr-1" /> Reject
+                <CardDescription>
+                  {!isLoading && 
+                    `${filteredItems.length} ${filteredItems.length === 1 ? 'item' : 'items'} ${
+                      activeTab !== 'all' ? `(${activeTab})` : ''
+                    }`
+                  }
+                </CardDescription>
+              </div>
+              <div className="w-full sm:w-64">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search reports..."
+                    className="pl-9 bg-background/60 w-full"
+                    value={searchTerm}
+                    onChange={handleSearch}
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <Tabs defaultValue="all" className="mt-4" onValueChange={handleTabChange}>
+              <TabsList className="grid grid-cols-4 mb-2">
+                <TabsTrigger value="all" className="data-[state=active]:bg-gold/20 data-[state=active]:text-gold">
+                  All
+                </TabsTrigger>
+                <TabsTrigger value="pending" className="data-[state=active]:bg-gold/20 data-[state=active]:text-gold">
+                  Pending
+                </TabsTrigger>
+                <TabsTrigger value="resolved" className="data-[state=active]:bg-gold/20 data-[state=active]:text-gold">
+                  Resolved
+                </TabsTrigger>
+                <TabsTrigger value="rejected" className="data-[state=active]:bg-gold/20 data-[state=active]:text-gold">
+                  Rejected
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Reason</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Reported</TableHead>
+                    <TableHead className="w-[100px] text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    Array(5).fill(0).map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell><Skeleton className="h-5 w-28" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                        <TableCell><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    filteredItems.length > 0 ? (
+                      filteredItems.map((item) => (
+                        <TableRow key={item.id}>
+                          <TableCell className="font-medium">{item.title}</TableCell>
+                          <TableCell>{getContentTypeIcon(item.content_type)}</TableCell>
+                          <TableCell className="max-w-[200px] truncate">
+                            {item.reason || 'No reason provided'}
+                          </TableCell>
+                          <TableCell>{getStatusBadge(item.status)}</TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {new Date(item.reported_at).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-1">
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <Eye className="h-4 w-4" />
+                                <span className="sr-only">View</span>
                               </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="text-green-500 hover:text-green-600 hover:bg-green-50"
-                                onClick={() => handleApprove(item.id, "reported")}
-                              >
-                                <Check className="h-4 w-4 mr-1" /> Approve
-                              </Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                    <span className="sr-only">Open menu</span>
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-40">
+                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem 
+                                    className="flex gap-2 text-green-500 focus:text-green-500"
+                                    onClick={() => handleApprove(item.id)}
+                                  >
+                                    <CheckCircle className="h-4 w-4" />
+                                    <span>Approve</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem className="flex gap-2">
+                                    <Flag className="h-4 w-4" />
+                                    <span>Flag for Review</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem 
+                                    className="flex gap-2 text-red-500 focus:text-red-500"
+                                    onClick={() => handleReject(item.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                    <span>Reject</span>
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
-                          </div>
-                        </div>
+                          </TableCell>
+                        </TableRow>
                       ))
                     ) : (
-                      <div className="flex flex-col items-center justify-center p-8">
-                        <AlertTriangle className="h-12 w-12 text-muted-foreground mb-2" />
-                        <h3 className="font-medium text-lg">No Reported Content</h3>
-                        <p className="text-muted-foreground text-center mt-1">
-                          {searchTerm ? "No results match your search" : "There are no flagged items requiring review"}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="queue" className="mt-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle>Content Queue</CardTitle>
-                <CardDescription>Review new content waiting for approval</CardDescription>
-              </CardHeader>
-              <CardContent className="p-0">
-                <ScrollArea className="h-[calc(100vh-300px)] w-full">
-                  <div className="divide-y divide-border">
-                    {filteredContentQueue.length > 0 ? (
-                      filteredContentQueue.map((item) => (
-                        <div key={item.id} className="p-4 hover:bg-muted/30">
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-start gap-2">
-                              <div className="mt-0.5">{getTypeIcon(item.type)}</div>
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <h3 className="font-medium">{item.title}</h3>
-                                  <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-500 border-amber-500/20">
-                                    Awaiting Approval
-                                  </Badge>
-                                </div>
-                                <div className="flex items-center gap-3 mt-1">
-                                  <p className="text-xs text-muted-foreground">by {item.author}</p>
-                                  <p className="text-xs text-muted-foreground">submitted {item.date}</p>
-                                </div>
-                                <p className="text-sm mt-2 text-muted-foreground">{item.excerpt}</p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                                onClick={() => handleReject(item.id, "queue")}
-                              >
-                                <X className="h-4 w-4 mr-1" /> Reject
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="text-green-500 hover:text-green-600 hover:bg-green-50"
-                                onClick={() => handleApprove(item.id, "queue")}
-                              >
-                                <Check className="h-4 w-4 mr-1" /> Approve
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="flex flex-col items-center justify-center p-8">
-                        <Check className="h-12 w-12 text-muted-foreground mb-2" />
-                        <h3 className="font-medium text-lg">No Pending Content</h3>
-                        <p className="text-muted-foreground text-center mt-1">
-                          {searchTerm ? "No results match your search" : "All content has been reviewed"}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                          {searchTerm 
+                            ? 'No content found matching your search.' 
+                            : activeTab !== 'all' 
+                              ? `No ${activeTab} content to show.` 
+                              : 'No content to moderate at this time.'}
+                        </TableCell>
+                      </TableRow>
+                    )
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </AdminLayout>
   );

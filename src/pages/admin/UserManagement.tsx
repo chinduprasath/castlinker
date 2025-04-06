@@ -1,472 +1,274 @@
 
-import { useState } from "react";
-import AdminLayout from "@/components/admin/AdminLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Search, Plus, Edit, Trash2, Check, Ban, Shield } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import AdminLayout from '@/components/admin/AdminLayout';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { 
+  ChevronDown, 
+  MoreHorizontal, 
+  Search, 
+  UserPlus, 
+  Shield,
+  Mail,
+  Ban,
+  Check,
+  RefreshCw
+} from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useToast } from '@/components/ui/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
-// Mock user data
-const users = [
-  { 
-    id: 1, 
-    name: "Emma Thompson", 
-    email: "emma@castlinker.com", 
-    role: "Actor", 
-    status: "active", 
-    verified: true, 
-    joined: "Apr 12, 2023", 
-    avatar: "/placeholder.svg", 
-    lastActive: "Today" 
-  },
-  { 
-    id: 2, 
-    name: "James Wilson", 
-    email: "james@castlinker.com", 
-    role: "Director", 
-    status: "active", 
-    verified: true, 
-    joined: "May 3, 2023", 
-    avatar: "/placeholder.svg", 
-    lastActive: "Yesterday" 
-  },
-  { 
-    id: 3, 
-    name: "Sophia Chen", 
-    email: "sophia@castlinker.com", 
-    role: "Producer", 
-    status: "active", 
-    verified: false, 
-    joined: "Jun 18, 2023", 
-    avatar: "/placeholder.svg", 
-    lastActive: "3 days ago" 
-  },
-  { 
-    id: 4, 
-    name: "Michael Rodriguez", 
-    email: "michael@castlinker.com", 
-    role: "Writer", 
-    status: "suspended", 
-    verified: false, 
-    joined: "Feb 22, 2023", 
-    avatar: "/placeholder.svg", 
-    lastActive: "1 month ago" 
-  },
-  { 
-    id: 5, 
-    name: "Olivia Johnson", 
-    email: "olivia@castlinker.com", 
-    role: "Actor", 
-    status: "active", 
-    verified: true, 
-    joined: "Jan 5, 2023", 
-    avatar: "/placeholder.svg", 
-    lastActive: "Today" 
-  },
-  { 
-    id: 6, 
-    name: "David Kim", 
-    email: "david@castlinker.com", 
-    role: "Cinematographer", 
-    status: "pending", 
-    verified: false, 
-    joined: "Jul 10, 2023", 
-    avatar: "/placeholder.svg", 
-    lastActive: "2 days ago" 
-  },
-  { 
-    id: 7, 
-    name: "Talent Studio Inc.", 
-    email: "contact@talentstudio.com", 
-    role: "Agency", 
-    status: "active", 
-    verified: true, 
-    joined: "Nov 15, 2022", 
-    avatar: "/placeholder.svg", 
-    lastActive: "Today" 
-  },
-];
+interface User {
+  id: string;
+  full_name: string;
+  email: string;
+  role: string;
+  avatar_url: string;
+  created_at: string;
+}
 
 const UserManagement = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [userType, setUserType] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<number | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
 
-  // Filtered users based on search and filters
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = 
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      user.email.toLowerCase().includes(searchTerm.toLowerCase());
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        setUsers(data || []);
+        setFilteredUsers(data || []);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load user data",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
     
-    const matchesRole = userType === "all" || 
-      (userType === "individual" && user.role !== "Agency") ||
-      (userType === "agency" && user.role === "Agency") || 
-      (userType === user.role.toLowerCase());
-    
-    const matchesStatus = statusFilter === "all" || statusFilter === user.status;
-    
-    return matchesSearch && matchesRole && matchesStatus;
-  });
+    fetchUsers();
+  }, [toast]);
 
-  const handleDeleteUser = () => {
-    // In a real app, this would call an API to delete the user
-    console.log("Delete user with ID:", selectedUser);
-    setShowDeleteDialog(false);
+  useEffect(() => {
+    // Filter users based on search term
+    if (!searchTerm.trim()) {
+      setFilteredUsers(users);
+      return;
+    }
+    
+    const term = searchTerm.toLowerCase();
+    const filtered = users.filter(
+      user => 
+        user.full_name?.toLowerCase().includes(term) || 
+        user.email?.toLowerCase().includes(term) || 
+        user.role?.toLowerCase().includes(term)
+    );
+    
+    setFilteredUsers(filtered);
+  }, [searchTerm, users]);
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const getRoleBadge = (role: string) => {
+    switch (role?.toLowerCase()) {
+      case 'admin':
+        return <Badge className="bg-red-500 hover:bg-red-600">Admin</Badge>;
+      case 'moderator':
+        return <Badge className="bg-amber-500 hover:bg-amber-600">Moderator</Badge>;
+      case 'content_manager':
+        return <Badge className="bg-blue-500 hover:bg-blue-600">Content Manager</Badge>;
+      case 'recruiter':
+        return <Badge className="bg-green-500 hover:bg-green-600">Recruiter</Badge>;
+      default:
+        return <Badge variant="outline">{role || 'User'}</Badge>;
+    }
+  };
+
+  const getInitials = (name: string) => {
+    if (!name) return '?';
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase();
   };
 
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold gold-gradient-text">User Management</h1>
-          <Button className="bg-gold text-black hover:bg-gold/90">
-            <Plus className="h-5 w-5 mr-2" /> Add New User
-          </Button>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold gold-gradient-text">User Management</h1>
+            <p className="text-muted-foreground">View and manage platform users</p>
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" className="gap-1">
+              <RefreshCw className="h-4 w-4" />
+              <span className="hidden sm:inline">Refresh</span>
+            </Button>
+            <Button size="sm" className="gap-1">
+              <UserPlus className="h-4 w-4" />
+              <span>Add User</span>
+            </Button>
+          </div>
         </div>
-
-        <Card className="bg-card-gradient backdrop-blur-sm border-gold/10">
-          <CardHeader>
-            <CardTitle>Users</CardTitle>
-            <CardDescription>Manage user accounts, permissions, and verification status.</CardDescription>
+        
+        <Card className="border-gold/10 shadow-sm">
+          <CardHeader className="pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <CardTitle>Users</CardTitle>
+              <CardDescription>
+                {!isLoading && 
+                  `${filteredUsers.length} ${filteredUsers.length === 1 ? 'user' : 'users'} ${
+                    searchTerm ? 'found' : 'total'
+                  }`
+                }
+              </CardDescription>
+            </div>
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search users..."
+                className="pl-9 bg-background/60 w-full"
+                value={searchTerm}
+                onChange={handleSearch}
+              />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4 mb-6">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  placeholder="Search users by name or email..."
-                  className="pl-10 bg-background/50 border-gold/10"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              
-              <Select value={userType} onValueChange={setUserType}>
-                <SelectTrigger className="w-[180px] bg-background/50 border-gold/10">
-                  <SelectValue placeholder="Filter by role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Roles</SelectItem>
-                  <SelectItem value="individual">Individuals</SelectItem>
-                  <SelectItem value="agency">Agencies</SelectItem>
-                  <SelectItem value="actor">Actors</SelectItem>
-                  <SelectItem value="director">Directors</SelectItem>
-                  <SelectItem value="producer">Producers</SelectItem>
-                  <SelectItem value="writer">Writers</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[180px] bg-background/50 border-gold/10">
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="suspended">Suspended</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Tabs defaultValue="all-users" className="w-full">
-              <TabsList className="bg-gold/10 mb-6">
-                <TabsTrigger value="all-users">All Users</TabsTrigger>
-                <TabsTrigger value="verified">Verified</TabsTrigger>
-                <TabsTrigger value="pending-verification">Pending Verification</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="all-users" className="mt-0">
-                <div className="rounded-md border border-gold/10 overflow-hidden">
-                  <Table>
-                    <TableHeader className="bg-card">
-                      <TableRow>
-                        <TableHead className="w-[50px]">
-                          <Checkbox />
-                        </TableHead>
-                        <TableHead>User</TableHead>
-                        <TableHead>Role</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Verified</TableHead>
-                        <TableHead>Joined</TableHead>
-                        <TableHead>Last Active</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-12">#</TableHead>
+                    <TableHead>User</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Joined</TableHead>
+                    <TableHead className="w-[60px] text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    Array(5).fill(0).map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell><Skeleton className="h-5 w-5" /></TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Skeleton className="h-9 w-9 rounded-full" />
+                            <Skeleton className="h-4 w-28" />
+                          </div>
+                        </TableCell>
+                        <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                        <TableCell><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredUsers.length > 0 ? (
-                        filteredUsers.map((user) => (
-                          <TableRow key={user.id}>
-                            <TableCell>
-                              <Checkbox />
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center space-x-3">
-                                <Avatar className="h-8 w-8 border border-gold/10">
-                                  <AvatarImage src={user.avatar} alt={user.name} />
-                                  <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                  <p className="font-medium">{user.name}</p>
-                                  <p className="text-xs text-muted-foreground">{user.email}</p>
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell>{user.role}</TableCell>
-                            <TableCell>
-                              <Badge 
-                                variant="outline" 
-                                className={`
-                                  ${user.status === 'active' ? 'bg-green-500/10 text-green-500 border-green-500/30' : ''}
-                                  ${user.status === 'suspended' ? 'bg-red-500/10 text-red-500 border-red-500/30' : ''}
-                                  ${user.status === 'pending' ? 'bg-orange-500/10 text-orange-500 border-orange-500/30' : ''}
-                                `}
-                              >
-                                {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              {user.verified ? (
-                                <Badge variant="outline" className="bg-gold/10 text-gold border-gold/30">
-                                  <Check className="h-3 w-3 mr-1" /> Verified
-                                </Badge>
-                              ) : (
-                                <Badge variant="outline" className="bg-muted/20 text-muted-foreground border-muted/30">
-                                  Unverified
-                                </Badge>
-                              )}
-                            </TableCell>
-                            <TableCell>{user.joined}</TableCell>
-                            <TableCell>{user.lastActive}</TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end space-x-2">
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-gold">
-                                  <Edit className="h-4 w-4" />
+                    ))
+                  ) : (
+                    filteredUsers.length > 0 ? (
+                      filteredUsers.map((user, index) => (
+                        <TableRow key={user.id}>
+                          <TableCell className="font-medium">{index + 1}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-9 w-9 border border-gold/20">
+                                <AvatarImage src={user.avatar_url} alt={user.full_name} />
+                                <AvatarFallback className="bg-gold/10 text-gold">
+                                  {getInitials(user.full_name)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="font-medium">{user.full_name || 'Unnamed User'}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell>{getRoleBadge(user.role)}</TableCell>
+                          <TableCell className="text-muted-foreground">{user.email}</TableCell>
+                          <TableCell>
+                            {new Date(user.created_at).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                  <span className="sr-only">Open menu</span>
                                 </Button>
-                                
-                                {user.status === 'active' ? (
-                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-orange-500">
-                                    <Ban className="h-4 w-4" />
-                                  </Button>
-                                ) : (
-                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-green-500">
-                                    <Check className="h-4 w-4" />
-                                  </Button>
-                                )}
-                                
-                                {!user.verified && (
-                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-gold">
-                                    <Shield className="h-4 w-4" />
-                                  </Button>
-                                )}
-                                
-                                <Dialog open={showDeleteDialog && selectedUser === user.id} onOpenChange={(open) => {
-                                  setShowDeleteDialog(open);
-                                  if (!open) setSelectedUser(null);
-                                }}>
-                                  <DialogTrigger asChild>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="icon" 
-                                      className="h-8 w-8 text-muted-foreground hover:text-red-500"
-                                      onClick={() => setSelectedUser(user.id)}
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </DialogTrigger>
-                                  <DialogContent className="bg-card-gradient backdrop-blur-sm border-gold/10">
-                                    <DialogHeader>
-                                      <DialogTitle>Confirm User Deletion</DialogTitle>
-                                      <DialogDescription>
-                                        Are you sure you want to delete this user? This action cannot be undone.
-                                      </DialogDescription>
-                                    </DialogHeader>
-                                    <div className="flex items-center space-x-3 p-4 bg-red-500/10 rounded-md border border-red-500/20 my-4">
-                                      <Avatar className="h-10 w-10 border border-gold/10">
-                                        <AvatarImage src={user.avatar} alt={user.name} />
-                                        <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                                      </Avatar>
-                                      <div>
-                                        <p className="font-medium">{user.name}</p>
-                                        <p className="text-xs text-muted-foreground">{user.email}</p>
-                                      </div>
-                                    </div>
-                                    <div className="flex justify-end space-x-2">
-                                      <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
-                                        Cancel
-                                      </Button>
-                                      <Button 
-                                        variant="destructive" 
-                                        onClick={handleDeleteUser}
-                                      >
-                                        Delete User
-                                      </Button>
-                                    </div>
-                                  </DialogContent>
-                                </Dialog>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
-                            No users found. Try adjusting your search or filters.
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-40">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem className="flex gap-2">
+                                  <Shield className="h-4 w-4" />
+                                  <span>Change Role</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="flex gap-2">
+                                  <Mail className="h-4 w-4" />
+                                  <span>Contact</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="flex gap-2">
+                                  <Check className="h-4 w-4" />
+                                  <span>Verify</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem className="flex gap-2 text-red-500 focus:text-red-500">
+                                  <Ban className="h-4 w-4" />
+                                  <span>Suspend</span>
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </TableCell>
                         </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="verified" className="mt-0">
-                <div className="rounded-md border border-gold/10 overflow-hidden">
-                  <Table>
-                    <TableHeader className="bg-card">
+                      ))
+                    ) : (
                       <TableRow>
-                        <TableHead className="w-[50px]">
-                          <Checkbox />
-                        </TableHead>
-                        <TableHead>User</TableHead>
-                        <TableHead>Role</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Joined</TableHead>
-                        <TableHead>Last Active</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                        <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                          No users found matching your search.
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredUsers.filter(u => u.verified).map((user) => (
-                        <TableRow key={user.id}>
-                          <TableCell>
-                            <Checkbox />
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center space-x-3">
-                              <Avatar className="h-8 w-8 border border-gold/10">
-                                <AvatarImage src={user.avatar} alt={user.name} />
-                                <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <p className="font-medium">{user.name}</p>
-                                <p className="text-xs text-muted-foreground">{user.email}</p>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>{user.role}</TableCell>
-                          <TableCell>
-                            <Badge 
-                              variant="outline" 
-                              className={`
-                                ${user.status === 'active' ? 'bg-green-500/10 text-green-500 border-green-500/30' : ''}
-                                ${user.status === 'suspended' ? 'bg-red-500/10 text-red-500 border-red-500/30' : ''}
-                                ${user.status === 'pending' ? 'bg-orange-500/10 text-orange-500 border-orange-500/30' : ''}
-                              `}
-                            >
-                              {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{user.joined}</TableCell>
-                          <TableCell>{user.lastActive}</TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end space-x-2">
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-gold">
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-500">
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="pending-verification" className="mt-0">
-                <div className="rounded-md border border-gold/10 overflow-hidden">
-                  <Table>
-                    <TableHeader className="bg-card">
-                      <TableRow>
-                        <TableHead className="w-[50px]">
-                          <Checkbox />
-                        </TableHead>
-                        <TableHead>User</TableHead>
-                        <TableHead>Role</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Joined</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredUsers.filter(u => !u.verified).map((user) => (
-                        <TableRow key={user.id}>
-                          <TableCell>
-                            <Checkbox />
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center space-x-3">
-                              <Avatar className="h-8 w-8 border border-gold/10">
-                                <AvatarImage src={user.avatar} alt={user.name} />
-                                <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <p className="font-medium">{user.name}</p>
-                                <p className="text-xs text-muted-foreground">{user.email}</p>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>{user.role}</TableCell>
-                          <TableCell>
-                            <Badge 
-                              variant="outline" 
-                              className={`
-                                ${user.status === 'active' ? 'bg-green-500/10 text-green-500 border-green-500/30' : ''}
-                                ${user.status === 'suspended' ? 'bg-red-500/10 text-red-500 border-red-500/30' : ''}
-                                ${user.status === 'pending' ? 'bg-orange-500/10 text-orange-500 border-orange-500/30' : ''}
-                              `}
-                            >
-                              {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{user.joined}</TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end space-x-2">
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="bg-green-500/10 text-green-500 border-green-500/30 hover:bg-green-500/20"
-                              >
-                                <Check className="h-4 w-4 mr-1" /> Verify
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="bg-red-500/10 text-red-500 border-red-500/30 hover:bg-red-500/20"
-                              >
-                                <Ban className="h-4 w-4 mr-1" /> Reject
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </TabsContent>
-            </Tabs>
+                    )
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
       </div>
