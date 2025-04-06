@@ -57,7 +57,7 @@ const ContentModeration = () => {
     const fetchContent = async () => {
       try {
         const { data, error } = await supabase
-          .from('content_moderation')
+          .from('content_moderation' as any)
           .select('*')
           .order('reported_at', { ascending: false });
         
@@ -208,13 +208,13 @@ const ContentModeration = () => {
                     placeholder="Search reports..."
                     className="pl-9 bg-background/60 w-full"
                     value={searchTerm}
-                    onChange={handleSearch}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
               </div>
             </div>
             
-            <Tabs defaultValue="all" className="mt-4" onValueChange={handleTabChange}>
+            <Tabs defaultValue="all" className="mt-4" onValueChange={(value) => setActiveTab(value)}>
               <TabsList className="grid grid-cols-4 mb-2">
                 <TabsTrigger value="all" className="data-[state=active]:bg-gold/20 data-[state=active]:text-gold">
                   All

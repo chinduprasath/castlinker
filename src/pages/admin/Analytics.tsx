@@ -58,14 +58,14 @@ const Analytics = () => {
     const fetchAnalytics = async () => {
       try {
         const { data, error } = await supabase
-          .from('admin_analytics')
+          .from('admin_analytics' as any)
           .select('*')
           .order('date', { ascending: true });
         
         if (error) throw error;
         
         // Format dates for display
-        const formattedData = data.map(item => ({
+        const formattedData = data.map((item: any) => ({
           ...item,
           date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
         }));

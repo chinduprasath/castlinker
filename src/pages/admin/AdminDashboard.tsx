@@ -43,7 +43,7 @@ const AdminDashboard = () => {
       try {
         // Fetch dashboard stats
         const { data: statsData, error: statsError } = await supabase
-          .from('admin_dashboard_stats')
+          .from('admin_dashboard_stats' as any)
           .select('*')
           .limit(1)
           .single();
@@ -52,14 +52,14 @@ const AdminDashboard = () => {
         
         // Fetch analytics data
         const { data: analyticsData, error: analyticsError } = await supabase
-          .from('admin_analytics')
+          .from('admin_analytics' as any)
           .select('*')
           .order('date', { ascending: true });
         
         if (analyticsError) throw analyticsError;
         
         // Format analytics data for charts
-        const formattedData = analyticsData.map(item => ({
+        const formattedData = analyticsData.map((item: any) => ({
           ...item,
           date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
         }));
