@@ -15,6 +15,8 @@ interface ConfirmDialogProps {
   onConfirm: () => void;
   title: string;
   description: string;
+  confirmButtonText?: string;
+  confirmButtonVariant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
 }
 
 const ConfirmDialog = ({ 
@@ -22,7 +24,9 @@ const ConfirmDialog = ({
   onClose, 
   onConfirm, 
   title, 
-  description 
+  description,
+  confirmButtonText = "Confirm",
+  confirmButtonVariant = "destructive"
 }: ConfirmDialogProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -38,10 +42,10 @@ const ConfirmDialog = ({
             Cancel
           </Button>
           <Button 
-            variant="destructive" 
+            variant={confirmButtonVariant}
             onClick={onConfirm}
           >
-            Confirm
+            {confirmButtonText}
           </Button>
         </DialogFooter>
       </DialogContent>

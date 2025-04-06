@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { User, UserFilters, UserFormData, AdminUserRole } from "@/types/adminTypes";
 import UserForm from "@/components/admin/UserForm";
 import { formatDistanceToNow } from "date-fns";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 
 const UserManagement = () => {
   // State for users and filters
@@ -48,7 +49,7 @@ const UserManagement = () => {
       
       if (error) throw error;
       
-      setUsers((data || []) as User[]);
+      setUsers(data as unknown as User[] || []);
     } catch (error) {
       console.error("Error fetching users:", error);
       toast.error("Failed to load users. Please try again.");
@@ -90,7 +91,7 @@ const UserManagement = () => {
       if (error) throw error;
       
       if (data) {
-        setUsers(prev => [...prev, ...(data as User[])]);
+        setUsers(prev => [...prev, ...(data as unknown as User[])]);
         setShowAddUserDialog(false);
         toast.success("User created successfully!");
       }
@@ -724,39 +725,13 @@ const UserManagement = () => {
       </Dialog>
 
       {/* Delete User Dialog */}
-      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent className="bg-card-gradient backdrop-blur-sm border-gold/10">
-          <DialogHeader>
-            <DialogTitle>Confirm User Deletion</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this user? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          {currentUser && (
-            <div className="flex items-center space-x-3 p-4 bg-red-500/10 rounded-md border border-red-500/20 my-4">
-              <Avatar className="h-10 w-10 border border-gold/10">
-                <AvatarImage src={currentUser.avatar_url || "/placeholder.svg"} alt={currentUser.name} />
-                <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-medium">{currentUser.name}</p>
-                <p className="text-xs text-muted-foreground">{currentUser.email}</p>
-              </div>
-            </div>
-          )}
-          <div className="flex justify-end space-x-2">
-            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
-              Cancel
-            </Button>
-            <Button 
-              variant="destructive" 
-              onClick={handleDeleteUser}
-            >
-              Delete User
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog 
+        isOpen={showDeleteDialog}
+        onClose={() => setShowDeleteDialog(false)}
+        onConfirm={handleDeleteUser}
+        title="Confirm User Deletion"
+        description="Are you sure you want to delete this user? This action cannot be undone."
+      />
     </AdminLayout>
   );
 };
