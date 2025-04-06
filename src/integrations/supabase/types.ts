@@ -550,6 +550,42 @@ export type Database = {
         }
         Relationships: []
       }
+      users_management: {
+        Row: {
+          avatar_url: string | null
+          email: string
+          id: string
+          joined_date: string
+          last_active: string
+          name: string
+          role: Database["public"]["Enums"]["admin_user_role"]
+          status: string
+          verified: boolean
+        }
+        Insert: {
+          avatar_url?: string | null
+          email: string
+          id?: string
+          joined_date?: string
+          last_active?: string
+          name: string
+          role: Database["public"]["Enums"]["admin_user_role"]
+          status?: string
+          verified?: boolean
+        }
+        Update: {
+          avatar_url?: string | null
+          email?: string
+          id?: string
+          joined_date?: string
+          last_active?: string
+          name?: string
+          role?: Database["public"]["Enums"]["admin_user_role"]
+          status?: string
+          verified?: boolean
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -591,7 +627,13 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      admin_user_role:
+        | "actor"
+        | "director"
+        | "producer"
+        | "writer"
+        | "cinematographer"
+        | "agency"
     }
     CompositeTypes: {
       [_ in never]: never

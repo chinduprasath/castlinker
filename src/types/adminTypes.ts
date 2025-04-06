@@ -26,3 +26,7 @@ export interface UserFilters {
   roleFilter: string;
   statusFilter: string;
 }
+
+// This helps TypeScript understand the Supabase database schema
+export type AdminUserRole = 'actor' | 'director' | 'producer' | 'writer' | 'cinematographer' | 'agency';
+

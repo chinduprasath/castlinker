@@ -14,7 +14,7 @@ import { Search, Plus, Edit, Trash2, Check, Ban, Shield, UserPlus } from "lucide
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { User, UserFilters, UserFormData } from "@/types/adminTypes";
+import { User, UserFilters, UserFormData, AdminUserRole } from "@/types/adminTypes";
 import UserForm from "@/components/admin/UserForm";
 import { formatDistanceToNow } from "date-fns";
 
@@ -45,11 +45,11 @@ const UserManagement = () => {
     try {
       const { data, error } = await supabase
         .from('users_management')
-        .select('*');
+        .select('*') as { data: User[] | null; error: any };
       
       if (error) throw error;
       
-      setUsers(data as User[]);
+      setUsers(data || []);
     } catch (error) {
       console.error("Error fetching users:", error);
       toast.error("Failed to load users. Please try again.");
@@ -81,18 +81,20 @@ const UserManagement = () => {
         .insert([{
           name: userData.name,
           email: userData.email,
-          role: userData.role,
+          role: userData.role as AdminUserRole,
           status: userData.status,
           verified: userData.verified,
           avatar_url: userData.avatar_url || null
         }])
-        .select();
+        .select() as { data: User[] | null; error: any };
       
       if (error) throw error;
       
-      setUsers(prev => [...prev, data[0] as User]);
-      setShowAddUserDialog(false);
-      toast.success("User created successfully!");
+      if (data) {
+        setUsers(prev => [...prev, ...(data as User[])]);
+        setShowAddUserDialog(false);
+        toast.success("User created successfully!");
+      }
     } catch (error) {
       console.error("Error adding user:", error);
       toast.error("Failed to create user. Please try again.");
@@ -108,7 +110,7 @@ const UserManagement = () => {
         .update({
           name: userData.name,
           email: userData.email,
-          role: userData.role,
+          role: userData.role as AdminUserRole,
           status: userData.status,
           verified: userData.verified,
           avatar_url: userData.avatar_url || null
