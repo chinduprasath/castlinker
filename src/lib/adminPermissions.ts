@@ -2,7 +2,7 @@
 // Define the permissions for each role
 const rolePermissions: Record<string, string[]> = {
   super_admin: [
-    'user_view', 'user_edit', 'user_delete',
+    'user_view', 'user_edit', 'user_delete', 'user_create',
     'content_view', 'content_edit', 'content_delete',
     'job_view', 'job_edit', 'job_delete',
     'event_view', 'event_edit', 'event_delete',
@@ -30,6 +30,7 @@ export const permissions = [
   { id: 'user_view', name: 'View Users', description: 'Can view user profiles and information' },
   { id: 'user_edit', name: 'Edit Users', description: 'Can edit user information' },
   { id: 'user_delete', name: 'Delete Users', description: 'Can delete user accounts' },
+  { id: 'user_create', name: 'Create Users', description: 'Can create new user accounts' },
   { id: 'content_view', name: 'View Content', description: 'Can view all content' },
   { id: 'content_edit', name: 'Edit Content', description: 'Can edit content' },
   { id: 'content_delete', name: 'Delete Content', description: 'Can delete content' },
