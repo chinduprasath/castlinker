@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { format } from "date-fns";
 import { 
   Card, 
   CardContent, 
@@ -19,65 +20,93 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Search, Plus, Clock, Users, MapPin } from "lucide-react";
+import { Calendar, Search, Plus, Clock, Users, MapPin, Loader2 } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { useEventsData } from "@/hooks/useEventsData";
+import EventForm from "@/components/admin/EventForm";
+import EventDetail from "@/components/admin/EventDetail";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
+import { Event } from "@/types/eventTypes";
 
 const EventManagement = () => {
-  const [searchQuery, setSearchQuery] = useState("");
-  
-  // Mock event data
-  const events = [
-    {
-      id: "EVT-2024-001",
-      title: "Annual Film Festival",
-      location: "Los Angeles Convention Center",
-      date: "2024-06-15",
-      time: "10:00 AM - 8:00 PM",
-      attendees: 450,
-      status: "upcoming"
-    },
-    {
-      id: "EVT-2024-002",
-      title: "Casting Director Workshop",
-      location: "New York Film Academy",
-      date: "2024-06-22",
-      time: "1:00 PM - 5:00 PM",
-      attendees: 75,
-      status: "upcoming"
-    },
-    {
-      id: "EVT-2024-003",
-      title: "Industry Networking Mixer",
-      location: "The Roosevelt Hotel, Hollywood",
-      date: "2024-05-30",
-      time: "7:00 PM - 10:00 PM",
-      attendees: 120,
-      status: "upcoming"
-    },
-    {
-      id: "EVT-2024-004",
-      title: "Screenwriting Competition",
-      location: "Online",
-      date: "2024-07-01",
-      time: "All Day",
-      attendees: 200,
-      status: "registration"
-    },
-    {
-      id: "EVT-2024-005",
-      title: "Makeup & SFX Workshop",
-      location: "Atlanta Film Studios",
-      date: "2024-05-10",
-      time: "9:00 AM - 4:00 PM",
-      attendees: 45,
-      status: "completed"
-    },
-  ];
+  const {
+    events,
+    isLoading,
+    searchQuery,
+    setSearchQuery,
+    selectedDate,
+    setSelectedDate,
+    addEvent,
+    updateEvent,
+    deleteEvent,
+    fetchEvents,
+    featuredEvent,
+    totalAttendees,
+    upcomingEventsCount,
+  } = useEventsData();
 
-  const filteredEvents = events.filter(event => 
-    event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    event.location.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  const handleCreateEvent = async (data: any) => {
+    setIsSubmitting(true);
+    const success = await addEvent(data);
+    setIsSubmitting(false);
+    
+    if (success) {
+      setIsCreateModalOpen(false);
+    }
+  };
+
+  const handleUpdateEvent = async (data: any) => {
+    if (!currentEvent) return;
+    
+    setIsSubmitting(true);
+    const success = await updateEvent(currentEvent.id, data);
+    setIsSubmitting(false);
+    
+    if (success) {
+      setIsEditModalOpen(false);
+    }
+  };
+
+  const handleDeleteEvent = async () => {
+    if (!currentEvent) return;
+    
+    const success = await deleteEvent(currentEvent.id);
+    
+    if (success) {
+      setIsDeleteDialogOpen(false);
+      setCurrentEvent(null);
+    }
+  };
+
+  const handleEditClick = (event: Event) => {
+    setCurrentEvent(event);
+    setIsEditModalOpen(true);
+  };
+
+  const handleViewClick = (event: Event) => {
+    setCurrentEvent(event);
+    setIsDetailModalOpen(true);
+  };
+
+  const handleDeleteClick = (event: Event) => {
+    setCurrentEvent(event);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const resetDateFilter = () => {
+    setSelectedDate(null);
+  };
 
   const getStatusBadge = (status: string) => {
     switch(status) {
@@ -87,14 +116,21 @@ const EventManagement = () => {
         return <Badge className="bg-green-500 hover:bg-green-600">Registration Open</Badge>;
       case "completed":
         return <Badge className="bg-gray-500 hover:bg-gray-600">Completed</Badge>;
+      case "cancelled":
+        return <Badge className="bg-red-500 hover:bg-red-600">Cancelled</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
   };
 
-  // Featured events for cards
-  const upcomingEvents = events.filter(event => event.status === "upcoming");
-  const featuredEvent = upcomingEvents[0];
+  const formatDate = (dateStr: string) => {
+    try {
+      const date = new Date(dateStr);
+      return format(date, "MMM d, yyyy");
+    } catch (error) {
+      return dateStr;
+    }
+  };
 
   return (
     <AdminLayout>
@@ -127,9 +163,7 @@ const EventManagement = () => {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
-                  <span className="text-3xl font-bold">
-                    {events.filter(event => event.status === "upcoming").length}
-                  </span>
+                  <span className="text-3xl font-bold">{upcomingEventsCount}</span>
                   <div className="p-2 bg-blue-500/10 rounded-full">
                     <Clock className="h-6 w-6 text-blue-500" />
                   </div>
@@ -144,9 +178,7 @@ const EventManagement = () => {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
-                  <span className="text-3xl font-bold">
-                    {events.reduce((acc, event) => acc + event.attendees, 0)}
-                  </span>
+                  <span className="text-3xl font-bold">{totalAttendees}</span>
                   <div className="p-2 bg-violet-500/10 rounded-full">
                     <Users className="h-6 w-6 text-violet-500" />
                   </div>
@@ -172,11 +204,11 @@ const EventManagement = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                       <div className="flex items-center">
                         <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                        <span className="text-sm">{featuredEvent.date}</span>
+                        <span className="text-sm">{formatDate(featuredEvent.event_date)}</span>
                       </div>
                       <div className="flex items-center">
                         <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
-                        <span className="text-sm">{featuredEvent.time}</span>
+                        <span className="text-sm">{featuredEvent.event_time}</span>
                       </div>
                       <div className="flex items-center">
                         <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
@@ -191,8 +223,8 @@ const EventManagement = () => {
                 </div>
               </CardContent>
               <CardFooter className="flex justify-end gap-2">
-                <Button variant="outline">Edit Event</Button>
-                <Button>View Details</Button>
+                <Button variant="outline" onClick={() => handleEditClick(featuredEvent)}>Edit Event</Button>
+                <Button onClick={() => handleViewClick(featuredEvent)}>View Details</Button>
               </CardFooter>
             </Card>
           )}
@@ -211,11 +243,35 @@ const EventManagement = () => {
                   />
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Filter by Date
-                  </Button>
-                  <Button size="sm">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Calendar className="h-4 w-4 mr-2" />
+                        {selectedDate ? format(selectedDate, "MMM d, yyyy") : "Filter by Date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="end">
+                      <CalendarComponent
+                        mode="single"
+                        selected={selectedDate || undefined}
+                        onSelect={setSelectedDate}
+                        initialFocus
+                      />
+                      {selectedDate && (
+                        <div className="p-2 border-t border-border">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="w-full" 
+                            onClick={resetDateFilter}
+                          >
+                            Clear Filter
+                          </Button>
+                        </div>
+                      )}
+                    </PopoverContent>
+                  </Popover>
+                  <Button size="sm" onClick={() => setIsCreateModalOpen(true)}>
                     <Plus className="h-4 w-4 mr-2" />
                     Create Event
                   </Button>
@@ -231,51 +287,133 @@ const EventManagement = () => {
               <CardDescription>Manage industry events and workshops</CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Event ID</TableHead>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Location</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Time</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Attendees</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredEvents.length > 0 ? (
-                    filteredEvents.map((event) => (
-                      <TableRow key={event.id}>
-                        <TableCell className="font-mono text-xs">{event.id}</TableCell>
-                        <TableCell className="font-medium">{event.title}</TableCell>
-                        <TableCell>{event.location}</TableCell>
-                        <TableCell>{event.date}</TableCell>
-                        <TableCell>{event.time}</TableCell>
-                        <TableCell>{getStatusBadge(event.status)}</TableCell>
-                        <TableCell>{event.attendees}</TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button variant="outline" size="sm">Edit</Button>
-                            <Button variant="outline" size="sm">View</Button>
-                          </div>
+              {isLoading ? (
+                <div className="flex justify-center items-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Event ID</TableHead>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Location</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Time</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Attendees</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {events.length > 0 ? (
+                      events.map((event) => (
+                        <TableRow key={event.id}>
+                          <TableCell className="font-mono text-xs">{event.id.substring(0, 8)}...</TableCell>
+                          <TableCell className="font-medium">{event.title}</TableCell>
+                          <TableCell>{event.location}</TableCell>
+                          <TableCell>{formatDate(event.event_date)}</TableCell>
+                          <TableCell>{event.event_time}</TableCell>
+                          <TableCell>{getStatusBadge(event.status)}</TableCell>
+                          <TableCell>{event.attendees}</TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button variant="outline" size="sm" onClick={() => handleEditClick(event)}>Edit</Button>
+                              <Button variant="outline" size="sm" onClick={() => handleViewClick(event)}>View</Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="text-red-500 hover:text-red-700"
+                                onClick={() => handleDeleteClick(event)}
+                              >
+                                Delete
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
+                          {searchQuery || selectedDate
+                            ? "No events found. Try adjusting your search or filter."
+                            : "No events found. Create your first event!"}
                         </TableCell>
                       </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
-                        No events found. Try adjusting your search.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                    )}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </div>
       </div>
+      
+      {/* Create Event Modal */}
+      <Sheet open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+        <SheetContent className="sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>Create New Event</SheetTitle>
+            <SheetDescription>
+              Add details for the new industry event.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="py-4">
+            <EventForm 
+              onSubmit={handleCreateEvent} 
+              isSubmitting={isSubmitting} 
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
+      
+      {/* Edit Event Modal */}
+      <Sheet open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <SheetContent className="sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>Edit Event</SheetTitle>
+            <SheetDescription>
+              Update details for the selected event.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="py-4">
+            {currentEvent && (
+              <EventForm 
+                onSubmit={handleUpdateEvent} 
+                initialData={currentEvent}
+                isSubmitting={isSubmitting} 
+              />
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+      
+      {/* Event Detail Modal */}
+      <Sheet open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
+        <SheetContent className="sm:max-w-lg">
+          {currentEvent && (
+            <EventDetail 
+              event={currentEvent} 
+              onEdit={() => {
+                setIsDetailModalOpen(false);
+                setTimeout(() => handleEditClick(currentEvent), 100);
+              }}
+              onClose={() => setIsDetailModalOpen(false)}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
+      
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={handleDeleteEvent}
+        title="Delete Event"
+        description="Are you sure you want to delete this event? This action cannot be undone."
+        confirmButtonText="Delete Event"
+        confirmButtonVariant="destructive"
+      />
     </AdminLayout>
   );
 };

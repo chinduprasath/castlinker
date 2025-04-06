@@ -222,6 +222,45 @@ export type Database = {
         }
         Relationships: []
       }
+      industry_events_management: {
+        Row: {
+          attendees: number | null
+          created_at: string | null
+          description: string | null
+          event_date: string
+          event_time: string
+          id: string
+          location: string
+          status: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          attendees?: number | null
+          created_at?: string | null
+          description?: string | null
+          event_date: string
+          event_time: string
+          id?: string
+          location: string
+          status?: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          attendees?: number | null
+          created_at?: string | null
+          description?: string | null
+          event_date?: string
+          event_time?: string
+          id?: string
+          location?: string
+          status?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       industry_news: {
         Row: {
           author_avatar: string | null
