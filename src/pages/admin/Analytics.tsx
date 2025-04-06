@@ -1,333 +1,303 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import AdminLayout from '@/components/admin/AdminLayout';
+
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle
-} from '@/components/ui/card';
-import {
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { 
+  BarChart as RechartsBarChart, 
+  LineChart as RechartsLineChart, 
+  PieChart as RechartsPieChart, 
+  AreaChart as RechartsAreaChart,
+  CartesianGrid,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer
-} from 'recharts';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/components/ui/use-toast';
-import { AnalyticsData } from '@/lib/adminTypes';
+  Area,
+  Bar,
+  Pie,
+  Cell
+} from "recharts";
+import {
+  Activity,
+  TrendingUp,
+  Users,
+  Calendar,
+  Film,
+  ArrowUpRight,
+  ArrowDownRight,
+  Download
+} from "lucide-react";
+import AdminLayout from "@/components/admin/AdminLayout";
 
-// Analytics color palette
-const colors = {
-  users: "#8884d8",
-  jobs: "#82ca9d",
-  applications: "#ffc658",
-  revenue: "#ff8042",
-  views: "#0088fe"
-};
+// Sample data for charts
+const userActivityData = [
+  { name: "Jan", value: 2400 },
+  { name: "Feb", value: 1398 },
+  { name: "Mar", value: 9800 },
+  { name: "Apr", value: 3908 },
+  { name: "May", value: 4800 },
+  { name: "Jun", value: 3800 },
+  { name: "Jul", value: 4300 },
+];
+
+const jobsData = [
+  { name: "Jan", posted: 100, applications: 420 },
+  { name: "Feb", posted: 120, applications: 509 },
+  { name: "Mar", posted: 140, applications: 610 },
+  { name: "Apr", posted: 130, applications: 540 },
+  { name: "May", posted: 150, applications: 620 },
+  { name: "Jun", posted: 160, applications: 710 },
+  { name: "Jul", posted: 170, applications: 780 },
+];
+
+const userDemographicsData = [
+  { name: "Actors", value: 400 },
+  { name: "Directors", value: 300 },
+  { name: "Producers", value: 200 },
+  { name: "Crew", value: 278 },
+  { name: "Writers", value: 189 },
+];
+
+const jobCategoriesData = [
+  { name: "Acting", value: 400 },
+  { name: "Directing", value: 300 },
+  { name: "Production", value: 300 },
+  { name: "Writing", value: 200 },
+  { name: "Crew", value: 278 },
+  { name: "Other", value: 189 },
+];
+
+// Colors for pie charts
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A28CFF', '#FF6B6B'];
 
 const Analytics = () => {
-  const [analyticsData, setAnalyticsData] = useState<AnalyticsData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview');
-  const { toast } = useToast();
-
-  useEffect(() => {
-    const fetchAnalytics = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('admin_analytics' as any)
-          .select('*')
-          .order('date', { ascending: true });
-        
-        if (error) throw error;
-        
-        // Format dates for display
-        const formattedData = data.map((item: any) => ({
-          ...item,
-          date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-        }));
-        
-        setAnalyticsData(formattedData as unknown as AnalyticsData[]);
-      } catch (error) {
-        console.error('Error fetching analytics data:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load analytics data",
-          variant: "destructive"
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchAnalytics();
-  }, [toast]);
-
-  const renderChart = () => {
-    switch (activeTab) {
-      case 'users':
-        return (
-          <Card className="border-gold/10 shadow-sm">
-            <CardHeader>
-              <CardTitle>User Registrations Over Time</CardTitle>
-              <CardDescription>Trend of new user registrations</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[350px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={analyticsData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Area type="monotone" dataKey="users_registered" stroke={colors.users} fill={colors.users} fillOpacity={0.3} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      case 'jobs':
-        return (
-          <Card className="border-gold/10 shadow-sm">
-            <CardHeader>
-              <CardTitle>Jobs Posted Over Time</CardTitle>
-              <CardDescription>Trend of new job postings</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[350px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={analyticsData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="jobs_posted" fill={colors.jobs} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      case 'applications':
-        return (
-          <Card className="border-gold/10 shadow-sm">
-            <CardHeader>
-              <CardTitle>Applications Submitted Over Time</CardTitle>
-              <CardDescription>Trend of job applications</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[350px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={analyticsData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Line type="monotone" dataKey="applications_submitted" stroke={colors.applications} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      case 'revenue':
-        return (
-          <Card className="border-gold/10 shadow-sm">
-            <CardHeader>
-              <CardTitle>Revenue Over Time</CardTitle>
-              <CardDescription>Trend of platform revenue</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[350px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={analyticsData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Area type="monotone" dataKey="revenue" stroke={colors.revenue} fill={colors.revenue} fillOpacity={0.3} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      case 'pageviews':
-        return (
-          <Card className="border-gold/10 shadow-sm">
-            <CardHeader>
-              <CardTitle>Page Views Over Time</CardTitle>
-              <CardDescription>Trend of page views</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[350px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={analyticsData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Line type="monotone" dataKey="page_views" stroke={colors.views} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      case 'overview':
-        return (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card className="border-gold/10 shadow-sm">
-              <CardHeader>
-                <CardTitle>User Registrations</CardTitle>
-                <CardDescription>Total user registrations</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[250px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={analyticsData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip />
-                      <Area type="monotone" dataKey="users_registered" stroke={colors.users} fill={colors.users} fillOpacity={0.3} />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-gold/10 shadow-sm">
-              <CardHeader>
-                <CardTitle>Jobs & Applications</CardTitle>
-                <CardDescription>Jobs posted vs applications submitted</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[250px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={analyticsData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="jobs_posted" fill={colors.jobs} />
-                      <Bar dataKey="applications_submitted" fill={colors.applications} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-gold/10 shadow-sm">
-              <CardHeader>
-                <CardTitle>Revenue & Page Views</CardTitle>
-                <CardDescription>Revenue generated vs page views</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[250px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={analyticsData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip />
-                      <Line type="monotone" dataKey="revenue" stroke={colors.revenue} />
-                      <Line type="monotone" dataKey="page_views" stroke={colors.views} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        );
-      default:
-        return <p>Select a category to view analytics.</p>;
-    }
-  };
-
   return (
     <AdminLayout>
       <div className="space-y-6">
         <h1 className="text-3xl font-bold gold-gradient-text">Analytics Dashboard</h1>
-        <p className="text-muted-foreground">Explore platform analytics and trends.</p>
+        <p className="text-muted-foreground">Platform statistics and insights.</p>
 
-        <Card className="border-gold/10 shadow-sm">
-          <CardHeader>
-            <CardTitle>Platform Analytics</CardTitle>
-            <CardDescription>
-              Explore various analytics categories to understand platform performance.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="overview" className="w-full" onValueChange={setActiveTab}>
-              <TabsList className="grid grid-cols-5">
-                <TabsTrigger value="overview" className="data-[state=active]:bg-gold/20 data-[state=active]:text-gold">Overview</TabsTrigger>
-                <TabsTrigger value="users" className="data-[state=active]:bg-gold/20 data-[state=active]:text-gold">Users</TabsTrigger>
-                <TabsTrigger value="jobs" className="data-[state=active]:bg-gold/20 data-[state=active]:text-gold">Jobs</TabsTrigger>
-                <TabsTrigger value="applications" className="data-[state=active]:bg-gold/20 data-[state=active]:text-gold">Applications</TabsTrigger>
-                <TabsTrigger value="revenue" className="data-[state=active]:bg-gold/20 data-[state=active]:text-gold">Revenue</TabsTrigger>
-                {/* <TabsTrigger value="pageviews">Page Views</TabsTrigger> */}
-              </TabsList>
-              <TabsContent value="overview">
-                {isLoading ? (
-                  <p>Loading analytics data...</p>
-                ) : (
-                  renderChart()
-                )}
-              </TabsContent>
-              <TabsContent value="users">
-                {isLoading ? (
-                  <p>Loading user analytics...</p>
-                ) : (
-                  renderChart()
-                )}
-              </TabsContent>
-              <TabsContent value="jobs">
-                {isLoading ? (
-                  <p>Loading job analytics...</p>
-                ) : (
-                  renderChart()
-                )}
-              </TabsContent>
-              <TabsContent value="applications">
-                {isLoading ? (
-                  <p>Loading application analytics...</p>
-                ) : (
-                  renderChart()
-                )}
-              </TabsContent>
-              <TabsContent value="revenue">
-                {isLoading ? (
-                  <p>Loading revenue analytics...</p>
-                ) : (
-                  renderChart()
-                )}
-              </TabsContent>
-              <TabsContent value="pageviews">
-                {isLoading ? (
-                  <p>Loading page view analytics...</p>
-                ) : (
-                  renderChart()
-                )}
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <div className="space-y-1">
+                <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                <CardDescription>Platform registrations</CardDescription>
+              </div>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">12,345</div>
+              <div className="flex items-center pt-1 text-xs text-green-500">
+                <ArrowUpRight className="h-3 w-3 mr-1" />
+                <span>12% from last month</span>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <div className="space-y-1">
+                <CardTitle className="text-sm font-medium">Active Jobs</CardTitle>
+                <CardDescription>Open positions</CardDescription>
+              </div>
+              <Film className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">867</div>
+              <div className="flex items-center pt-1 text-xs text-green-500">
+                <ArrowUpRight className="h-3 w-3 mr-1" />
+                <span>8% from last month</span>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <div className="space-y-1">
+                <CardTitle className="text-sm font-medium">Applications</CardTitle>
+                <CardDescription>Last 30 days</CardDescription>
+              </div>
+              <Activity className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">4,129</div>
+              <div className="flex items-center pt-1 text-xs text-red-500">
+                <ArrowDownRight className="h-3 w-3 mr-1" />
+                <span>3% from last month</span>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <div className="space-y-1">
+                <CardTitle className="text-sm font-medium">Events</CardTitle>
+                <CardDescription>Scheduled this month</CardDescription>
+              </div>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">24</div>
+              <div className="flex items-center pt-1 text-xs text-green-500">
+                <ArrowUpRight className="h-3 w-3 mr-1" />
+                <span>20% from last month</span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Main Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* User Activity Chart */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>User Activity</CardTitle>
+                  <CardDescription>Daily active users over time</CardDescription>
+                </div>
+                <Button variant="outline" size="sm">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px] w-full">
+                <RechartsAreaChart
+                  width={500}
+                  height={300}
+                  data={userActivityData}
+                  margin={{
+                    top: 10,
+                    right: 30,
+                    left: 0,
+                    bottom: 0,
+                  }}
+                >
+                  <defs>
+                    <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#8884d8" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <Tooltip />
+                  <Area type="monotone" dataKey="value" stroke="#8884d8" fillOpacity={1} fill="url(#colorUv)" />
+                </RechartsAreaChart>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Jobs Posted vs Applications Chart */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Job Metrics</CardTitle>
+                  <CardDescription>Jobs posted vs applications received</CardDescription>
+                </div>
+                <Button variant="outline" size="sm">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px] w-full">
+                <RechartsBarChart
+                  width={500}
+                  height={300}
+                  data={jobsData}
+                  margin={{
+                    top: 5,
+                    right: 30,
+                    left: 20,
+                    bottom: 5,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="posted" fill="#8884d8" />
+                  <Bar dataKey="applications" fill="#82ca9d" />
+                </RechartsBarChart>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Secondary Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* User Demographics */}
+          <Card>
+            <CardHeader>
+              <CardTitle>User Demographics</CardTitle>
+              <CardDescription>Breakdown by role type</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px] w-full flex items-center justify-center">
+                <RechartsPieChart width={400} height={300}>
+                  <Pie
+                    data={userDemographicsData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label={({name, percent}) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {userDemographicsData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </RechartsPieChart>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Job Categories */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Job Categories</CardTitle>
+              <CardDescription>Most popular job types</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px] w-full flex items-center justify-center">
+                <RechartsPieChart width={400} height={300}>
+                  <Pie
+                    data={jobCategoriesData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label={({name, percent}) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {jobCategoriesData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </RechartsPieChart>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </AdminLayout>
   );
