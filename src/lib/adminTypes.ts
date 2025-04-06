@@ -1,4 +1,5 @@
 
+
 // Admin Dashboard Types
 export interface DashboardStats {
   id?: string;
@@ -46,3 +47,4 @@ export interface AdminJob {
   is_featured: boolean;
   is_verified: boolean;
 }
+

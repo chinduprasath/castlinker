@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -292,6 +293,7 @@ const Analytics = () => {
             </div>
           </TabsContent>
           
+          {/* Rest of Tabs Content */}
           <TabsContent value="users">
             <Card className="border-gold/10 shadow-sm">
               <CardHeader>
