@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,7 +48,7 @@ const UserManagement = () => {
       
       if (error) throw error;
       
-      setUsers(data as User[] || []);
+      setUsers((data || []) as User[]);
     } catch (error) {
       console.error("Error fetching users:", error);
       toast.error("Failed to load users. Please try again.");

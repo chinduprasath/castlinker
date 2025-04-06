@@ -121,7 +121,7 @@ const JobManagement = () => {
       } else {
         const { error } = await (supabase
           .from('film_jobs')
-          .insert([jobData]) as any);
+          .insert([jobData as any]) as any);
           
         if (error) throw error;
         
