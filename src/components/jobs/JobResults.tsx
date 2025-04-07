@@ -4,7 +4,7 @@ import { ChevronDown, Bookmark, BookmarkCheck, MapPin, Calendar, DollarSign } fr
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Job, JobSort } from "@/hooks/useJobsData";
+import { Job, JobSort } from "@/types/jobTypes";
 import { useAuth } from "@/contexts/AuthContext";
 import JobDetail from "./JobDetail";
 import JobApplicationForm from "./JobApplicationForm";

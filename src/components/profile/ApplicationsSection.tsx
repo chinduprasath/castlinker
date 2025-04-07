@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Calendar, ExternalLink, Clock } from "lucide-react";
 import { useState, useEffect } from "react";
-import { Job } from "@/hooks/useJobsData";
+import { Job } from "@/types/jobTypes";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";

@@ -1,58 +1,16 @@
 
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { 
+  fetchJobs, 
+  fetchSavedJobs,
+  toggleSaveJob as toggleSaveJobService,
+  applyForJob as applyForJobService
+} from '@/services/jobsService';
+import { Job, JobFilters, JobSort } from '@/types/jobTypes';
 
-export type JobType = 'Full-time' | 'Part-time' | 'Contract' | 'Temporary';
-export type LocationType = 'On-site' | 'Remote' | 'Hybrid';
-export type RoleCategory = 'Acting' | 'Directing' | 'Production' | 'Cinematography' | 'Writing' | 'Editing' | 'Sound' | 'VFX' | 'Costume' | 'Makeup' | 'Other';
-export type ExperienceLevel = 'Entry Level' | 'Mid Level' | 'Senior Level' | 'Executive';
-export type PostedWithin = '24h' | '3d' | '7d' | '14d' | '30d' | 'any';
-
-export interface Job {
-  id: string;
-  title: string;
-  company: string;
-  company_logo?: string;
-  description: string;
-  requirements?: string[];
-  responsibilities?: string[];
-  job_type: JobType;
-  role_category: RoleCategory;
-  experience_level?: string;
-  salary_min?: number;
-  salary_max?: number;
-  salary_currency?: string;
-  salary_period?: string;
-  location: string;
-  location_type: LocationType;
-  tags?: string[];
-  application_deadline?: string;
-  application_url?: string;
-  application_email?: string;
-  is_featured?: boolean;
-  is_verified?: boolean;
-  created_at?: string;
-  status?: string;
-}
-
-export interface JobFilters {
-  search?: string;
-  location?: string;
-  jobTypes?: JobType[];
-  roleCategories?: RoleCategory[];
-  experienceLevels?: ExperienceLevel[];
-  postedWithin?: PostedWithin;
-  locationTypes?: LocationType[];
-  salaryMin?: number;
-  salaryMax?: number;
-}
-
-export interface JobSort {
-  field: 'relevance' | 'created_at' | 'salary_max';
-  direction: 'asc' | 'desc';
-}
+export type { Job, JobFilters, JobSort, JobType, LocationType, RoleCategory, ExperienceLevel, PostedWithin } from '@/types/jobTypes';
 
 export const useJobsData = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -65,102 +23,12 @@ export const useJobsData = () => {
   const { user } = useAuth();
 
   // Fetch jobs based on filters and sorting
-  const fetchJobs = async () => {
+  const getJobs = async () => {
     setIsLoading(true);
     try {
-      // Note: Explicitly type this as any to avoid TS errors with the database schema
-      let query = supabase.from('film_jobs').select('*', { count: 'exact' }) as any;
-
-      // Apply filters
-      if (filters.search && filters.search.trim() !== '') {
-        // Use the search_film_jobs function for text search
-        const { data, error, count } = await supabase.rpc('search_film_jobs', {
-          search_term: filters.search
-        }) as any;
-        
-        if (error) throw error;
-        setJobs(data || []);
-        setTotalCount(count || 0);
-        setIsLoading(false);
-        return;
-      }
-
-      if (filters.location && filters.location !== 'Remote') {
-        query = query.ilike('location', `%${filters.location}%`);
-      }
-
-      if (filters.location === 'Remote') {
-        query = query.eq('location_type', 'Remote');
-      }
-
-      if (filters.jobTypes && filters.jobTypes.length > 0) {
-        query = query.in('job_type', filters.jobTypes);
-      }
-
-      if (filters.roleCategories && filters.roleCategories.length > 0) {
-        query = query.in('role_category', filters.roleCategories);
-      }
-
-      if (filters.locationTypes && filters.locationTypes.length > 0) {
-        query = query.in('location_type', filters.locationTypes);
-      }
-
-      if (filters.experienceLevels && filters.experienceLevels.length > 0) {
-        query = query.in('experience_level', filters.experienceLevels);
-      }
-
-      if (filters.salaryMin) {
-        query = query.gte('salary_min', filters.salaryMin);
-      }
-
-      if (filters.salaryMax) {
-        query = query.lte('salary_max', filters.salaryMax);
-      }
-
-      if (filters.postedWithin && filters.postedWithin !== 'any') {
-        const now = new Date();
-        let date = new Date();
-        
-        switch (filters.postedWithin) {
-          case '24h':
-            date.setDate(now.getDate() - 1);
-            break;
-          case '3d':
-            date.setDate(now.getDate() - 3);
-            break;
-          case '7d':
-            date.setDate(now.getDate() - 7);
-            break;
-          case '14d':
-            date.setDate(now.getDate() - 14);
-            break;
-          case '30d':
-            date.setDate(now.getDate() - 30);
-            break;
-        }
-        
-        query = query.gte('created_at', date.toISOString());
-      }
-
-      // Apply sorting
-      if (sort.field === 'created_at') {
-        query = query.order('created_at', { ascending: sort.direction === 'asc' });
-      } else if (sort.field === 'salary_max') {
-        query = query.order('salary_max', { ascending: sort.direction === 'asc', nullsFirst: false });
-      } else {
-        // Default sorting (relevance) - order by featured first, then created_at
-        query = query.order('is_featured', { ascending: false }).order('created_at', { ascending: false });
-      }
-
-      // Only active jobs
-      query = query.eq('status', 'active');
-
-      const { data, error, count } = await query;
-
-      if (error) throw error;
-      
-      setJobs(data || []);
-      setTotalCount(count || 0);
+      const { data, count } = await fetchJobs(filters, sort);
+      setJobs(data);
+      setTotalCount(count);
     } catch (error: any) {
       console.error('Error fetching jobs:', error);
       toast({
@@ -174,7 +42,7 @@ export const useJobsData = () => {
   };
 
   // Fetch user's saved jobs
-  const fetchSavedJobs = async () => {
+  const getSavedJobs = async () => {
     if (!user) {
       // If not logged in, try to get from localStorage
       const storedSavedJobs = localStorage.getItem('savedJobs');
@@ -185,14 +53,7 @@ export const useJobsData = () => {
     }
 
     try {
-      const { data, error } = await (supabase
-        .from('saved_jobs')
-        .select('job_id')
-        .eq('user_id', user.id) as any);
-
-      if (error) throw error;
-      
-      const savedJobIds = data.map((record: any) => record.job_id);
+      const savedJobIds = await fetchSavedJobs(user.id);
       setSavedJobs(savedJobIds);
     } catch (error: any) {
       console.error('Error fetching saved jobs:', error);
@@ -201,58 +62,29 @@ export const useJobsData = () => {
 
   // Toggle saving a job
   const toggleSaveJob = async (jobId: string) => {
-    // If not logged in, save to localStorage
-    if (!user) {
-      const updatedSavedJobs = savedJobs.includes(jobId)
-        ? savedJobs.filter(id => id !== jobId)
-        : [...savedJobs, jobId];
-      
-      setSavedJobs(updatedSavedJobs);
-      localStorage.setItem('savedJobs', JSON.stringify(updatedSavedJobs));
-      
-      toast({
-        title: savedJobs.includes(jobId) ? 'Job removed' : 'Job saved',
-        description: savedJobs.includes(jobId) 
-          ? 'This job has been removed from your saved list' 
-          : 'This job has been saved for later',
-      });
-      
-      return;
-    }
-
     try {
-      if (savedJobs.includes(jobId)) {
-        // Delete from saved jobs
-        const { error } = await (supabase
-          .from('saved_jobs')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('job_id', jobId) as any);
-
-        if (error) throw error;
+      // If not logged in, save to localStorage
+      if (!user) {
+        const updatedSavedJobs = savedJobs.includes(jobId)
+          ? savedJobs.filter(id => id !== jobId)
+          : [...savedJobs, jobId];
         
-        setSavedJobs(savedJobs.filter(id => id !== jobId));
-        toast({
-          title: 'Job removed',
-          description: 'This job has been removed from your saved list',
-        });
-      } else {
-        // Add to saved jobs
-        const { error } = await (supabase
-          .from('saved_jobs')
-          .insert({
-            user_id: user.id,
-            job_id: jobId
-          }) as any);
-
-        if (error) throw error;
+        setSavedJobs(updatedSavedJobs);
+        localStorage.setItem('savedJobs', JSON.stringify(updatedSavedJobs));
         
-        setSavedJobs([...savedJobs, jobId]);
         toast({
-          title: 'Job saved',
-          description: 'This job has been saved to your profile',
+          title: savedJobs.includes(jobId) ? 'Job removed' : 'Job saved',
+          description: savedJobs.includes(jobId) 
+            ? 'This job has been removed from your saved list' 
+            : 'This job has been saved for later',
         });
+        
+        return;
       }
+
+      const { newSavedJobs, message } = await toggleSaveJobService(jobId, user.id, savedJobs);
+      setSavedJobs(newSavedJobs);
+      toast(message);
     } catch (error: any) {
       console.error('Error toggling saved job:', error);
       toast({
@@ -269,40 +101,9 @@ export const useJobsData = () => {
     cover_letter?: string;
     additional_files?: string[];
   }) => {
-    if (!user) {
-      toast({
-        title: 'Authentication required',
-        description: 'Please log in to apply for jobs',
-        variant: 'destructive',
-      });
-      return false;
-    }
-
-    try {
-      const { error } = await (supabase
-        .from('job_applications')
-        .insert({
-          user_id: user.id,
-          job_id: jobId,
-          ...application
-        }) as any);
-
-      if (error) throw error;
-      
-      toast({
-        title: 'Application submitted',
-        description: 'Your application has been submitted successfully',
-      });
-      return true;
-    } catch (error: any) {
-      console.error('Error applying for job:', error);
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to submit application',
-        variant: 'destructive',
-      });
-      return false;
-    }
+    const result = await applyForJobService(jobId, user?.id, application);
+    toast(result.message);
+    return result.success;
   };
 
   // Update filters
@@ -322,12 +123,12 @@ export const useJobsData = () => {
 
   // Effect to fetch jobs when filters or sort changes
   useEffect(() => {
-    fetchJobs();
+    getJobs();
   }, [filters, sort]);
 
   // Effect to fetch saved jobs on mount and when user changes
   useEffect(() => {
-    fetchSavedJobs();
+    getSavedJobs();
   }, [user]);
 
   return {
@@ -342,6 +143,6 @@ export const useJobsData = () => {
     resetFilters,
     toggleSaveJob,
     applyForJob,
-    refetchJobs: fetchJobs,
+    refetchJobs: getJobs,
   };
 };

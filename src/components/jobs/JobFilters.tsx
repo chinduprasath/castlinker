@@ -1,11 +1,10 @@
-
 import { useEffect, useState } from "react";
 import { Filter, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
-import { JobFilters, JobType, RoleCategory, ExperienceLevel } from "@/hooks/useJobsData";
+import { JobFilters, JobType, RoleCategory, ExperienceLevel } from "@/types/jobTypes";
 
 interface JobFiltersProps {
   onFilterChange: (filters: Partial<JobFilters>) => void;
@@ -220,4 +219,3 @@ const JobFiltersComponent = ({ onFilterChange, onResetFilters }: JobFiltersProps
 };
 
 export default JobFiltersComponent;
-

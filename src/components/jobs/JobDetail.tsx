@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Bookmark, Calendar, Clock, DollarSign, ExternalLink, Mail, MapPin, Share2 } from "lucide-react";
-import { Job } from "@/hooks/useJobsData";
+import { Job } from "@/types/jobTypes";
 
 interface JobDetailProps {
   job: Job | null;
