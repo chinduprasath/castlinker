@@ -7,17 +7,18 @@ import Footer from "@/components/Footer";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
   
   useEffect(() => {
     // Add a slight delay to check user login state to avoid flash of landing page
     const timer = setTimeout(() => {
       // Check if user is logged in, redirect to dashboard
-      const userData = localStorage.getItem('user');
-      if (userData) {
+      if (user) {
         navigate('/dashboard');
       } else {
         setLoading(false);
@@ -25,7 +26,7 @@ const Index = () => {
     }, 300);
     
     return () => clearTimeout(timer);
-  }, [navigate]);
+  }, [navigate, user]);
 
   // Show a temporary loading state while checking user login
   if (loading) {
