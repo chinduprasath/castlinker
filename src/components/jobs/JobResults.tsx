@@ -1,13 +1,14 @@
 
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { ChevronDown, Bookmark, BookmarkCheck, MapPin, Calendar, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Bookmark, Clock, ExternalLink, MapPin, Star, DollarSign, Calendar } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Job, JobSort } from "@/hooks/useJobsData";
+import { Job } from "@/hooks/useJobsData";
+import { useAuth } from "@/contexts/AuthContext";
 import JobDetail from "./JobDetail";
 import JobApplicationForm from "./JobApplicationForm";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface JobResultsProps {
   jobs: Job[];
@@ -15,79 +16,27 @@ interface JobResultsProps {
   totalCount: number;
   savedJobs: string[];
   onSaveJob: (jobId: string) => void;
-  onApplyJob: (jobId: string, application: any) => Promise<boolean>;
-  onSort: (sort: JobSort) => void;
+  onApplyJob: (jobId: string, data: any) => void;
+  onSort: (sort: string) => void;
 }
 
-const JobResults = ({ 
-  jobs, 
-  isLoading, 
-  totalCount, 
-  savedJobs, 
-  onSaveJob, 
-  onApplyJob, 
-  onSort 
+const JobResults = ({
+  jobs,
+  isLoading,
+  totalCount,
+  savedJobs,
+  onSaveJob,
+  onApplyJob,
+  onSort,
 }: JobResultsProps) => {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const [isApplicationOpen, setIsApplicationOpen] = useState(false);
+  const [isApplyFormOpen, setIsApplyFormOpen] = useState(false);
+  const { user } = useAuth();
   
-  const handleViewDetails = (job: Job) => {
-    setSelectedJob(job);
-    setIsDetailOpen(true);
-  };
-  
-  const handleApply = (job: Job) => {
-    setSelectedJob(job);
-    setIsApplicationOpen(true);
-  };
-  
-  const handleSortChange = (value: string) => {
-    switch (value) {
-      case "relevance":
-        onSort({ field: "relevance", direction: "desc" });
-        break;
-      case "recent":
-        onSort({ field: "created_at", direction: "desc" });
-        break;
-      case "salary":
-        onSort({ field: "salary_max", direction: "desc" });
-        break;
-    }
-  };
-
-  const formatSalary = (job: Job) => {
-    if (!job.salary_min && !job.salary_max) return "Salary not specified";
-    
-    const currency = job.salary_currency || "USD";
-    const period = job.salary_period || "yearly";
-    
-    let formattedPeriod = "";
-    switch (period) {
-      case "hourly": formattedPeriod = "/hour"; break;
-      case "daily": formattedPeriod = "/day"; break;
-      case "weekly": formattedPeriod = "/week"; break;
-      case "monthly": formattedPeriod = "/month"; break;
-      case "yearly": formattedPeriod = "/year"; break;
-      default: formattedPeriod = ""; // for flat rate
-    }
-    
-    if (job.salary_min && job.salary_max) {
-      return `${currency === "USD" ? "$" : ""}${job.salary_min.toLocaleString()} - ${currency === "USD" ? "$" : ""}${job.salary_max.toLocaleString()}${formattedPeriod}`;
-    } else if (job.salary_min) {
-      return `${currency === "USD" ? "$" : ""}${job.salary_min.toLocaleString()}${formattedPeriod}+`;
-    } else if (job.salary_max) {
-      return `Up to ${currency === "USD" ? "$" : ""}${job.salary_max.toLocaleString()}${formattedPeriod}`;
-    }
-    
-    return "Salary not specified";
-  };
-
   const formatDate = (dateString?: string) => {
-    if (!dateString) return "";
-    
-    const now = new Date();
+    if (!dateString) return "N/A";
     const date = new Date(dateString);
+    const now = new Date();
     const diffTime = Math.abs(now.getTime() - date.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
@@ -101,196 +50,208 @@ const JobResults = ({
       const weeks = Math.floor(diffDays / 7);
       return `${weeks} ${weeks === 1 ? 'week' : 'weeks'} ago`;
     } else {
-      const months = Math.floor(diffDays / 30);
-      return `${months} ${months === 1 ? 'month' : 'months'} ago`;
+      return date.toLocaleDateString();
+    }
+  };
+  
+  const handleJobClick = (job: Job) => {
+    setSelectedJob(job);
+  };
+  
+  const handleApplyClick = (job: Job) => {
+    setSelectedJob(job);
+    setIsApplyFormOpen(true);
+  };
+  
+  const handleSubmitApplication = (data: any) => {
+    if (selectedJob) {
+      onApplyJob(selectedJob.id, data);
+      setIsApplyFormOpen(false);
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin h-8 w-8 border-4 border-gold border-t-transparent rounded-full"></div>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
-        <div>
-          <h2 className="text-xl font-bold">{totalCount} Jobs Found</h2>
-          <p className="text-sm text-foreground/60">Showing available opportunities</p>
+    <>
+      <div className="space-y-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <h3 className="text-lg font-medium">
+            {totalCount} {totalCount === 1 ? 'Job' : 'Jobs'} Found
+            <span className="text-sm font-normal text-muted-foreground ml-2">Showing available opportunities</span>
+          </h3>
+          
+          <div className="flex items-center gap-2">
+            <span className="text-sm mr-2">Sort by:</span>
+            <select
+              className="bg-background border border-input rounded-md px-3 py-1 text-sm shadow-sm focus:border-gold focus:outline-none"
+              onChange={(e) => onSort(e.target.value)}
+              defaultValue="relevance"
+            >
+              <option value="relevance">Most Relevant</option>
+              <option value="date">Most Recent</option>
+              <option value="salary">Highest Pay</option>
+            </select>
+          </div>
         </div>
         
-        <Tabs defaultValue="relevance" className="w-full sm:w-auto mt-4 sm:mt-0" onValueChange={handleSortChange}>
-          <TabsList className="bg-cinematic-dark/50 border border-gold/10">
-            <TabsTrigger value="relevance">Most Relevant</TabsTrigger>
-            <TabsTrigger value="recent">Most Recent</TabsTrigger>
-            <TabsTrigger value="salary">Highest Pay</TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
-      
-      {jobs.length === 0 ? (
-        <Card className="bg-card-gradient border-gold/10 p-8 text-center">
-          <div className="space-y-3">
-            <h3 className="text-xl font-medium">No jobs found</h3>
-            <p className="text-foreground/70">Try adjusting your search filters to find more opportunities</p>
+        {isLoading ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map((_, i) => (
+              <Card key={i} className="border-border/40 overflow-hidden">
+                <CardContent className="p-0">
+                  <div className="p-4 space-y-3">
+                    <Skeleton className="h-8 w-3/4" />
+                    <Skeleton className="h-4 w-1/3" />
+                    <div className="flex flex-wrap gap-3">
+                      <Skeleton className="h-6 w-20" />
+                      <Skeleton className="h-6 w-24" />
+                      <Skeleton className="h-6 w-16" />
+                    </div>
+                    <Skeleton className="h-16 w-full" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {jobs.map((job) => (
-            <Card key={job.id} className={`bg-card-gradient overflow-hidden transition-all hover:border-gold/30 ${job.is_featured ? 'border-gold/20' : 'border-gold/10'}`}>
-              {job.is_featured && (
-                <div className="bg-gold/20 text-gold text-xs py-1 px-4 text-center">
-                  Featured Opportunity
-                </div>
-              )}
-              <CardContent className="p-6">
-                <div className="flex flex-col lg:flex-row lg:items-start gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-xl font-bold">{job.title}</h3>
-                          {job.is_verified && (
-                            <Badge className="bg-blue-500/80 hover:bg-blue-500 text-white border-none">
-                              Verified
-                            </Badge>
+        ) : jobs.length === 0 ? (
+          <Card className="border-border/40 bg-background">
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <h3 className="text-xl font-medium mb-2">No jobs found</h3>
+              <p className="text-muted-foreground text-center max-w-md">
+                No jobs match your current search criteria. Try adjusting your filters or search terms.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {jobs.map((job) => {
+              const isSaved = savedJobs.includes(job.id);
+              const isFeatured = job.is_featured;
+              
+              return (
+                <Card 
+                  key={job.id} 
+                  className={`border-border/40 overflow-hidden transition-all hover:shadow-md hover:border-gold/20 cursor-pointer ${
+                    isFeatured ? 'border-l-4 border-l-gold' : ''
+                  }`}
+                  onClick={() => handleJobClick(job)}
+                >
+                  <CardContent className="p-0">
+                    {isFeatured && (
+                      <div className="bg-gold/10 py-1 px-4">
+                        <span className="text-gold text-xs font-medium">Featured Opportunity</span>
+                      </div>
+                    )}
+                    <div className="p-4 space-y-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-bold text-xl">{job.title}</h3>
+                          <p className="text-muted-foreground">{job.company}</p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="rounded-full hover:text-gold"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSaveJob(job.id);
+                          }}
+                        >
+                          {isSaved ? (
+                            <BookmarkCheck className="h-5 w-5 text-gold" />
+                          ) : (
+                            <Bookmark className="h-5 w-5" />
                           )}
-                        </div>
-                        
-                        <div className="flex items-center gap-1 mt-1">
-                          <span className="text-foreground/70">{job.company}</span>
-                        </div>
-                        
-                        <div className="flex flex-wrap gap-y-2 gap-x-4 mt-3 text-sm text-foreground/60">
-                          <div className="flex items-center gap-1">
+                        </Button>
+                      </div>
+                      
+                      <div className="flex flex-wrap gap-3 text-sm">
+                        {job.location && (
+                          <div className="flex items-center gap-1 text-muted-foreground">
                             <MapPin className="h-4 w-4" />
                             <span>{job.location}</span>
-                            <Badge variant="outline" className="ml-1 text-xs bg-cinematic-dark/30 border-gold/10">
-                              {job.location_type}
-                            </Badge>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-4 w-4" />
-                            <span>Posted {formatDate(job.created_at)}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <DollarSign className="h-4 w-4" />
-                            <span>{formatSalary(job)}</span>
-                          </div>
-                        </div>
-                        
-                        <p className="mt-3 text-foreground/80">{job.description}</p>
-                        
-                        {job.requirements && job.requirements.length > 0 && (
-                          <div className="mt-4">
-                            <h4 className="font-medium mb-2">Requirements:</h4>
-                            <ul className="list-disc pl-5 space-y-1 text-foreground/70 text-sm">
-                              {job.requirements.slice(0, 3).map((req, index) => (
-                                <li key={index}>{req}</li>
-                              ))}
-                              {job.requirements.length > 3 && (
-                                <li>
-                                  <Button 
-                                    variant="link" 
-                                    size="sm" 
-                                    className="h-auto p-0 text-gold"
-                                    onClick={() => handleViewDetails(job)}
-                                  >
-                                    View {job.requirements.length - 3} more
-                                  </Button>
-                                </li>
-                              )}
-                            </ul>
+                            {job.remote && <Badge variant="outline" className="ml-1">Remote</Badge>}
                           </div>
                         )}
                         
-                        {job.tags && job.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mt-5">
-                            {job.tags.map((tag) => (
-                              <span 
-                                key={tag} 
-                                className="px-3 py-1 bg-cinematic-dark/70 text-foreground/80 text-xs rounded-full border border-gold/10"
-                              >
-                                {tag}
-                              </span>
-                            ))}
+                        {job.created_at && (
+                          <div className="flex items-center gap-1 text-muted-foreground">
+                            <Calendar className="h-4 w-4" />
+                            <span>Posted {formatDate(job.created_at)}</span>
+                          </div>
+                        )}
+                        
+                        {job.salary && (
+                          <div className="flex items-center gap-1 text-muted-foreground">
+                            <DollarSign className="h-4 w-4" />
+                            <span>{job.salary}</span>
                           </div>
                         )}
                       </div>
                       
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className={`text-foreground/50 hover:text-gold ${savedJobs.includes(job.id) ? 'text-gold' : ''}`}
-                        onClick={() => onSaveJob(job.id)}
-                      >
-                        <Bookmark className={`h-5 w-5 ${savedJobs.includes(job.id) ? 'fill-gold' : ''}`} />
-                      </Button>
+                      <p className="text-sm line-clamp-2">{job.description}</p>
+                      
+                      {job.required_skills && job.required_skills.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {job.required_skills.map((skill, index) => (
+                            <Badge key={index} variant="secondary" className="bg-muted text-foreground">{skill}</Badge>
+                          ))}
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center justify-end gap-2 pt-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="border-gold/30 text-gold hover:bg-gold/5"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleJobClick(job);
+                          }}
+                        >
+                          View Details
+                          <ChevronDown className="ml-1 h-4 w-4" />
+                        </Button>
+                        
+                        {user && (
+                          <Button 
+                            size="sm" 
+                            className="bg-gold hover:bg-gold/90 text-white dark:text-black"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleApplyClick(job);
+                            }}
+                          >
+                            Apply Now
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </div>
-                
-                <div className="flex flex-wrap justify-between items-center mt-6 pt-4 border-t border-gold/10">
-                  {job.application_deadline && (
-                    <p className="text-sm text-foreground/60">
-                      <Calendar className="h-4 w-4 inline-block mr-1" />
-                      Deadline: <span className="font-medium text-foreground/80">
-                        {new Date(job.application_deadline).toLocaleDateString()}
-                      </span>
-                    </p>
-                  )}
-                  
-                  <div className="flex gap-3 mt-4 sm:mt-0">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="border-gold/30 hover:border-gold"
-                      onClick={() => handleViewDetails(job)}
-                    >
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      View Details
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      className="bg-gold hover:bg-gold-dark text-cinematic"
-                      onClick={() => handleApply(job)}
-                    >
-                      Apply Now
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
       
       {/* Job Detail Modal */}
-      {selectedJob && (
-        <JobDetail
-          job={selectedJob}
-          isSaved={savedJobs.includes(selectedJob.id)}
-          onToggleSave={onSaveJob}
-          onApply={() => setIsApplicationOpen(true)}
-          isOpen={isDetailOpen}
-          onClose={() => setIsDetailOpen(false)}
-        />
-      )}
+      <JobDetail
+        job={selectedJob}
+        isOpen={!!selectedJob && !isApplyFormOpen}
+        onClose={() => setSelectedJob(null)}
+        onApply={() => setIsApplyFormOpen(true)}
+        isSaved={selectedJob ? savedJobs.includes(selectedJob.id) : false}
+        onSave={() => selectedJob && onSaveJob(selectedJob.id)}
+      />
       
       {/* Job Application Form */}
-      {selectedJob && (
-        <JobApplicationForm
-          job={selectedJob}
-          isOpen={isApplicationOpen}
-          onClose={() => setIsApplicationOpen(false)}
-          onSubmit={(application) => onApplyJob(selectedJob.id, application)}
-        />
-      )}
-    </div>
+      <JobApplicationForm
+        job={selectedJob}
+        isOpen={isApplyFormOpen}
+        onClose={() => setIsApplyFormOpen(false)}
+        onSubmit={handleSubmitApplication}
+      />
+    </>
   );
 };
 

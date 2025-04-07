@@ -50,7 +50,7 @@ const Jobs = () => {
         
         {user && (
           <Button 
-            className="bg-gold hover:bg-gold/90 text-black"
+            className="bg-gold hover:bg-gold/90 text-white dark:text-black"
             onClick={() => setIsCreateFormOpen(true)}
           >
             <Plus className="mr-2 h-4 w-4" />
