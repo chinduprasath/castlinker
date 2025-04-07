@@ -8,7 +8,7 @@ import { Bookmark, Calendar, Clock, DollarSign, ExternalLink, Mail, MapPin, Shar
 import { Job } from "@/hooks/useJobsData";
 
 interface JobDetailProps {
-  job: Job;
+  job: Job | null;
   isSaved: boolean;
   onToggleSave: (jobId: string) => void;
   onApply: () => void;
@@ -19,6 +19,28 @@ interface JobDetailProps {
 
 const JobDetail = ({ job, isSaved, onToggleSave, onApply, trigger, isOpen, onClose }: JobDetailProps) => {
   const [activeTab, setActiveTab] = useState("details");
+  
+  // Return early if job is null to prevent errors
+  if (!job && isOpen) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Job not found</DialogTitle>
+          </DialogHeader>
+          <p className="text-center py-8">Sorry, the job details could not be loaded.</p>
+          <DialogFooter>
+            <Button onClick={onClose}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+  
+  // If job is null and dialog is not open, don't render anything
+  if (!job) {
+    return null;
+  }
   
   const formatSalary = () => {
     if (!job.salary_min && !job.salary_max) return "Not specified";

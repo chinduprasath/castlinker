@@ -65,9 +65,11 @@ const JobResults = ({
   
   const handleSubmitApplication = async (data: any) => {
     if (selectedJob) {
-      await onApplyJob(selectedJob.id, data);
-      setIsApplyFormOpen(false);
-      return true;
+      const result = await onApplyJob(selectedJob.id, data);
+      if (result) {
+        setIsApplyFormOpen(false);
+      }
+      return result;
     }
     return false;
   };
@@ -275,16 +277,18 @@ const JobResults = ({
         onClose={() => setSelectedJob(null)}
         onApply={() => setIsApplyFormOpen(true)}
         isSaved={selectedJob ? savedJobs.includes(selectedJob.id) : false}
-        onToggleSave={() => selectedJob && onSaveJob(selectedJob.id)}
+        onToggleSave={(jobId) => onSaveJob(jobId)} 
       />
       
       {/* Job Application Form */}
-      <JobApplicationForm
-        job={selectedJob}
-        isOpen={isApplyFormOpen}
-        onClose={() => setIsApplyFormOpen(false)}
-        onSubmit={handleSubmitApplication}
-      />
+      {selectedJob && (
+        <JobApplicationForm
+          job={selectedJob}
+          isOpen={isApplyFormOpen}
+          onClose={() => setIsApplyFormOpen(false)}
+          onSubmit={handleSubmitApplication}
+        />
+      )}
     </>
   );
 };
