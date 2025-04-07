@@ -1,3 +1,4 @@
+
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
 
 @tailwind base;
@@ -143,6 +144,11 @@
   .dark .tab-trigger[data-state=active] {
     @apply bg-background text-foreground;
   }
+  
+  /* Add specific styles for light theme */
+  .light .bg-card-gradient {
+    @apply bg-white;
+  }
 }
 
 .font-montserrat {
@@ -152,3 +158,4 @@
 .font-playfair {
   font-family: 'Playfair Display', serif;
 }
+

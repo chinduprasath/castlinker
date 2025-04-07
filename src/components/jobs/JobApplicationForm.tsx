@@ -34,12 +34,6 @@ type ApplicationValues = z.infer<typeof applicationSchema>;
 
 const JobApplicationForm = ({ job, isOpen, onClose, onSubmit }: JobApplicationFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Return null if job is null
-  if (!job) {
-    return null;
-  }
-  
   const form = useForm<ApplicationValues>({
     resolver: zodResolver(applicationSchema),
     defaultValues: {
@@ -48,6 +42,28 @@ const JobApplicationForm = ({ job, isOpen, onClose, onSubmit }: JobApplicationFo
       additional_info: '',
     },
   });
+  
+  // To fix flickering, don't render anything if not open
+  if (!isOpen) {
+    return null;
+  }
+  
+  // Return null if job is null
+  if (!job) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Job not found</DialogTitle>
+          </DialogHeader>
+          <p className="text-center py-8">Sorry, the job details could not be loaded.</p>
+          <DialogFooter>
+            <Button onClick={onClose}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
   
   const handleSubmit = async (values: ApplicationValues) => {
     setIsSubmitting(true);

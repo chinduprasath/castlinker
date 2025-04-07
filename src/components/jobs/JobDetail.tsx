@@ -1,10 +1,9 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Bookmark, Calendar, Clock, DollarSign, ExternalLink, Mail, MapPin, Share2, Star } from "lucide-react";
+import { Bookmark, Calendar, Clock, DollarSign, ExternalLink, Mail, MapPin, Share2 } from "lucide-react";
 import { Job } from "@/hooks/useJobsData";
 
 interface JobDetailProps {
@@ -20,8 +19,11 @@ interface JobDetailProps {
 const JobDetail = ({ job, isSaved, onToggleSave, onApply, trigger, isOpen, onClose }: JobDetailProps) => {
   const [activeTab, setActiveTab] = useState("details");
   
-  // Return early if job is null to prevent errors
-  if (!job && isOpen) {
+  if (!isOpen) {
+    return null;
+  }
+  
+  if (!job) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="sm:max-w-3xl">
@@ -35,11 +37,6 @@ const JobDetail = ({ job, isSaved, onToggleSave, onApply, trigger, isOpen, onClo
         </DialogContent>
       </Dialog>
     );
-  }
-  
-  // If job is null and dialog is not open, don't render anything
-  if (!job) {
-    return null;
   }
   
   const formatSalary = () => {
@@ -82,7 +79,6 @@ const JobDetail = ({ job, isSaved, onToggleSave, onApply, trigger, isOpen, onClo
         url: window.location.href
       }).catch(err => console.error('Error sharing', err));
     } else {
-      // Fallback - copy to clipboard
       navigator.clipboard.writeText(window.location.href);
       alert("Link copied to clipboard!");
     }
