@@ -1,11 +1,13 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { memo } from "react";
 
-const JobListSkeleton = ({ count = 3 }: { count?: number }) => {
+// Using memo to prevent unnecessary re-renders
+const JobListSkeleton = memo(({ count = 3 }: { count?: number }) => {
   return (
     <div className="space-y-4">
-      {Array(count).fill(0).map((_, i) => (
+      {Array.from({ length: count }).map((_, i) => (
         <Card key={i} className="border-border/40 overflow-hidden">
           <CardContent className="p-0">
             <div className="p-4 space-y-3">
@@ -23,6 +25,8 @@ const JobListSkeleton = ({ count = 3 }: { count?: number }) => {
       ))}
     </div>
   );
-};
+});
+
+JobListSkeleton.displayName = "JobListSkeleton";
 
 export default JobListSkeleton;

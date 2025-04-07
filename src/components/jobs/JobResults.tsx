@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, memo, useCallback } from "react";
 import { Job, JobSort } from "@/types/jobTypes";
 import JobDetail from "./JobDetail";
 import JobApplicationForm from "./JobApplicationForm";
@@ -18,7 +18,7 @@ interface JobResultsProps {
   onSort: (sort: JobSort) => void;
 }
 
-const JobResults = ({
+const JobResults = memo(({
   jobs,
   isLoading,
   totalCount,
@@ -30,16 +30,16 @@ const JobResults = ({
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isApplyFormOpen, setIsApplyFormOpen] = useState(false);
   
-  const handleJobClick = (job: Job) => {
+  const handleJobClick = useCallback((job: Job) => {
     setSelectedJob(job);
-  };
+  }, []);
   
-  const handleApplyClick = (job: Job) => {
+  const handleApplyClick = useCallback((job: Job) => {
     setSelectedJob(job);
     setIsApplyFormOpen(true);
-  };
+  }, []);
   
-  const handleSubmitApplication = async (data: any) => {
+  const handleSubmitApplication = useCallback(async (data: any) => {
     if (selectedJob) {
       const result = await onApplyJob(selectedJob.id, data);
       if (result) {
@@ -48,7 +48,24 @@ const JobResults = ({
       return result;
     }
     return false;
-  };
+  }, [selectedJob, onApplyJob]);
+
+  const handleCloseDetail = useCallback(() => {
+    setSelectedJob(null);
+  }, []);
+
+  const handleCloseApplyForm = useCallback(() => {
+    setIsApplyFormOpen(false);
+  }, []);
+
+  const handleOpenApplyForm = useCallback(() => {
+    setIsApplyFormOpen(true);
+  }, []);
+
+  // Avoid unnecessary calculation on each render
+  const isSaved = useCallback((jobId: string) => {
+    return savedJobs.includes(jobId);
+  }, [savedJobs]);
 
   return (
     <>
@@ -72,7 +89,7 @@ const JobResults = ({
               <JobCard
                 key={job.id}
                 job={job}
-                isSaved={savedJobs.includes(job.id)}
+                isSaved={isSaved(job.id)}
                 onSaveClick={onSaveJob}
                 onViewDetailsClick={handleJobClick}
                 onApplyClick={handleApplyClick}
@@ -86,10 +103,10 @@ const JobResults = ({
       <JobDetail
         job={selectedJob}
         isOpen={!!selectedJob && !isApplyFormOpen}
-        onClose={() => setSelectedJob(null)}
-        onApply={() => setIsApplyFormOpen(true)}
-        isSaved={selectedJob ? savedJobs.includes(selectedJob.id) : false}
-        onToggleSave={(jobId) => onSaveJob(jobId)} 
+        onClose={handleCloseDetail}
+        onApply={handleOpenApplyForm}
+        isSaved={selectedJob ? isSaved(selectedJob.id) : false}
+        onToggleSave={onSaveJob} 
       />
       
       {/* Job Application Form */}
@@ -97,12 +114,14 @@ const JobResults = ({
         <JobApplicationForm
           job={selectedJob}
           isOpen={isApplyFormOpen}
-          onClose={() => setIsApplyFormOpen(false)}
+          onClose={handleCloseApplyForm}
           onSubmit={handleSubmitApplication}
         />
       )}
     </>
   );
-};
+});
+
+JobResults.displayName = "JobResults";
 
 export default JobResults;

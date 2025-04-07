@@ -1,12 +1,13 @@
 
 import { JobSort } from "@/types/jobTypes";
+import { memo } from "react";
 
 interface JobSortSelectProps {
   onSort: (sort: JobSort) => void;
   defaultValue?: string;
 }
 
-const JobSortSelect = ({ onSort, defaultValue = "relevance" }: JobSortSelectProps) => {
+const JobSortSelect = memo(({ onSort, defaultValue = "relevance" }: JobSortSelectProps) => {
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
     let sort: JobSort;
@@ -39,6 +40,8 @@ const JobSortSelect = ({ onSort, defaultValue = "relevance" }: JobSortSelectProp
       </select>
     </div>
   );
-};
+});
+
+JobSortSelect.displayName = "JobSortSelect";
 
 export default JobSortSelect;
