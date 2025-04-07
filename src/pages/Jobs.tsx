@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -15,6 +16,7 @@ const Jobs = () => {
   const { 
     jobs, 
     isLoading, 
+    error,
     totalCount, 
     filters, 
     sort,
@@ -74,11 +76,13 @@ const Jobs = () => {
           <JobResults 
             jobs={jobs}
             isLoading={isLoading}
+            error={error}
             totalCount={totalCount}
             savedJobs={savedJobs}
             onSaveJob={toggleSaveJob}
             onApplyJob={applyForJob}
             onSort={updateSort}
+            refetchJobs={refetchJobs}
           />
         </div>
       </div>

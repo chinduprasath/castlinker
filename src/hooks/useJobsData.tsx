@@ -15,6 +15,7 @@ export type { Job, JobFilters, JobSort, JobType, LocationType, RoleCategory, Exp
 export const useJobsData = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<JobFilters>({});
   const [sort, setSort] = useState<JobSort>({ field: 'relevance', direction: 'desc' });
   const [savedJobs, setSavedJobs] = useState<string[]>([]);
@@ -25,13 +26,29 @@ export const useJobsData = () => {
   // Fetch jobs based on filters and sorting
   const getJobs = useCallback(async () => {
     setIsLoading(true);
+    setError(null);
     try {
-      const { data, count } = await fetchJobs(filters, sort);
-      console.log('Job data fetched:', data.length, 'jobs');
-      setJobs(data);
-      setTotalCount(count);
+      const { data, count, error } = await fetchJobs(filters, sort);
+      
+      if (error) {
+        setError(error.message);
+        console.error('Error fetching jobs:', error);
+        toast({
+          title: 'Error fetching jobs',
+          description: error.message,
+          variant: 'destructive',
+        });
+        // Still set empty array to prevent endless loading state
+        setJobs([]);
+        setTotalCount(0);
+      } else {
+        console.log('Job data fetched:', data.length, 'jobs');
+        setJobs(data);
+        setTotalCount(count);
+      }
     } catch (error: any) {
-      console.error('Error fetching jobs:', error);
+      console.error('Error in getJobs:', error);
+      setError(error.message || 'An unexpected error occurred');
       toast({
         title: 'Error fetching jobs',
         description: error.message || 'An unexpected error occurred',
@@ -127,17 +144,34 @@ export const useJobsData = () => {
 
   // Effect to fetch jobs when filters or sort changes
   useEffect(() => {
-    getJobs();
+    const fetchJobsData = async () => {
+      try {
+        await getJobs();
+      } catch (err) {
+        console.error('Error in fetchJobsData effect:', err);
+      }
+    };
+    
+    fetchJobsData();
   }, [getJobs]);
 
   // Effect to fetch saved jobs on mount and when user changes
   useEffect(() => {
-    getSavedJobs();
+    const fetchSavedJobsData = async () => {
+      try {
+        await getSavedJobs();
+      } catch (err) {
+        console.error('Error in fetchSavedJobsData effect:', err);
+      }
+    };
+    
+    fetchSavedJobsData();
   }, [getSavedJobs]);
 
   return {
     jobs,
     isLoading,
+    error,
     totalCount,
     filters,
     sort,

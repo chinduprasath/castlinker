@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Job, JobFilters } from '@/types/jobTypes';
 
@@ -19,7 +18,7 @@ export const fetchJobs = async (filters: JobFilters, sort: { field: string; dire
       
       if (error) {
         console.error('Search error:', error);
-        throw error;
+        throw new Error(`Search failed: ${error.message}`);
       }
       
       console.log('Search results:', data?.length || 0, 'jobs found');
@@ -97,18 +96,33 @@ export const fetchJobs = async (filters: JobFilters, sort: { field: string; dire
     query = query.eq('status', 'active');
 
     console.log('Executing query for jobs');
-    const { data, error, count } = await query;
+    
+    // Set a reasonable timeout for the query
+    const { data, error, count } = await Promise.race([
+      query,
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Query timed out after 30 seconds')), 30000)
+      )
+    ]) as any;
 
     if (error) {
       console.error('Query error:', error);
-      throw error;
+      throw new Error(`Query failed: ${error.message}`);
     }
     
     console.log('Query results:', data?.length || 0, 'jobs found');
     return { data: data || [], count: count || 0 };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching jobs:', error);
-    throw error;
+    // Return empty data but with error property to handle in the UI
+    return { 
+      data: [], 
+      count: 0, 
+      error: {
+        message: error.message || 'Failed to fetch jobs. Please check your connection and try again.',
+        originalError: error
+      }
+    };
   }
 };
 
