@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import JobDetail from "./JobDetail";
 import JobApplicationForm from "./JobApplicationForm";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatDate, formatSalary } from "./utils/jobFormatters";
 
 interface JobResultsProps {
   jobs: Job[];
@@ -33,27 +34,6 @@ const JobResults = ({
   const [isApplyFormOpen, setIsApplyFormOpen] = useState(false);
   const { user } = useAuth();
   
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return "N/A";
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) {
-      return "Today";
-    } else if (diffDays === 1) {
-      return "Yesterday";
-    } else if (diffDays < 7) {
-      return `${diffDays} days ago`;
-    } else if (diffDays < 30) {
-      const weeks = Math.floor(diffDays / 7);
-      return `${weeks} ${weeks === 1 ? 'week' : 'weeks'} ago`;
-    } else {
-      return date.toLocaleDateString();
-    }
-  };
-  
   const handleJobClick = (job: Job) => {
     setSelectedJob(job);
   };
@@ -72,18 +52,6 @@ const JobResults = ({
       return result;
     }
     return false;
-  };
-
-  // Helper function for formatting salary
-  const formatSalary = (job: Job) => {
-    if (job.salary_min && job.salary_max) {
-      return `$${job.salary_min.toLocaleString()} - $${job.salary_max.toLocaleString()}`;
-    } else if (job.salary_min) {
-      return `$${job.salary_min.toLocaleString()}+`;
-    } else if (job.salary_max) {
-      return `Up to $${job.salary_max.toLocaleString()}`;
-    }
-    return "Not specified";
   };
 
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
