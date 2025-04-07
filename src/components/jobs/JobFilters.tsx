@@ -47,8 +47,8 @@ const JobFiltersComponent = ({ onFilterChange, onResetFilters }: JobFiltersProps
       jobTypes,
       roleCategories,
       experienceLevels,
-      minSalary: payRange[0],
-      maxSalary: payRange[1]
+      salaryMin: payRange[0],
+      salaryMax: payRange[1]
     });
   }, [jobTypes, roleCategories, experienceLevels, payRange, onFilterChange]);
   
@@ -155,9 +155,9 @@ const JobFiltersComponent = ({ onFilterChange, onResetFilters }: JobFiltersProps
           </div>
           <div className="flex items-center space-x-2">
             <Checkbox 
-              id="technical" 
-              checked={roleCategories.includes('Technical')} 
-              onCheckedChange={(checked) => handleRoleCategoryChange(checked, 'Technical')} 
+              id="cinematography" 
+              checked={roleCategories.includes('Cinematography')} 
+              onCheckedChange={(checked) => handleRoleCategoryChange(checked, 'Cinematography')} 
             />
             <label htmlFor="technical" className="text-sm">Technical</label>
           </div>
@@ -220,3 +220,4 @@ const JobFiltersComponent = ({ onFilterChange, onResetFilters }: JobFiltersProps
 };
 
 export default JobFiltersComponent;
+
