@@ -4,7 +4,7 @@ import { ChevronDown, Bookmark, BookmarkCheck, MapPin, Calendar, DollarSign } fr
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Job } from "@/hooks/useJobsData";
+import { Job, JobSort } from "@/hooks/useJobsData";
 import { useAuth } from "@/contexts/AuthContext";
 import JobDetail from "./JobDetail";
 import JobApplicationForm from "./JobApplicationForm";
@@ -16,8 +16,8 @@ interface JobResultsProps {
   totalCount: number;
   savedJobs: string[];
   onSaveJob: (jobId: string) => void;
-  onApplyJob: (jobId: string, data: any) => void;
-  onSort: (sort: string) => void;
+  onApplyJob: (jobId: string, data: any) => Promise<boolean>;
+  onSort: (sort: JobSort) => void;
 }
 
 const JobResults = ({
@@ -63,11 +63,43 @@ const JobResults = ({
     setIsApplyFormOpen(true);
   };
   
-  const handleSubmitApplication = (data: any) => {
+  const handleSubmitApplication = async (data: any) => {
     if (selectedJob) {
-      onApplyJob(selectedJob.id, data);
+      await onApplyJob(selectedJob.id, data);
       setIsApplyFormOpen(false);
+      return true;
     }
+    return false;
+  };
+
+  // Helper function for formatting salary
+  const formatSalary = (job: Job) => {
+    if (job.salary_min && job.salary_max) {
+      return `$${job.salary_min.toLocaleString()} - $${job.salary_max.toLocaleString()}`;
+    } else if (job.salary_min) {
+      return `$${job.salary_min.toLocaleString()}+`;
+    } else if (job.salary_max) {
+      return `Up to $${job.salary_max.toLocaleString()}`;
+    }
+    return "Not specified";
+  };
+
+  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    let sort: JobSort;
+    
+    switch(value) {
+      case "date":
+        sort = { field: "created_at", direction: "desc" };
+        break;
+      case "salary":
+        sort = { field: "salary_max", direction: "desc" };
+        break;
+      default:
+        sort = { field: "relevance", direction: "desc" };
+    }
+    
+    onSort(sort);
   };
 
   return (
@@ -83,7 +115,7 @@ const JobResults = ({
             <span className="text-sm mr-2">Sort by:</span>
             <select
               className="bg-background border border-input rounded-md px-3 py-1 text-sm shadow-sm focus:border-gold focus:outline-none"
-              onChange={(e) => onSort(e.target.value)}
+              onChange={handleSortChange}
               defaultValue="relevance"
             >
               <option value="relevance">Most Relevant</option>
@@ -126,6 +158,7 @@ const JobResults = ({
             {jobs.map((job) => {
               const isSaved = savedJobs.includes(job.id);
               const isFeatured = job.is_featured;
+              const isRemote = job.location_type === 'Remote';
               
               return (
                 <Card 
@@ -169,7 +202,7 @@ const JobResults = ({
                           <div className="flex items-center gap-1 text-muted-foreground">
                             <MapPin className="h-4 w-4" />
                             <span>{job.location}</span>
-                            {job.remote && <Badge variant="outline" className="ml-1">Remote</Badge>}
+                            {isRemote && <Badge variant="outline" className="ml-1">Remote</Badge>}
                           </div>
                         )}
                         
@@ -180,21 +213,22 @@ const JobResults = ({
                           </div>
                         )}
                         
-                        {job.salary && (
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <DollarSign className="h-4 w-4" />
-                            <span>{job.salary}</span>
-                          </div>
-                        )}
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                          <DollarSign className="h-4 w-4" />
+                          <span>{formatSalary(job)}</span>
+                        </div>
                       </div>
                       
                       <p className="text-sm line-clamp-2">{job.description}</p>
                       
-                      {job.required_skills && job.required_skills.length > 0 && (
+                      {job.requirements && job.requirements.length > 0 && (
                         <div className="flex flex-wrap gap-2">
-                          {job.required_skills.map((skill, index) => (
+                          {job.requirements.slice(0, 3).map((skill, index) => (
                             <Badge key={index} variant="secondary" className="bg-muted text-foreground">{skill}</Badge>
                           ))}
+                          {job.requirements.length > 3 && (
+                            <Badge variant="secondary" className="bg-muted text-foreground">+{job.requirements.length - 3} more</Badge>
+                          )}
                         </div>
                       )}
                       
@@ -241,7 +275,7 @@ const JobResults = ({
         onClose={() => setSelectedJob(null)}
         onApply={() => setIsApplyFormOpen(true)}
         isSaved={selectedJob ? savedJobs.includes(selectedJob.id) : false}
-        onSave={() => selectedJob && onSaveJob(selectedJob.id)}
+        onToggleSave={() => selectedJob && onSaveJob(selectedJob.id)}
       />
       
       {/* Job Application Form */}

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
-import { JobFilters } from "@/hooks/useJobsData";
+import { JobFilters, JobType, RoleCategory, ExperienceLevel } from "@/hooks/useJobsData";
 
 interface JobFiltersProps {
   onFilterChange: (filters: Partial<JobFilters>) => void;
@@ -13,12 +13,12 @@ interface JobFiltersProps {
 }
 
 const JobFiltersComponent = ({ onFilterChange, onResetFilters }: JobFiltersProps) => {
-  const [jobTypes, setJobTypes] = useState<string[]>([]);
-  const [roleCategories, setRoleCategories] = useState<string[]>([]);
-  const [experienceLevels, setExperienceLevels] = useState<string[]>([]);
+  const [jobTypes, setJobTypes] = useState<JobType[]>([]);
+  const [roleCategories, setRoleCategories] = useState<RoleCategory[]>([]);
+  const [experienceLevels, setExperienceLevels] = useState<ExperienceLevel[]>([]);
   const [payRange, setPayRange] = useState([0, 200000]);
   
-  const handleJobTypeChange = (checked: boolean | "indeterminate", jobType: string) => {
+  const handleJobTypeChange = (checked: boolean | "indeterminate", jobType: JobType) => {
     setJobTypes(prev => 
       checked 
         ? [...prev, jobType]
@@ -26,7 +26,7 @@ const JobFiltersComponent = ({ onFilterChange, onResetFilters }: JobFiltersProps
     );
   };
   
-  const handleRoleCategoryChange = (checked: boolean | "indeterminate", category: string) => {
+  const handleRoleCategoryChange = (checked: boolean | "indeterminate", category: RoleCategory) => {
     setRoleCategories(prev => 
       checked 
         ? [...prev, category]
@@ -34,7 +34,7 @@ const JobFiltersComponent = ({ onFilterChange, onResetFilters }: JobFiltersProps
     );
   };
   
-  const handleExperienceChange = (checked: boolean | "indeterminate", level: string) => {
+  const handleExperienceChange = (checked: boolean | "indeterminate", level: ExperienceLevel) => {
     setExperienceLevels(prev => 
       checked 
         ? [...prev, level]
@@ -50,7 +50,7 @@ const JobFiltersComponent = ({ onFilterChange, onResetFilters }: JobFiltersProps
       minSalary: payRange[0],
       maxSalary: payRange[1]
     });
-  }, [jobTypes, roleCategories, experienceLevels, payRange]);
+  }, [jobTypes, roleCategories, experienceLevels, payRange, onFilterChange]);
   
   const handleReset = () => {
     setJobTypes([]);

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useJobsData, Job, JobFilters } from "@/hooks/useJobsData";
+import { useJobsData, Job, JobFilters, JobSort } from "@/hooks/useJobsData";
 
 // Import our components
 import JobListingHeader from "@/components/jobs/JobListingHeader";
