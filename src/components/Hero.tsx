@@ -3,8 +3,12 @@ import { motion } from "framer-motion";
 import { ArrowRight, Video, UserCheck, Award } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import DemoVideo from "./DemoVideo";
 
 const Hero = () => {
+  const [isDemoOpen, setIsDemoOpen] = useState(false);
+  
   const fadeIn = {
     hidden: { opacity: 0, y: 20 },
     visible: { 
@@ -61,12 +65,15 @@ const Hero = () => {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
-            <Link to="/demo">
-              <Button variant="outline" size="lg" className="border-gold/30 hover:border-gold">
-                Watch Demo
-                <Video className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
+            <Button 
+              variant="outline" 
+              size="lg" 
+              className="border-gold/30 hover:border-gold"
+              onClick={() => setIsDemoOpen(true)}
+            >
+              Watch Demo
+              <Video className="ml-2 h-4 w-4" />
+            </Button>
           </motion.div>
           
           <motion.div 
@@ -102,6 +109,9 @@ const Hero = () => {
           </motion.div>
         </div>
       </div>
+      
+      {/* Demo Video Modal */}
+      <DemoVideo isOpen={isDemoOpen} onClose={() => setIsDemoOpen(false)} />
     </section>
   );
 };
