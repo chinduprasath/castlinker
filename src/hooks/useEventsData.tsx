@@ -30,6 +30,7 @@ export function useEventsData() {
       
       if (error) throw error;
       
+      // Use type assertion to treat the data as Event[]
       setEvents(data as Event[]);
     } catch (error) {
       console.error("Error fetching events:", error);
