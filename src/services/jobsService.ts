@@ -4,17 +4,25 @@ import { Job, JobFilters } from '@/types/jobTypes';
 
 export const fetchJobs = async (filters: JobFilters, sort: { field: string; direction: string }) => {
   try {
+    console.log('Fetching jobs with filters:', filters, 'and sort:', sort);
+    
     // Note: Explicitly type this as any to avoid TS errors with the database schema
     let query = supabase.from('film_jobs').select('*', { count: 'exact' }) as any;
 
     // Apply filters
     if (filters.search && filters.search.trim() !== '') {
+      console.log('Using search term:', filters.search);
       // Use the search_film_jobs function for text search
       const { data, error, count } = await supabase.rpc('search_film_jobs', {
         search_term: filters.search
       }) as any;
       
-      if (error) throw error;
+      if (error) {
+        console.error('Search error:', error);
+        throw error;
+      }
+      
+      console.log('Search results:', data?.length || 0, 'jobs found');
       return { data: data || [], count: count || 0 };
     }
 
@@ -88,10 +96,15 @@ export const fetchJobs = async (filters: JobFilters, sort: { field: string; dire
     // Only active jobs
     query = query.eq('status', 'active');
 
+    console.log('Executing query for jobs');
     const { data, error, count } = await query;
 
-    if (error) throw error;
+    if (error) {
+      console.error('Query error:', error);
+      throw error;
+    }
     
+    console.log('Query results:', data?.length || 0, 'jobs found');
     return { data: data || [], count: count || 0 };
   } catch (error) {
     console.error('Error fetching jobs:', error);

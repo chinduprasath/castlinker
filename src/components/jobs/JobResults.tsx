@@ -80,7 +80,7 @@ const JobResults = memo(({
         </div>
         
         {isLoading ? (
-          <JobListSkeleton />
+          <JobListSkeleton count={3} />
         ) : jobs.length === 0 ? (
           <NoJobsFound />
         ) : (

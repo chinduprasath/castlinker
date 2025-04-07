@@ -1,6 +1,6 @@
 
 import { JobSort } from "@/types/jobTypes";
-import { memo } from "react";
+import { memo, useCallback } from "react";
 
 interface JobSortSelectProps {
   onSort: (sort: JobSort) => void;
@@ -8,7 +8,7 @@ interface JobSortSelectProps {
 }
 
 const JobSortSelect = memo(({ onSort, defaultValue = "relevance" }: JobSortSelectProps) => {
-  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleSortChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
     let sort: JobSort;
     
@@ -24,7 +24,7 @@ const JobSortSelect = memo(({ onSort, defaultValue = "relevance" }: JobSortSelec
     }
     
     onSort(sort);
-  };
+  }, [onSort]);
 
   return (
     <div className="flex items-center gap-2">

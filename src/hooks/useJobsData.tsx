@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
@@ -23,10 +23,11 @@ export const useJobsData = () => {
   const { user } = useAuth();
 
   // Fetch jobs based on filters and sorting
-  const getJobs = async () => {
+  const getJobs = useCallback(async () => {
     setIsLoading(true);
     try {
       const { data, count } = await fetchJobs(filters, sort);
+      console.log('Job data fetched:', data.length, 'jobs');
       setJobs(data);
       setTotalCount(count);
     } catch (error: any) {
@@ -36,13 +37,16 @@ export const useJobsData = () => {
         description: error.message || 'An unexpected error occurred',
         variant: 'destructive',
       });
+      // Set empty array to prevent endless loading state
+      setJobs([]);
+      setTotalCount(0);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [filters, sort, toast]);
 
   // Fetch user's saved jobs
-  const getSavedJobs = async () => {
+  const getSavedJobs = useCallback(async () => {
     if (!user) {
       // If not logged in, try to get from localStorage
       const storedSavedJobs = localStorage.getItem('savedJobs');
@@ -58,10 +62,10 @@ export const useJobsData = () => {
     } catch (error: any) {
       console.error('Error fetching saved jobs:', error);
     }
-  };
+  }, [user]);
 
   // Toggle saving a job
-  const toggleSaveJob = async (jobId: string) => {
+  const toggleSaveJob = useCallback(async (jobId: string) => {
     try {
       // If not logged in, save to localStorage
       if (!user) {
@@ -93,10 +97,10 @@ export const useJobsData = () => {
         variant: 'destructive',
       });
     }
-  };
+  }, [savedJobs, user, toast]);
 
   // Apply for a job
-  const applyForJob = async (jobId: string, application: {
+  const applyForJob = useCallback(async (jobId: string, application: {
     resume_url?: string;
     cover_letter?: string;
     additional_files?: string[];
@@ -104,32 +108,32 @@ export const useJobsData = () => {
     const result = await applyForJobService(jobId, user?.id, application);
     toast(result.message);
     return result.success;
-  };
+  }, [user, toast]);
 
   // Update filters
-  const updateFilters = (newFilters: Partial<JobFilters>) => {
+  const updateFilters = useCallback((newFilters: Partial<JobFilters>) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
-  };
+  }, []);
 
   // Update sort
-  const updateSort = (newSort: JobSort) => {
+  const updateSort = useCallback((newSort: JobSort) => {
     setSort(newSort);
-  };
+  }, []);
 
   // Reset all filters
-  const resetFilters = () => {
+  const resetFilters = useCallback(() => {
     setFilters({});
-  };
+  }, []);
 
   // Effect to fetch jobs when filters or sort changes
   useEffect(() => {
     getJobs();
-  }, [filters, sort]);
+  }, [getJobs]);
 
   // Effect to fetch saved jobs on mount and when user changes
   useEffect(() => {
     getSavedJobs();
-  }, [user]);
+  }, [getSavedJobs]);
 
   return {
     jobs,
