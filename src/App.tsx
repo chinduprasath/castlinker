@@ -131,103 +131,135 @@ const App = () => {
         />
 
         {/* Protected Routes */}
-        <Route element={<PrivateRoute />}>
-          <Route 
-            path="/dashboard" 
-            element={
-              <AppLayout>
-                <Dashboard />
-              </AppLayout>
-            }
-          />
-          <Route 
-            path="/jobs" 
-            element={
-              <AppLayout>
-                <Jobs />
-              </AppLayout>
-            }
-          />
-          <Route 
-            path="/profile" 
-            element={
-              <AppLayout>
-                <Profile />
-              </AppLayout>
-            }
-          />
-          <Route 
-            path="/settings" 
-            element={
-              <AppLayout>
-                <Settings />
-              </AppLayout>
-            }
-          />
-          <Route 
-            path="/talent-directory" 
-            element={
-              <AppLayout>
-                <TalentDirectory />
-              </AppLayout>
-            }
-          />
-          <Route 
-            path="/industry-hub" 
-            element={
-              <AppLayout>
-                <IndustryHub />
-              </AppLayout>
-            }
-          />
-          <Route 
-            path="/chat" 
-            element={
-              <AppLayout>
-                <Chat />
-              </AppLayout>
-            }
-          />
-          <Route 
-            path="/billing" 
-            element={
-              <AppLayout>
-                <Billing />
-              </AppLayout>
-            }
-          />
-          <Route 
-            path="/notifications" 
-            element={
-              <AppLayout>
-                <Notifications />
-              </AppLayout>
-            }
-          />
-          <Route 
-            path="/help" 
-            element={
-              <AppLayout>
-                <Help />
-              </AppLayout>
-            }
-          />
-        </Route>
+        <Route path="/dashboard" element={
+          <PrivateRoute>
+            <AppLayout>
+              <Dashboard />
+            </AppLayout>
+          </PrivateRoute>
+        } />
+        <Route path="/jobs" element={
+          <PrivateRoute>
+            <AppLayout>
+              <Jobs />
+            </AppLayout>
+          </PrivateRoute>
+        } />
+        <Route path="/profile" element={
+          <PrivateRoute>
+            <AppLayout>
+              <Profile />
+            </AppLayout>
+          </PrivateRoute>
+        } />
+        <Route path="/settings" element={
+          <PrivateRoute>
+            <AppLayout>
+              <Settings />
+            </AppLayout>
+          </PrivateRoute>
+        } />
+        <Route path="/talent-directory" element={
+          <PrivateRoute>
+            <AppLayout>
+              <TalentDirectory />
+            </AppLayout>
+          </PrivateRoute>
+        } />
+        <Route path="/industry-hub" element={
+          <PrivateRoute>
+            <AppLayout>
+              <IndustryHub />
+            </AppLayout>
+          </PrivateRoute>
+        } />
+        <Route path="/chat" element={
+          <PrivateRoute>
+            <AppLayout>
+              <Chat />
+            </AppLayout>
+          </PrivateRoute>
+        } />
+        <Route path="/billing" element={
+          <PrivateRoute>
+            <AppLayout>
+              <Billing />
+            </AppLayout>
+          </PrivateRoute>
+        } />
+        <Route path="/notifications" element={
+          <PrivateRoute>
+            <AppLayout>
+              <Notifications />
+            </AppLayout>
+          </PrivateRoute>
+        } />
+        <Route path="/help" element={
+          <PrivateRoute>
+            <AppLayout>
+              <Help />
+            </AppLayout>
+          </PrivateRoute>
+        } />
 
         {/* Admin Routes */}
         <Route path="/admin/login" element={<AdminLogin />} />
-        <Route element={<AdminRouteGuard />}>
-          <Route element={<AdminLayout />}>
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/users" element={<UserManagement />} />
-            <Route path="/admin/jobs" element={<JobManagement />} />
-            <Route path="/admin/events" element={<EventManagement />} />
-            <Route path="/admin/content" element={<ContentModeration />} />
-            <Route path="/admin/analytics" element={<Analytics />} />
-            <Route path="/admin/notifications" element={<AdminNotifications />} />
-            <Route path="/admin/settings" element={<AdminSettings />} />
-          </Route>
-        </Route>
+        <Route path="/admin" element={
+          <AdminRouteGuard>
+            <AdminLayout>
+              <AdminDashboard />
+            </AdminLayout>
+          </AdminRouteGuard>
+        } />
+        <Route path="/admin/users" element={
+          <AdminRouteGuard>
+            <AdminLayout>
+              <UserManagement />
+            </AdminLayout>
+          </AdminRouteGuard>
+        } />
+        <Route path="/admin/jobs" element={
+          <AdminRouteGuard>
+            <AdminLayout>
+              <JobManagement />
+            </AdminLayout>
+          </AdminRouteGuard>
+        } />
+        <Route path="/admin/events" element={
+          <AdminRouteGuard>
+            <AdminLayout>
+              <EventManagement />
+            </AdminLayout>
+          </AdminRouteGuard>
+        } />
+        <Route path="/admin/content" element={
+          <AdminRouteGuard>
+            <AdminLayout>
+              <ContentModeration />
+            </AdminLayout>
+          </AdminRouteGuard>
+        } />
+        <Route path="/admin/analytics" element={
+          <AdminRouteGuard>
+            <AdminLayout>
+              <Analytics />
+            </AdminLayout>
+          </AdminRouteGuard>
+        } />
+        <Route path="/admin/notifications" element={
+          <AdminRouteGuard>
+            <AdminLayout>
+              <AdminNotifications />
+            </AdminLayout>
+          </AdminRouteGuard>
+        } />
+        <Route path="/admin/settings" element={
+          <AdminRouteGuard>
+            <AdminLayout>
+              <AdminSettings />
+            </AdminLayout>
+          </AdminRouteGuard>
+        } />
 
         {/* 404 Route */}
         <Route path="*" element={<NotFound />} />
