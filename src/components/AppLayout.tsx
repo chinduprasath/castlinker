@@ -55,7 +55,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
         <SidebarProvider defaultOpen={!sidebarCollapsed}>
           <div className="flex min-h-screen w-full">
             <DashboardSidebar onToggle={toggleSidebar} isCollapsed={sidebarCollapsed} />
-            <div className={`flex-1 transition-all duration-300 ease-in-out ${sidebarCollapsed ? 'ml-[-10px]' : 'ml-[10px]'} w-[calc(100%-${sidebarCollapsed ? '70px' : '250px'})]`}>
+            <div className={`flex-1 transition-all duration-300 ease-in-out ${sidebarCollapsed ? 'ml-[30px]' : 'ml-[10px]'} w-[calc(100%-${sidebarCollapsed ? '70px' : '250px'})]`}>
               {showTopBar && <TopBar />}
               <main className="p-2 sm:p-4 overflow-x-hidden">
                 {children}
