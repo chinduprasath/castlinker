@@ -50,7 +50,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
+    <div className={`min-h-screen ${theme === 'light' ? 'bg-gray-50' : 'bg-background'} text-foreground transition-colors duration-300`}>
       {/* Show Navbar on landing page or public pages without user logged in */}
       {(showNavbar || isLandingPage && !user) && <Navbar />}
       

@@ -62,27 +62,27 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   // For this demo, we'll consider emails containing "admin" as admin accounts
   if (!user || !user.email.includes("admin")) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center">
+      <div className={`min-h-screen flex flex-col items-center justify-center ${theme === 'light' ? 'bg-gray-50' : 'bg-background'}`}>
         <Shield className="h-12 w-12 text-red-500 mb-4" />
         <h1 className="text-2xl font-bold mb-2">Access Denied</h1>
-        <p className="text-muted-foreground mb-4">You don't have permission to access the admin panel.</p>
+        <p className={`${theme === 'light' ? 'text-gray-600' : 'text-muted-foreground'} mb-4`}>You don't have permission to access the admin panel.</p>
         <Button onClick={() => navigate("/")}>Return to Home</Button>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className={`min-h-screen ${theme === 'light' ? 'bg-gray-50' : 'bg-background'} text-foreground`}>
       <div className="flex h-screen overflow-hidden">
         {/* Admin Sidebar */}
         <div 
           className={`${
             collapsed ? "w-16" : "w-60"
-          } bg-card h-full border-r border-gold/10 transition-all duration-300 ease-in-out fixed left-0 top-0 z-50`}
+          } ${theme === 'light' ? 'bg-white shadow-md' : 'bg-card'} h-full ${theme === 'light' ? 'border-gray-200' : 'border-gold/10'} border-r transition-all duration-300 ease-in-out fixed left-0 top-0 z-50`}
         >
           <div className="flex flex-col h-full">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gold/10">
+            <div className={`flex items-center justify-between p-4 ${theme === 'light' ? 'border-gray-200' : 'border-gold/10'} border-b`}>
               <div className="flex items-center">
                 {!collapsed && (
                   <span className="text-xl font-bold gold-gradient-text mr-2">CastLinker</span>
@@ -93,25 +93,25 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                 variant="ghost"
                 size="icon"
                 onClick={toggleSidebar}
-                className="text-muted-foreground hover:text-foreground"
+                className={`${theme === 'light' ? 'text-gray-500 hover:text-gray-800' : 'text-muted-foreground hover:text-foreground'}`}
               >
                 {collapsed ? <Menu /> : <X />}
               </Button>
             </div>
 
             {/* Admin Info */}
-            <div className={`p-4 border-b border-gold/10 ${collapsed ? "items-center" : ""}`}>
+            <div className={`p-4 ${theme === 'light' ? 'border-gray-200' : 'border-gold/10'} border-b ${collapsed ? "items-center" : ""}`}>
               <div className="flex items-center">
-                <Avatar className="h-10 w-10 border-2 border-gold/30">
+                <Avatar className={`h-10 w-10 ${theme === 'light' ? 'border-gray-300' : 'border-gold/30'} border-2`}>
                   <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="bg-gold/20 text-gold">
+                  <AvatarFallback className={`${theme === 'light' ? 'bg-amber-100 text-amber-600' : 'bg-gold/20 text-gold'}`}>
                     {user.name.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
                 {!collapsed && (
                   <div className="ml-3">
-                    <p className="text-sm font-medium">{user.name}</p>
-                    <p className="text-xs text-muted-foreground">Admin</p>
+                    <p className={`text-sm font-medium ${theme === 'light' ? 'text-gray-800' : ''}`}>{user.name}</p>
+                    <p className={`text-xs ${theme === 'light' ? 'text-gray-500' : 'text-muted-foreground'}`}>Admin</p>
                   </div>
                 )}
               </div>
@@ -126,7 +126,11 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                     variant="ghost"
                     className={`w-full justify-start ${
                       collapsed ? "px-2" : "px-3"
-                    } hover:bg-gold/10 hover:text-gold mb-1`}
+                    } ${
+                      theme === 'light' 
+                        ? 'hover:bg-amber-50 hover:text-amber-600' 
+                        : 'hover:bg-gold/10 hover:text-gold'
+                    } mb-1`}
                     onClick={() => navigate(item.path)}
                   >
                     <item.icon className={`h-5 w-5 ${!collapsed ? "mr-3" : ""}`} />
@@ -137,10 +141,14 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             </ScrollArea>
 
             {/* Footer */}
-            <div className="p-4 border-t border-gold/10">
+            <div className={`p-4 ${theme === 'light' ? 'border-gray-200' : 'border-gold/10'} border-t`}>
               <Button
                 variant="ghost"
-                className="w-full justify-start hover:bg-red-500/10 hover:text-red-500"
+                className={`w-full justify-start ${
+                  theme === 'light' 
+                    ? 'hover:bg-red-50 hover:text-red-500' 
+                    : 'hover:bg-red-500/10 hover:text-red-500'
+                }`}
                 onClick={handleLogout}
               >
                 <LogOut className={`h-5 w-5 ${!collapsed ? "mr-3" : ""}`} />

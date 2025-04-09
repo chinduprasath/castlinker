@@ -17,13 +17,13 @@ const ThemeToggle = ({ showTooltip = true, className = '' }: ThemeToggleProps) =
       variant="outline" 
       size="icon" 
       onClick={toggleTheme}
-      className={`rounded-xl border-gold/30 shadow-sm hover:bg-gold/10 ${className}`}
+      className={`rounded-xl ${theme === 'light' ? 'border-amber-300 bg-amber-50 hover:bg-amber-100' : 'border-gold/30 hover:bg-gold/10'} shadow-sm ${className}`}
       aria-label="Toggle theme"
     >
       {theme === 'dark' ? (
         <Sun className="h-[1.2rem] w-[1.2rem] text-gold transition-all" />
       ) : (
-        <Moon className="h-[1.2rem] w-[1.2rem] text-gold transition-all" />
+        <Moon className="h-[1.2rem] w-[1.2rem] text-amber-600 transition-all" />
       )}
       <span className="sr-only">Toggle theme</span>
     </Button>
