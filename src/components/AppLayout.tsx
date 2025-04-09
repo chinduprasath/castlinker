@@ -21,7 +21,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   const { theme } = useTheme();
   
   // Public pages (don't need authentication and don't show sidebar)
-  const publicPages = ['/', '/login', '/signup', '/about', '/features', '/pricing', '/contact', '/privacy', '/help'];
+  const publicPages = ['/', '/login', '/signup', '/about', '/features', '/pricing', '/contact', '/privacy', '/help', '/admin/login'];
   
   // Check if current path is an admin path
   const isAdminPage = location.pathname.startsWith('/admin');

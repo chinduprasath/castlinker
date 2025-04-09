@@ -11,7 +11,8 @@ import {
   CreditCard, 
   HelpCircle, 
   ChevronDown,
-  Menu
+  Menu,
+  X
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -27,9 +28,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 const TopBar = () => {
   const { user, logout } = useAuth();
+  const { isAdmin } = useAdminAuth();
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState(3); // Mock notification count
   const [isSearchOpen, setIsSearchOpen] = useState(false); // For mobile view
@@ -161,6 +164,17 @@ const TopBar = () => {
                   Billing
                 </DropdownMenuItem>
               </DropdownMenuGroup>
+              
+              {isAdmin && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate('/admin/dashboard')} className="rounded-lg">
+                    <Shield className="mr-2 h-4 w-4" />
+                    Admin Dashboard
+                  </DropdownMenuItem>
+                </>
+              )}
+              
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => navigate('/privacy')} className="rounded-lg">
                 <Shield className="mr-2 h-4 w-4" />
@@ -182,7 +196,5 @@ const TopBar = () => {
     </div>
   );
 };
-
-import { X } from 'lucide-react';
 
 export default TopBar;

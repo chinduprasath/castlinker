@@ -55,7 +55,7 @@ const AdminLoginForm = () => {
           description: "You've successfully logged in to the admin dashboard.",
           variant: "default",
         });
-        navigate("/admin/dashboard");
+        navigate("/admin/dashboard"); // Ensure consistent redirect to admin dashboard
       } else {
         setError("You don't have admin access privileges.");
         // Logout the user if they're not an admin

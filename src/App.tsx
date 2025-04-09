@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -206,6 +205,13 @@ const App = () => {
 
           {/* Admin Routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin/dashboard" element={
+            <AdminRouteGuard>
+              <AdminLayout>
+                <AdminDashboard />
+              </AdminLayout>
+            </AdminRouteGuard>
+          } />
           <Route path="/admin" element={
             <AdminRouteGuard>
               <AdminLayout>
