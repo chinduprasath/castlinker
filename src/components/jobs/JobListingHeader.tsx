@@ -27,10 +27,10 @@ const JobListingHeader = ({ onSearch }: JobListingHeaderProps) => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-xl bg-card border border-gold/10 p-6">
-        <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
-          <div className="md:col-span-3 relative">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="rounded-xl bg-card border border-gold/10 p-4 sm:p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-7 gap-3 sm:gap-4">
+          <div className="sm:col-span-1 md:col-span-3 relative">
             <Search className="absolute left-3 top-3 h-4 w-4 text-foreground/40" />
             <Input 
               type="text"
@@ -42,7 +42,7 @@ const JobListingHeader = ({ onSearch }: JobListingHeaderProps) => {
             />
           </div>
           
-          <div className="md:col-span-2 relative">
+          <div className="sm:col-span-1 md:col-span-2 relative">
             <MapPin className="absolute left-3 top-3 h-4 w-4 text-foreground/40" />
             <Input 
               type="text"
@@ -54,7 +54,7 @@ const JobListingHeader = ({ onSearch }: JobListingHeaderProps) => {
             />
           </div>
           
-          <div className="md:col-span-2">
+          <div className="sm:col-span-2 md:col-span-2">
             <Button 
               className="w-full bg-gold hover:bg-gold-dark text-cinematic h-10"
               onClick={handleSearch}

@@ -29,7 +29,7 @@ const JobDetail = ({ job, isSaved, onToggleSave, onApply, isOpen, onClose }: Job
   if (!job) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-3xl">
+        <DialogContent className="sm:max-w-3xl max-w-[95vw] p-4 sm:p-6">
           <DialogHeader>
             <h2 className="text-lg font-medium">Job not found</h2>
           </DialogHeader>
@@ -57,7 +57,7 @@ const JobDetail = ({ job, isSaved, onToggleSave, onApply, isOpen, onClose }: Job
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto max-w-[95vw] p-3 sm:p-6">
         <DialogHeader>
           <JobDetailHeader 
             job={job} 
@@ -75,7 +75,7 @@ const JobDetail = ({ job, isSaved, onToggleSave, onApply, isOpen, onClose }: Job
           onApply={onApply} 
         />
         
-        <DialogFooter>
+        <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0 mt-4">
           <JobDetailFooter 
             jobId={job.id} 
             isSaved={isSaved} 

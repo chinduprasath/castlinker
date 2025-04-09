@@ -23,20 +23,25 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   const publicPages = ['/', '/login', '/signup', '/about', '/features', '/pricing', '/contact', '/privacy', '/help'];
   
   // Check if current path is an admin path
-  const isAdminPage = location.pathname.startsWith('/admin');
+  const isAdminPage = location.pathname.startsWith('/admin') && location.pathname !== '/admin/login';
+  const isAdminLoginPage = location.pathname === '/admin/login';
   
   const isPublicPage = publicPages.includes(location.pathname);
-  // Only show the navbar on the landing page and true public pages when not logged in
-  const showNavbar = (location.pathname === '/' || isPublicPage) && !user;
+  // Only show the navbar on true public pages when not logged in
+  const showNavbar = isPublicPage && !user && location.pathname !== '/';
   // Show sidebar when logged in and not on a public page and not on admin pages
-  const showSidebar = user && !isPublicPage && !isAdminPage;
+  const showSidebar = user && !isPublicPage && !isAdminPage && !isAdminLoginPage;
   // Show topbar when user is logged in and not on admin pages
-  const showTopBar = user && !isAdminPage;
+  const showTopBar = user && !isAdminPage && !isAdminLoginPage;
+  // Special case for landing page - show navbar but with different styling
+  const isLandingPage = location.pathname === '/';
 
   // Auto collapse sidebar on mobile
   useEffect(() => {
     if (isMobile) {
       setSidebarCollapsed(true);
+    } else {
+      setSidebarCollapsed(false);
     }
   }, [isMobile]);
 
@@ -44,17 +49,31 @@ const AppLayout = ({ children }: AppLayoutProps) => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
 
+  // Don't render anything for admin pages as they have their own layout
+  if (isAdminPage) {
+    return children;
+  }
+
+  if (isAdminLoginPage) {
+    return children;
+  }
+
   return (
-    <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
-      {showNavbar && <Navbar />}
+    <div className={`min-h-screen ${theme === 'light' ? 'bg-gray-50' : 'bg-background'} text-foreground transition-colors duration-300`}>
+      {/* Show Navbar on landing page or public pages without user logged in */}
+      {(showNavbar || isLandingPage && !user) && <Navbar />}
       
       {showSidebar ? (
         <SidebarProvider defaultOpen={!sidebarCollapsed}>
           <div className="flex min-h-screen w-full">
             <DashboardSidebar onToggle={toggleSidebar} isCollapsed={sidebarCollapsed} />
-            <div className={`flex-1 transition-all duration-300 ease-in-out ${sidebarCollapsed ? 'pl-0 md:pl-0' : 'pl-0 md:pl-[250px]'}`}>
+            <div className={`flex-1 transition-all duration-300 ease-in-out ${
+              sidebarCollapsed 
+                ? 'pl-0 md:pl-[20px] w-[calc(100%-70px)]' 
+                : 'pl-0 md:pl-[260px] w-[calc(100%-250px)]'
+            }`}>
               {showTopBar && <TopBar />}
-              <main className="p-2 sm:p-4 md:p-6 max-w-[2000px] mx-auto">
+              <main className="p-2 sm:p-4 md:p-6 max-w-[2000px] mx-auto overflow-x-hidden">
                 {children}
               </main>
             </div>
@@ -63,9 +82,11 @@ const AppLayout = ({ children }: AppLayoutProps) => {
       ) : (
         <div className="max-w-[2000px] mx-auto">
           {showTopBar && <TopBar />}
-          <main className="p-2 sm:p-4 md:p-6">
-            {children}
-          </main>
+          <div className={`${showNavbar ? "pt-16" : ""}`}>
+            <main className="p-2 sm:p-4 md:p-6">
+              {children}
+            </main>
+          </div>
         </div>
       )}
     </div>

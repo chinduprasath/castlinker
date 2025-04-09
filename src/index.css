@@ -55,7 +55,7 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-montserrat;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -91,15 +91,34 @@
   }
   
   .hero-card {
-    @apply rounded-xl overflow-hidden shadow-lg bg-card-gradient backdrop-blur-sm border border-gold/10;
+    @apply rounded-xl overflow-hidden shadow-lg border border-gold/10;
   }
 
   .role-card {
-    @apply flex flex-col items-center p-6 rounded-xl border border-gold/10 bg-card-gradient hover:border-gold/30 transition-all cursor-pointer;
+    @apply flex flex-col items-center justify-center p-4 sm:p-6 rounded-xl border border-gold/10 hover:border-gold/30 transition-all cursor-pointer h-[120px] sm:h-[160px];
   }
 
   .feature-card {
-    @apply rounded-xl overflow-hidden shadow-lg bg-card-gradient backdrop-blur-sm border border-gold/10 p-6 flex flex-col;
+    @apply rounded-xl overflow-hidden shadow-lg border border-gold/10 p-4 sm:p-6 flex flex-col h-full;
+  }
+  
+  /* Light mode specific styles */
+  .light .hero-card,
+  .light .feature-card,
+  .light .role-card {
+    @apply bg-white shadow-md;
+  }
+  
+  /* Dark mode specific styles */
+  .dark .hero-card,
+  .dark .feature-card,
+  .dark .role-card {
+    @apply bg-card-gradient backdrop-blur-sm;
+  }
+  
+  /* Admin panel light mode styles */
+  .light-mode .bg-card {
+    background-color: white;
   }
   
   .light .job-filters {
@@ -130,14 +149,20 @@
   .light .bg-card-gradient {
     @apply bg-white;
   }
-}
-
-.font-montserrat {
-  font-family: 'Montserrat', sans-serif;
-}
-
-.font-playfair {
-  font-family: 'Playfair Display', serif;
+  
+  /* Fix for admin panel in light mode */
+  .light-mode .bg-card {
+    background-color: white;
+  }
+  
+  /* Fix light theme for cinematic backgrounds */
+  .light .bg-cinematic {
+    background-color: #f5f5f7;
+  }
+  
+  .light .min-h-screen.bg-cinematic {
+    background-color: #f5f5f7;
+  }
 }
 
 /* Custom responsive utilities */
@@ -165,6 +190,15 @@
   .responsive-heading {
     @apply text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl;
   }
+}
+
+/* Font classes */
+.font-montserrat {
+  font-family: 'Montserrat', sans-serif;
+}
+
+.font-playfair {
+  font-family: 'Playfair Display', serif;
 }
 
 /* Custom animations */
@@ -207,6 +241,18 @@
     padding-left: 1rem;
     padding-right: 1rem;
   }
+
+  h1 {
+    @apply text-2xl;
+  }
+  
+  h2 {
+    @apply text-xl;
+  }
+  
+  h3 {
+    @apply text-lg;
+  }
 }
 
 @media (min-width: 641px) and (max-width: 1024px) {
@@ -236,6 +282,22 @@
   }
 }
 
+/* Fix dropdown menus on mobile */
+.dropdown-menu-content {
+  @apply z-50;
+}
+
+/* Ensure text doesn't overflow on small screens */
+.truncate-mobile {
+  @apply truncate;
+}
+
+@media (min-width: 640px) {
+  .truncate-mobile {
+    @apply overflow-visible;
+  }
+}
+
 /* Print styles */
 @media print {
   .no-print {
@@ -254,3 +316,11 @@
   }
 }
 
+/* Dialog and popper styles */
+[data-radix-popper-content-wrapper] {
+  @apply z-50;
+}
+
+[role="dialog"] {
+  @apply z-50;
+}

@@ -9,8 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Users, Calendar, MessageSquare, TrendingUp, AlertCircle, CheckCircle, Bell } from "lucide-react";
+import { useTheme } from "@/contexts/ThemeContext";
 
-// Mock data for charts
 const userGrowthData = [
   { month: 'Jan', users: 120 },
   { month: 'Feb', users: 180 },
@@ -38,7 +38,6 @@ const engagementData = [
 
 const COLORS = ['#CFB53B', '#D4AF37', '#F5D76E', '#FFDF00', '#DAA520'];
 
-// Mock data for recent activities
 const recentActivities = [
   { id: 1, type: 'user', action: 'joined', user: { name: 'Michael Chen', role: 'Actor', avatar: '/placeholder.svg' }, time: '5 min ago' },
   { id: 2, type: 'content', action: 'reported', user: { name: 'Sarah Williams', role: 'Director', avatar: '/placeholder.svg' }, item: 'Inappropriate comment', time: '10 min ago' },
@@ -47,7 +46,6 @@ const recentActivities = [
   { id: 5, type: 'event', action: 'created', user: { name: 'Film Festival Org', role: 'Organization', avatar: '/placeholder.svg' }, item: 'Annual Film Festival', time: '2 hours ago' },
 ];
 
-// Mock data for pending approvals
 const pendingApprovals = [
   { id: 1, type: 'Job', title: 'Stunt Performer for Action Movie', company: 'Action Films Inc.', submitted: '2 days ago', status: 'pending' },
   { id: 2, type: 'Content', title: 'Industry Insights Article', author: 'Film Academy', submitted: '1 day ago', status: 'pending' },
@@ -57,75 +55,89 @@ const pendingApprovals = [
 
 const AdminDashboard = () => {
   const [timeRange, setTimeRange] = useState<string>("7d");
+  const { theme } = useTheme();
+
+  const getCardStyle = () => {
+    return theme === 'light' 
+      ? 'bg-white shadow-sm border border-gray-200' 
+      : 'bg-card-gradient backdrop-blur-sm border-gold/10';
+  };
+
+  const getTextColor = () => {
+    return theme === 'light' ? 'text-gray-800' : 'text-foreground';
+  };
+
+  const getMutedTextColor = () => {
+    return theme === 'light' ? 'text-gray-500' : 'text-muted-foreground';
+  };
 
   return (
     <AdminLayout>
       <div className="space-y-6">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold gold-gradient-text">Admin Dashboard</h1>
+          <h1 className={`text-3xl font-bold ${theme === 'light' ? 'text-amber-600' : 'gold-gradient-text'}`}>Admin Dashboard</h1>
           <Tabs defaultValue="7d" className="w-[300px]" onValueChange={setTimeRange}>
-            <TabsList className="grid w-full grid-cols-4 bg-gold/10">
-              <TabsTrigger value="24h">24h</TabsTrigger>
-              <TabsTrigger value="7d">7d</TabsTrigger>
-              <TabsTrigger value="30d">30d</TabsTrigger>
-              <TabsTrigger value="90d">90d</TabsTrigger>
+            <TabsList className={`grid w-full grid-cols-4 ${theme === 'light' ? 'bg-amber-100/50 border border-amber-200' : 'bg-gold/10'}`}>
+              <TabsTrigger value="24h" className={theme === 'light' ? 'data-[state=active]:bg-white data-[state=active]:text-amber-600' : ''}>24h</TabsTrigger>
+              <TabsTrigger value="7d" className={theme === 'light' ? 'data-[state=active]:bg-white data-[state=active]:text-amber-600' : ''}>7d</TabsTrigger>
+              <TabsTrigger value="30d" className={theme === 'light' ? 'data-[state=active]:bg-white data-[state=active]:text-amber-600' : ''}>30d</TabsTrigger>
+              <TabsTrigger value="90d" className={theme === 'light' ? 'data-[state=active]:bg-white data-[state=active]:text-amber-600' : ''}>90d</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-          <Card className="bg-card-gradient backdrop-blur-sm border-gold/10">
+          <Card className={getCardStyle()}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-lg font-medium">Total Users</CardTitle>
-              <Users className="h-5 w-5 text-gold" />
+              <Users className={`h-5 w-5 ${theme === 'light' ? 'text-amber-600' : 'text-gold'}`} />
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">2,584</div>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className={`text-xs ${getMutedTextColor()} mt-1`}>
                 <TrendingUp className="h-3 w-3 inline mr-1 text-green-500" />
                 <span className="text-green-500 font-medium">+12.5%</span> from last month
               </p>
             </CardContent>
           </Card>
           
-          <Card className="bg-card-gradient backdrop-blur-sm border-gold/10">
+          <Card className={getCardStyle()}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-lg font-medium">Active Jobs</CardTitle>
-              <MessageSquare className="h-5 w-5 text-gold" />
+              <MessageSquare className={`h-5 w-5 ${theme === 'light' ? 'text-amber-600' : 'text-gold'}`} />
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">156</div>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className={`text-xs ${getMutedTextColor()} mt-1`}>
                 <TrendingUp className="h-3 w-3 inline mr-1 text-green-500" />
                 <span className="text-green-500 font-medium">+8.2%</span> from last month
               </p>
             </CardContent>
           </Card>
           
-          <Card className="bg-card-gradient backdrop-blur-sm border-gold/10">
+          <Card className={getCardStyle()}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-lg font-medium">Upcoming Events</CardTitle>
-              <Calendar className="h-5 w-5 text-gold" />
+              <Calendar className={`h-5 w-5 ${theme === 'light' ? 'text-amber-600' : 'text-gold'}`} />
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">23</div>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className={`text-xs ${getMutedTextColor()} mt-1`}>
                 <TrendingUp className="h-3 w-3 inline mr-1 text-green-500" />
                 <span className="text-green-500 font-medium">+4.7%</span> from last month
               </p>
             </CardContent>
           </Card>
           
-          <Card className="bg-card-gradient backdrop-blur-sm border-gold/10">
+          <Card className={getCardStyle()}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-lg font-medium">Pending Approvals</CardTitle>
-              <Bell className="h-5 w-5 text-gold" />
+              <Bell className={`h-5 w-5 ${theme === 'light' ? 'text-amber-600' : 'text-gold'}`} />
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">42</div>
               <div className="flex items-center mt-1">
-                <Badge variant="outline" className="text-xs py-0 bg-orange-500/10 text-orange-500 border-orange-500/30">
+                <Badge variant="outline" className={`text-xs py-0 ${theme === 'light' ? 'bg-orange-100 text-orange-600 border-orange-200' : 'bg-orange-500/10 text-orange-500 border-orange-500/30'}`}>
                   Requires Attention
                 </Badge>
               </div>
@@ -133,9 +145,8 @@ const AdminDashboard = () => {
           </Card>
         </div>
 
-        {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <Card className="bg-card-gradient backdrop-blur-sm border-gold/10">
+          <Card className={getCardStyle()}>
             <CardHeader>
               <CardTitle>User Growth</CardTitle>
               <CardDescription>User signups over time</CardDescription>
@@ -144,13 +155,13 @@ const AdminDashboard = () => {
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={userGrowthData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#222" />
-                    <XAxis dataKey="month" stroke="#888" />
-                    <YAxis stroke="#888" />
+                    <CartesianGrid strokeDasharray="3 3" stroke={theme === 'light' ? "#e2e8f0" : "#222"} />
+                    <XAxis dataKey="month" stroke={theme === 'light' ? "#64748b" : "#888"} />
+                    <YAxis stroke={theme === 'light' ? "#64748b" : "#888"} />
                     <Tooltip 
                       contentStyle={{ 
-                        backgroundColor: '#333', 
-                        border: '1px solid #444',
+                        backgroundColor: theme === 'light' ? '#fff' : '#333', 
+                        border: theme === 'light' ? '1px solid #e2e8f0' : '1px solid #444',
                         borderRadius: '8px'
                       }} 
                     />
@@ -158,10 +169,10 @@ const AdminDashboard = () => {
                     <Line 
                       type="monotone" 
                       dataKey="users" 
-                      stroke="#CFB53B" 
+                      stroke={theme === 'light' ? "#f59e0b" : "#CFB53B"} 
                       strokeWidth={2} 
-                      dot={{ stroke: '#CFB53B', strokeWidth: 2, r: 4 }}
-                      activeDot={{ r: 6, stroke: '#CFB53B', strokeWidth: 2 }} 
+                      dot={{ stroke: theme === 'light' ? "#f59e0b" : "#CFB53B", strokeWidth: 2, r: 4 }}
+                      activeDot={{ r: 6, stroke: theme === 'light' ? "#f59e0b" : "#CFB53B", strokeWidth: 2 }} 
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -169,7 +180,7 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-card-gradient backdrop-blur-sm border-gold/10">
+          <Card className={getCardStyle()}>
             <CardHeader>
               <CardTitle>Platform Engagement</CardTitle>
               <CardDescription>Views and applications by section</CardDescription>
@@ -178,19 +189,19 @@ const AdminDashboard = () => {
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={engagementData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#222" />
-                    <XAxis dataKey="source" stroke="#888" />
-                    <YAxis stroke="#888" />
+                    <CartesianGrid strokeDasharray="3 3" stroke={theme === 'light' ? "#e2e8f0" : "#222"} />
+                    <XAxis dataKey="source" stroke={theme === 'light' ? "#64748b" : "#888"} />
+                    <YAxis stroke={theme === 'light' ? "#64748b" : "#888"} />
                     <Tooltip 
                       contentStyle={{ 
-                        backgroundColor: '#333', 
-                        border: '1px solid #444',
+                        backgroundColor: theme === 'light' ? '#fff' : '#333', 
+                        border: theme === 'light' ? '1px solid #e2e8f0' : '1px solid #444',
                         borderRadius: '8px'
                       }} 
                     />
                     <Legend />
-                    <Bar dataKey="views" fill="#CFB53B" />
-                    <Bar dataKey="applications" fill="#D4AF37" />
+                    <Bar dataKey="views" fill={theme === 'light' ? "#f59e0b" : "#CFB53B"} />
+                    <Bar dataKey="applications" fill={theme === 'light' ? "#fbbf24" : "#D4AF37"} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -198,9 +209,8 @@ const AdminDashboard = () => {
           </Card>
         </div>
 
-        {/* Bottom Cards */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="bg-card-gradient backdrop-blur-sm border-gold/10 lg:col-span-2">
+          <Card className={`${getCardStyle()} lg:col-span-2`}>
             <CardHeader>
               <CardTitle>Recent Activities</CardTitle>
               <CardDescription>Latest actions on the platform</CardDescription>
@@ -208,17 +218,17 @@ const AdminDashboard = () => {
             <CardContent>
               <div className="space-y-4">
                 {recentActivities.map((activity) => (
-                  <div key={activity.id} className="flex items-start pb-3 border-b border-gold/10">
-                    <Avatar className="h-9 w-9 border border-gold/20">
+                  <div key={activity.id} className={`flex items-start pb-3 border-b ${theme === 'light' ? 'border-gray-200' : 'border-gold/10'}`}>
+                    <Avatar className={`h-9 w-9 ${theme === 'light' ? 'border-amber-200' : 'border-gold/20'} border`}>
                       <AvatarImage src={activity.user.avatar} />
-                      <AvatarFallback className="bg-gold/10 text-gold">
+                      <AvatarFallback className={`${theme === 'light' ? 'bg-amber-100 text-amber-600' : 'bg-gold/10 text-gold'}`}>
                         {activity.user.name.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="ml-3 flex-1">
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-medium">
-                          <span className="text-foreground">{activity.user.name}</span>
+                          <span className={getTextColor()}>{activity.user.name}</span>
                           {' '}
                           {activity.action === 'joined' && 'joined the platform'}
                           {activity.action === 'reported' && `reported ${activity.item}`}
@@ -226,9 +236,9 @@ const AdminDashboard = () => {
                           {activity.action === 'verification' && 'requested verification'}
                           {activity.action === 'created' && `created an event: ${activity.item}`}
                         </p>
-                        <span className="text-xs text-muted-foreground">{activity.time}</span>
+                        <span className={`text-xs ${getMutedTextColor()}`}>{activity.time}</span>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">{activity.user.role}</p>
+                      <p className={`text-xs ${getMutedTextColor()} mt-1`}>{activity.user.role}</p>
                     </div>
                   </div>
                 ))}
@@ -236,7 +246,7 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-card-gradient backdrop-blur-sm border-gold/10">
+          <Card className={getCardStyle()}>
             <CardHeader>
               <CardTitle>Job Categories</CardTitle>
               <CardDescription>Distribution by type</CardDescription>
@@ -261,8 +271,8 @@ const AdminDashboard = () => {
                     </Pie>
                     <Tooltip 
                       contentStyle={{ 
-                        backgroundColor: '#333', 
-                        border: '1px solid #444',
+                        backgroundColor: theme === 'light' ? '#fff' : '#333', 
+                        border: theme === 'light' ? '1px solid #e2e8f0' : '1px solid #444',
                         borderRadius: '8px'
                       }} 
                     />
@@ -274,15 +284,14 @@ const AdminDashboard = () => {
           </Card>
         </div>
 
-        {/* Pending Approvals Table */}
-        <Card className="bg-card-gradient backdrop-blur-sm border-gold/10 mt-6">
+        <Card className={`${getCardStyle()} mt-6`}>
           <CardHeader>
             <CardTitle>Pending Approvals</CardTitle>
             <CardDescription>Items waiting for admin review</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
-              <TableHeader>
+              <TableHeader className={theme === 'light' ? 'bg-gray-50 border-b border-gray-200' : ''}>
                 <TableRow>
                   <TableHead>Type</TableHead>
                   <TableHead>Title</TableHead>
@@ -293,9 +302,9 @@ const AdminDashboard = () => {
               </TableHeader>
               <TableBody>
                 {pendingApprovals.map((approval) => (
-                  <TableRow key={approval.id}>
+                  <TableRow key={approval.id} className={theme === 'light' ? 'border-b border-gray-200 hover:bg-gray-50' : ''}>
                     <TableCell className="font-medium">
-                      <Badge variant="outline" className="bg-gold/10 text-gold border-gold/30">
+                      <Badge variant="outline" className={`${theme === 'light' ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-gold/10 text-gold border-gold/30'}`}>
                         {approval.type}
                       </Badge>
                     </TableCell>
@@ -304,10 +313,10 @@ const AdminDashboard = () => {
                     <TableCell>{approval.submitted}</TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
-                        <Button size="sm" variant="outline" className="h-8 bg-green-500/10 text-green-500 border-green-500/30 hover:bg-green-500/20">
+                        <Button size="sm" variant="outline" className={`h-8 ${theme === 'light' ? 'bg-green-50 text-green-600 border-green-200 hover:bg-green-100' : 'bg-green-500/10 text-green-500 border-green-500/30 hover:bg-green-500/20'}`}>
                           <CheckCircle className="h-4 w-4 mr-1" /> Approve
                         </Button>
-                        <Button size="sm" variant="outline" className="h-8 bg-red-500/10 text-red-500 border-red-500/30 hover:bg-red-500/20">
+                        <Button size="sm" variant="outline" className={`h-8 ${theme === 'light' ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100' : 'bg-red-500/10 text-red-500 border-red-500/30 hover:bg-red-500/20'}`}>
                           <AlertCircle className="h-4 w-4 mr-1" /> Reject
                         </Button>
                       </div>

@@ -1,7 +1,7 @@
-
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/contexts/AuthContext';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 
 // Layouts
 import AppLayout from '@/components/AppLayout';
@@ -48,228 +48,237 @@ import AdminRouteGuard from '@/components/admin/AdminRouteGuard';
 const App = () => {
   return (
     <AuthProvider>
-      <Router>
-        <Routes>
-          {/* Public Routes */}
-          <Route 
-            path="/" 
-            element={
-              <AppLayout>
-                <Index />
-              </AppLayout>
-            }
-          />
-          <Route 
-            path="/login" 
-            element={
-              <AppLayout>
-                <Login />
-              </AppLayout>
-            }
-          />
-          <Route 
-            path="/signup" 
-            element={
-              <AppLayout>
-                <Signup />
-              </AppLayout>
-            }
-          />
-          <Route 
-            path="/about" 
-            element={
-              <AppLayout>
-                <About />
-              </AppLayout>
-            }
-          />
-          <Route 
-            path="/features" 
-            element={
-              <AppLayout>
-                <Features />
-              </AppLayout>
-            }
-          />
-          <Route 
-            path="/pricing" 
-            element={
-              <AppLayout>
-                <Pricing />
-              </AppLayout>
-            }
-          />
-          <Route 
-            path="/contact" 
-            element={
-              <AppLayout>
-                <Contact />
-              </AppLayout>
-            }
-          />
-          <Route 
-            path="/privacy" 
-            element={
-              <AppLayout>
-                <Privacy />
-              </AppLayout>
-            }
-          />
-          <Route 
-            path="/blog" 
-            element={
-              <AppLayout>
-                <BlogPage />
-              </AppLayout>
-            }
-          />
-          <Route 
-            path="/events" 
-            element={
-              <AppLayout>
-                <Events />
-              </AppLayout>
-            }
-          />
+      <ThemeProvider>
+        <Router>
+          <Routes>
+            {/* Public Routes */}
+            <Route 
+              path="/" 
+              element={
+                <AppLayout>
+                  <Index />
+                </AppLayout>
+              }
+            />
+            <Route 
+              path="/login" 
+              element={
+                <AppLayout>
+                  <Login />
+                </AppLayout>
+              }
+            />
+            <Route 
+              path="/signup" 
+              element={
+                <AppLayout>
+                  <Signup />
+                </AppLayout>
+              }
+            />
+            <Route 
+              path="/about" 
+              element={
+                <AppLayout>
+                  <About />
+                </AppLayout>
+              }
+            />
+            <Route 
+              path="/features" 
+              element={
+                <AppLayout>
+                  <Features />
+                </AppLayout>
+              }
+            />
+            <Route 
+              path="/pricing" 
+              element={
+                <AppLayout>
+                  <Pricing />
+                </AppLayout>
+              }
+            />
+            <Route 
+              path="/contact" 
+              element={
+                <AppLayout>
+                  <Contact />
+                </AppLayout>
+              }
+            />
+            <Route 
+              path="/privacy" 
+              element={
+                <AppLayout>
+                  <Privacy />
+                </AppLayout>
+              }
+            />
+            <Route 
+              path="/blog" 
+              element={
+                <AppLayout>
+                  <BlogPage />
+                </AppLayout>
+              }
+            />
+            <Route 
+              path="/events" 
+              element={
+                <AppLayout>
+                  <Events />
+                </AppLayout>
+              }
+            />
 
-          {/* Protected Routes */}
-          <Route path="/dashboard" element={
-            <PrivateRoute>
-              <AppLayout>
-                <Dashboard />
-              </AppLayout>
-            </PrivateRoute>
-          } />
-          <Route path="/jobs" element={
-            <PrivateRoute>
-              <AppLayout>
-                <Jobs />
-              </AppLayout>
-            </PrivateRoute>
-          } />
-          <Route path="/profile" element={
-            <PrivateRoute>
-              <AppLayout>
-                <Profile />
-              </AppLayout>
-            </PrivateRoute>
-          } />
-          <Route path="/settings" element={
-            <PrivateRoute>
-              <AppLayout>
-                <Settings />
-              </AppLayout>
-            </PrivateRoute>
-          } />
-          <Route path="/talent-directory" element={
-            <PrivateRoute>
-              <AppLayout>
-                <TalentDirectory />
-              </AppLayout>
-            </PrivateRoute>
-          } />
-          <Route path="/industry-hub" element={
-            <PrivateRoute>
-              <AppLayout>
-                <IndustryHub />
-              </AppLayout>
-            </PrivateRoute>
-          } />
-          <Route path="/chat" element={
-            <PrivateRoute>
-              <AppLayout>
-                <Chat />
-              </AppLayout>
-            </PrivateRoute>
-          } />
-          <Route path="/billing" element={
-            <PrivateRoute>
-              <AppLayout>
-                <Billing />
-              </AppLayout>
-            </PrivateRoute>
-          } />
-          <Route path="/notifications" element={
-            <PrivateRoute>
-              <AppLayout>
-                <Notifications />
-              </AppLayout>
-            </PrivateRoute>
-          } />
-          <Route path="/help" element={
-            <PrivateRoute>
-              <AppLayout>
-                <Help />
-              </AppLayout>
-            </PrivateRoute>
-          } />
+            {/* Protected Routes */}
+            <Route path="/dashboard" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <Dashboard />
+                </AppLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/jobs" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <Jobs />
+                </AppLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/profile" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <Profile />
+                </AppLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/settings" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <Settings />
+                </AppLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/talent-directory" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <TalentDirectory />
+                </AppLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/industry-hub" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <IndustryHub />
+                </AppLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/chat" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <Chat />
+                </AppLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/billing" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <Billing />
+                </AppLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/notifications" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <Notifications />
+                </AppLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/help" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <Help />
+                </AppLayout>
+              </PrivateRoute>
+            } />
 
-          {/* Admin Routes */}
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin" element={
-            <AdminRouteGuard>
-              <AdminLayout>
-                <AdminDashboard />
-              </AdminLayout>
-            </AdminRouteGuard>
-          } />
-          <Route path="/admin/users" element={
-            <AdminRouteGuard>
-              <AdminLayout>
-                <UserManagement />
-              </AdminLayout>
-            </AdminRouteGuard>
-          } />
-          <Route path="/admin/jobs" element={
-            <AdminRouteGuard>
-              <AdminLayout>
-                <JobManagement />
-              </AdminLayout>
-            </AdminRouteGuard>
-          } />
-          <Route path="/admin/events" element={
-            <AdminRouteGuard>
-              <AdminLayout>
-                <EventManagement />
-              </AdminLayout>
-            </AdminRouteGuard>
-          } />
-          <Route path="/admin/content" element={
-            <AdminRouteGuard>
-              <AdminLayout>
-                <ContentModeration />
-              </AdminLayout>
-            </AdminRouteGuard>
-          } />
-          <Route path="/admin/analytics" element={
-            <AdminRouteGuard>
-              <AdminLayout>
-                <Analytics />
-              </AdminLayout>
-            </AdminRouteGuard>
-          } />
-          <Route path="/admin/notifications" element={
-            <AdminRouteGuard>
-              <AdminLayout>
-                <AdminNotifications />
-              </AdminLayout>
-            </AdminRouteGuard>
-          } />
-          <Route path="/admin/settings" element={
-            <AdminRouteGuard>
-              <AdminLayout>
-                <AdminSettings />
-              </AdminLayout>
-            </AdminRouteGuard>
-          } />
+            {/* Admin Routes */}
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin/dashboard" element={
+              <AdminRouteGuard>
+                <AdminLayout>
+                  <AdminDashboard />
+                </AdminLayout>
+              </AdminRouteGuard>
+            } />
+            <Route path="/admin" element={
+              <AdminRouteGuard>
+                <AdminLayout>
+                  <AdminDashboard />
+                </AdminLayout>
+              </AdminRouteGuard>
+            } />
+            <Route path="/admin/users" element={
+              <AdminRouteGuard>
+                <AdminLayout>
+                  <UserManagement />
+                </AdminLayout>
+              </AdminRouteGuard>
+            } />
+            <Route path="/admin/jobs" element={
+              <AdminRouteGuard>
+                <AdminLayout>
+                  <JobManagement />
+                </AdminLayout>
+              </AdminRouteGuard>
+            } />
+            <Route path="/admin/events" element={
+              <AdminRouteGuard>
+                <AdminLayout>
+                  <EventManagement />
+                </AdminLayout>
+              </AdminRouteGuard>
+            } />
+            <Route path="/admin/content" element={
+              <AdminRouteGuard>
+                <AdminLayout>
+                  <ContentModeration />
+                </AdminLayout>
+              </AdminRouteGuard>
+            } />
+            <Route path="/admin/analytics" element={
+              <AdminRouteGuard>
+                <AdminLayout>
+                  <Analytics />
+                </AdminLayout>
+              </AdminRouteGuard>
+            } />
+            <Route path="/admin/notifications" element={
+              <AdminRouteGuard>
+                <AdminLayout>
+                  <AdminNotifications />
+                </AdminLayout>
+              </AdminRouteGuard>
+            } />
+            <Route path="/admin/settings" element={
+              <AdminRouteGuard>
+                <AdminLayout>
+                  <AdminSettings />
+                </AdminLayout>
+              </AdminRouteGuard>
+            } />
 
-          {/* 404 Route */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        
-        {/* Toast notifications */}
-        <Toaster />
-      </Router>
+            {/* 404 Route */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          
+          {/* Toast notifications */}
+          <Toaster />
+        </Router>
+      </ThemeProvider>
     </AuthProvider>
   );
 };
