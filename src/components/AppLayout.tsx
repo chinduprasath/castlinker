@@ -70,7 +70,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
             <div className={`flex-1 transition-all duration-300 ease-in-out ${
               sidebarCollapsed 
                 ? 'pl-0 md:pl-[20px] w-[calc(100%-70px)]' 
-                : 'pl-0 md:pl-[260px] w-[calc(100%-250px)]'
+                : 'pl-0 md:pl-[20px] w-[calc(100%-250px)]'
             }`}>
               {showTopBar && <TopBar />}
               <main className="p-2 sm:p-4 md:p-6 max-w-[2000px] mx-auto overflow-x-hidden">
