@@ -7,7 +7,7 @@ const Login = () => {
   const { theme } = useTheme();
   
   return (
-    <div className={`min-h-screen ${theme === 'light' ? 'bg-amber-50/30 bg-gradient-to-b from-white to-amber-50/30' : 'bg-cinematic'} text-foreground`}>
+    <div className={`min-h-screen ${theme === 'light' ? 'bg-gray-50' : 'bg-cinematic'} text-foreground`}>
       <div className="container mx-auto px-4 pt-24 pb-16">
         <div className="max-w-md mx-auto pt-10 pb-16">
           <LoginForm />

@@ -46,6 +46,10 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
       document.body.style.setProperty('--border-color', '#e2e8f0');
       document.body.style.setProperty('--muted-color', '#64748b');
       document.body.style.setProperty('--highlight-color', '#f59e0b');
+      document.body.style.setProperty('--admin-bg', '#fff');
+      document.body.style.setProperty('--admin-text', '#374151');
+      document.body.style.setProperty('--admin-border', '#e5e7eb');
+      document.body.style.setProperty('--admin-highlight', '#f59e0b');
     } else {
       document.body.classList.add('dark-mode');
       document.body.classList.remove('light-mode');
@@ -57,6 +61,10 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
       document.body.style.removeProperty('--border-color');
       document.body.style.removeProperty('--muted-color');
       document.body.style.removeProperty('--highlight-color');
+      document.body.style.removeProperty('--admin-bg');
+      document.body.style.removeProperty('--admin-text');
+      document.body.style.removeProperty('--admin-border');
+      document.body.style.removeProperty('--admin-highlight');
     }
 
     // Save to localStorage

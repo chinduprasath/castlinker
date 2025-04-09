@@ -21,18 +21,19 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   const { theme } = useTheme();
   
   // Public pages (don't need authentication and don't show sidebar)
-  const publicPages = ['/', '/login', '/signup', '/about', '/features', '/pricing', '/contact', '/privacy', '/help', '/admin/login'];
+  const publicPages = ['/', '/login', '/signup', '/about', '/features', '/pricing', '/contact', '/privacy', '/help'];
   
   // Check if current path is an admin path
-  const isAdminPage = location.pathname.startsWith('/admin');
+  const isAdminPage = location.pathname.startsWith('/admin') && location.pathname !== '/admin/login';
+  const isAdminLoginPage = location.pathname === '/admin/login';
   
   const isPublicPage = publicPages.includes(location.pathname);
   // Only show the navbar on true public pages when not logged in
   const showNavbar = isPublicPage && !user && location.pathname !== '/';
   // Show sidebar when logged in and not on a public page and not on admin pages
-  const showSidebar = user && !isPublicPage && !isAdminPage;
+  const showSidebar = user && !isPublicPage && !isAdminPage && !isAdminLoginPage;
   // Show topbar when user is logged in and not on admin pages
-  const showTopBar = user && !isAdminPage;
+  const showTopBar = user && !isAdminPage && !isAdminLoginPage;
   // Special case for landing page - show navbar but with different styling
   const isLandingPage = location.pathname === '/';
 
@@ -50,7 +51,11 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   };
 
   // Don't render anything for admin pages as they have their own layout
-  if (isAdminPage && location.pathname !== '/admin/login') {
+  if (isAdminPage) {
+    return children;
+  }
+
+  if (isAdminLoginPage) {
     return children;
   }
 

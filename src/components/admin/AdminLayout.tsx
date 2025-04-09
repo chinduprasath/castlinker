@@ -19,7 +19,9 @@ import {
   ChevronDown,
   User,
   CreditCard,
-  HelpCircle
+  HelpCircle,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -38,6 +40,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import ThemeToggle from "@/components/ThemeToggle";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -97,18 +100,18 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     : '?';
 
   return (
-    <div className={`min-h-screen ${theme === 'light' ? 'bg-gray-50' : 'bg-background'} text-foreground`}>
+    <div className={`min-h-screen ${theme === 'light' ? 'bg-amber-50/20' : 'bg-background'} text-foreground`}>
       {/* Top Bar */}
-      <div className="w-full border-b border-gray-200 bg-white/90 backdrop-blur-sm fixed top-0 z-50 shadow-sm">
+      <div className={`w-full border-b ${theme === 'light' ? 'border-gray-200 bg-white' : 'border-gold/10 bg-background/90'} backdrop-blur-sm fixed top-0 z-50 shadow-sm`}>
         <div className="flex h-16 items-center justify-between px-4">
           {isSearchOpen ? (
-            <div className="absolute left-0 top-0 w-full z-20 p-3 bg-white border-b border-gray-200">
+            <div className={`absolute left-0 top-0 w-full z-20 p-3 ${theme === 'light' ? 'bg-white border-gray-200' : 'bg-background border-gold/10'} border-b`}>
               <div className="relative flex items-center">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
                 <Input
                   type="search"
                   placeholder="Search..."
-                  className="w-full bg-white/60 pl-9 focus-visible:ring-amber-300/30 rounded-xl"
+                  className={`w-full ${theme === 'light' ? 'bg-white/60 border-gray-200' : 'bg-background/60'} pl-9 focus-visible:ring-amber-300/30 rounded-xl`}
                   autoFocus
                 />
                 <Button 
@@ -135,7 +138,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                 </Button>
 
                 <div className="hidden md:flex items-center">
-                  <Shield className="h-6 w-6 text-amber-600 mr-2" />
+                  <Shield className={`h-6 w-6 ${theme === 'light' ? 'text-amber-600' : 'text-gold'} mr-2`} />
                   <span className={`text-xl font-bold ${theme === 'light' ? 'text-amber-600' : 'gold-gradient-text'}`}>
                     CastLinker Admin
                   </span>
@@ -149,7 +152,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                   <Input
                     type="search"
                     placeholder="Search..."
-                    className="w-full bg-white/60 pl-9 focus-visible:ring-amber-300/30 rounded-xl border-gray-200"
+                    className={`w-full ${theme === 'light' ? 'bg-white/60 border-gray-200' : 'bg-background/60'} pl-9 focus-visible:ring-amber-300/30 rounded-xl`}
                   />
                 </div>
               </div>
@@ -172,7 +175,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             <Button 
               variant="ghost" 
               size="icon" 
-              className="relative text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-xl"
+              className={`relative ${theme === 'light' ? 'text-gray-500 hover:text-gray-900 hover:bg-gray-100' : 'text-muted-foreground hover:text-foreground hover:bg-gold/5'} rounded-xl`}
               onClick={() => navigate('/admin/notifications')}
             >
               <Bell className="h-5 w-5" />
@@ -189,41 +192,41 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             {/* User Profile Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-9 gap-1 sm:gap-2 px-1 sm:px-2 rounded-xl hover:bg-gray-100">
-                  <Avatar className="h-7 w-7 sm:h-8 sm:w-8 border border-amber-200">
+                <Button variant="ghost" className={`h-9 gap-1 sm:gap-2 px-1 sm:px-2 rounded-xl ${theme === 'light' ? 'hover:bg-gray-100' : 'hover:bg-gold/5'}`}>
+                  <Avatar className={`h-7 w-7 sm:h-8 sm:w-8 ${theme === 'light' ? 'border border-amber-200' : 'border border-gold/20'}`}>
                     <AvatarImage src={user.avatar} alt={user.name} />
-                    <AvatarFallback className="bg-amber-100 text-amber-600 text-xs sm:text-sm">
+                    <AvatarFallback className={`${theme === 'light' ? 'bg-amber-100 text-amber-600' : 'bg-gold/10 text-gold'} text-xs sm:text-sm`}>
                       {initials}
                     </AvatarFallback>
                   </Avatar>
                   <div className="hidden sm:flex flex-col items-start text-left">
-                    <span className="text-sm font-medium leading-none text-gray-900">{user.name}</span>
-                    <span className="text-xs text-gray-500">Admin</span>
+                    <span className={`text-sm font-medium leading-none ${theme === 'light' ? 'text-gray-900' : 'text-foreground'}`}>{user.name}</span>
+                    <span className={`text-xs ${theme === 'light' ? 'text-gray-500' : 'text-muted-foreground'}`}>Admin</span>
                   </div>
-                  <ChevronDown className="h-4 w-4 text-gray-500 hidden sm:block" />
+                  <ChevronDown className={`h-4 w-4 ${theme === 'light' ? 'text-gray-500' : 'text-muted-foreground'} hidden sm:block`} />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56 rounded-xl border-gray-200 bg-white" align="end">
+              <DropdownMenuContent className={`w-56 rounded-xl ${theme === 'light' ? 'border-gray-200 bg-white' : ''}`} align="end">
                 <DropdownMenuLabel>Admin Account</DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-gray-200" />
+                <DropdownMenuSeparator className={theme === 'light' ? 'bg-gray-200' : ''} />
                 <DropdownMenuGroup>
-                  <DropdownMenuItem onClick={() => navigate('/admin/profile')} className="rounded-lg hover:bg-gray-100 text-gray-700">
+                  <DropdownMenuItem onClick={() => navigate('/admin/profile')} className={`rounded-lg ${theme === 'light' ? 'hover:bg-gray-100 text-gray-700' : 'hover:bg-gold/5'}`}>
                     <User className="mr-2 h-4 w-4" />
                     Profile
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/admin/settings')} className="rounded-lg hover:bg-gray-100 text-gray-700">
+                  <DropdownMenuItem onClick={() => navigate('/admin/settings')} className={`rounded-lg ${theme === 'light' ? 'hover:bg-gray-100 text-gray-700' : 'hover:bg-gold/5'}`}>
                     <Settings className="mr-2 h-4 w-4" />
                     Settings
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
                 
-                <DropdownMenuSeparator className="bg-gray-200" />
-                <DropdownMenuItem onClick={() => navigate('/help')} className="rounded-lg hover:bg-gray-100 text-gray-700">
+                <DropdownMenuSeparator className={theme === 'light' ? 'bg-gray-200' : ''} />
+                <DropdownMenuItem onClick={() => navigate('/help')} className={`rounded-lg ${theme === 'light' ? 'hover:bg-gray-100 text-gray-700' : 'hover:bg-gold/5'}`}>
                   <HelpCircle className="mr-2 h-4 w-4" />
                   Help & Support
                 </DropdownMenuItem>
-                <DropdownMenuSeparator className="bg-gray-200" />
-                <DropdownMenuItem onClick={handleLogout} className="text-red-500 focus:text-red-500 rounded-lg hover:bg-red-50">
+                <DropdownMenuSeparator className={theme === 'light' ? 'bg-gray-200' : ''} />
+                <DropdownMenuItem onClick={handleLogout} className={`text-red-500 focus:text-red-500 rounded-lg ${theme === 'light' ? 'hover:bg-red-50' : 'hover:bg-red-900/10'}`}>
                   <LogOut className="mr-2 h-4 w-4" />
                   Logout
                 </DropdownMenuItem>
@@ -238,7 +241,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         <div 
           className={`${
             collapsed ? "w-16" : "w-60"
-          } ${theme === 'light' ? 'bg-white shadow-md' : 'bg-card'} h-full ${theme === 'light' ? 'border-gray-200' : 'border-gold/10'} border-r transition-all duration-300 ease-in-out fixed left-0 top-16 z-40`}
+          } ${theme === 'light' ? 'bg-white shadow-md' : 'bg-card'} h-full ${theme === 'light' ? 'border-gray-200' : 'border-gold/10'} border-r transition-all duration-300 ease-in-out fixed left-0 top-16 z-40 rounded-r-2xl`}
         >
           <div className="flex flex-col h-full">
             {/* Navigation */}
@@ -254,7 +257,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                       theme === 'light' 
                         ? 'hover:bg-amber-50 hover:text-amber-600 text-gray-700' 
                         : 'hover:bg-gold/10 hover:text-gold'
-                    } mb-1`}
+                    } mb-1 rounded-xl`}
                     onClick={() => navigate(item.path)}
                   >
                     <item.icon className={`h-5 w-5 ${!collapsed ? "mr-3" : ""}`} />
@@ -266,19 +269,29 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
 
             {/* Footer */}
             <div className={`p-4 ${theme === 'light' ? 'border-gray-200' : 'border-gold/10'} border-t`}>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={toggleSidebar}
-                className={`w-full flex items-center justify-center h-10 ${
-                  theme === 'light' 
-                    ? 'border-amber-200 text-amber-600 hover:bg-amber-50' 
-                    : 'hover:bg-gold/10 text-gold border-gold/30'
-                }`}
-              >
-                {collapsed ? <ChevronDown className="h-5 w-5" /> : <ChevronDown className="h-5 w-5 mr-1" />}
-                {!collapsed && <span>Collapse</span>}
-              </Button>
+              <div className={`flex ${collapsed ? 'justify-center' : 'justify-between items-center'}`}>
+                {!collapsed && (
+                  <span className={`text-xs ${theme === 'light' ? 'text-gray-500' : 'text-muted-foreground'}`}>Theme</span>
+                )}
+                
+                <ThemeToggle showTooltip={collapsed} />
+              </div>
+              
+              <div className="mt-3">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={toggleSidebar}
+                  className={`w-full flex items-center justify-center h-10 rounded-xl ${
+                    theme === 'light' 
+                      ? 'border-amber-200 text-amber-600 hover:bg-amber-50' 
+                      : 'hover:bg-gold/10 text-gold border-gold/30'
+                  }`}
+                >
+                  {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5 mr-1" />}
+                  {!collapsed && <span>Collapse</span>}
+                </Button>
+              </div>
             </div>
           </div>
         </div>

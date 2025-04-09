@@ -33,7 +33,7 @@ const Index = () => {
   // Show a temporary loading state while checking user login
   if (loading) {
     return (
-      <div className={`min-h-screen flex items-center justify-center ${theme === 'light' ? 'bg-amber-50/30' : 'bg-cinematic'}`}>
+      <div className={`min-h-screen flex items-center justify-center ${theme === 'light' ? 'bg-white' : 'bg-cinematic'}`}>
         <div className="text-center">
           <h1 className={`text-3xl font-bold ${theme === 'light' ? 'text-amber-600' : 'gold-gradient-text'} mb-4`}>CastLinker</h1>
           <div className="flex space-x-2 justify-center">
@@ -50,11 +50,11 @@ const Index = () => {
   return (
     <div className={`min-h-screen ${theme === 'light' ? 'bg-white' : 'bg-cinematic'} text-foreground`}>
       <Hero />
-      <div className={theme === 'light' ? 'bg-amber-50/30' : ''}>
+      <div className={theme === 'light' ? 'bg-amber-50/60' : ''}>
         <RoleSelection />
       </div>
       <Features />
-      <div className={theme === 'light' ? 'bg-amber-50/30' : ''}>
+      <div className={theme === 'light' ? 'bg-amber-50/60' : ''}>
         <CTA />
       </div>
       <Footer />
