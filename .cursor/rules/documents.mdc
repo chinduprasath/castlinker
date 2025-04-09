@@ -1,0 +1,80 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Your rule content
+
+📜 Set of Rules (Policy) to Display:
+For Admins:
+
+Maintain fairness and do not favor any user.
+
+Approve only genuine events or jobs after review.
+
+Remove content that is offensive, fake, misleading, or illegal.
+
+Ban users who repeatedly violate community standards.
+
+Use the "Trusted User Badge" carefully after verification.
+
+Monitor and act on abuse reports within 48 hours.
+
+For Normal Users:
+
+Post only genuine opportunities (fake posts can lead to ban).
+
+Do not spam the chat feature.
+
+Respect other users in communication.
+
+Profile must be truthful — misrepresentation leads to ban.
+
+Trusted Badges can be revoked if behavior is inappropriate.
+
+Reporting system must be used only when necessary.
+
+
+Documents you should maintain:
+
+User Flow Diagram:
+Showing how users move between screens like signup → profile → browse → apply → chat.
+
+Database Structure Doc:
+
+Users Table
+
+Events/Jobs Table
+
+Chat Messages Table
+
+Admin Actions Table
+
+Badges Table
+
+Reports Table
+
+APIs List:
+
+Login/Signup API
+
+Profile Update API
+
+Post Event API
+
+Apply for Job API
+
+Admin Block/Delete API
+
+Chat APIs
+
+Notifications API
+
+Admin Panel Wireframe:
+Just a basic sketch of admin dashboard layout.
+
+Terms and Conditions + Privacy Policy:
+Important because you're dealing with user-generated content.
+
+

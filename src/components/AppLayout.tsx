@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { SidebarProvider } from "@/components/ui/sidebar";
@@ -53,18 +52,20 @@ const AppLayout = ({ children }: AppLayoutProps) => {
         <SidebarProvider defaultOpen={!sidebarCollapsed}>
           <div className="flex min-h-screen w-full">
             <DashboardSidebar onToggle={toggleSidebar} isCollapsed={sidebarCollapsed} />
-            <div className={`flex-1 transition-all duration-300 ease-in-out ${sidebarCollapsed ? 'pl-[-90px]' : 'pl-[10px]'}`}>
+            <div className={`flex-1 transition-all duration-300 ease-in-out ${sidebarCollapsed ? 'pl-0 md:pl-0' : 'pl-0 md:pl-[250px]'}`}>
               {showTopBar && <TopBar />}
-              <main className="p-4">
+              <main className="p-2 sm:p-4 md:p-6 max-w-[2000px] mx-auto">
                 {children}
               </main>
             </div>
           </div>
         </SidebarProvider>
       ) : (
-        <div>
+        <div className="max-w-[2000px] mx-auto">
           {showTopBar && <TopBar />}
-          {children}
+          <main className="p-2 sm:p-4 md:p-6">
+            {children}
+          </main>
         </div>
       )}
     </div>

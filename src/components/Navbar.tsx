@@ -25,13 +25,13 @@ const Navbar = () => {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-cinematic/80 backdrop-blur-md border-b border-gold/10">
-      <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+      <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-3 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
-          <span className="text-2xl font-bold gold-gradient-text">CastLinker</span>
+          <span className="text-xl sm:text-2xl font-bold gold-gradient-text">CastLinker</span>
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-6">
+        <nav className="hidden md:flex items-center gap-4 lg:gap-6">
           <Link to="/about" className="text-sm font-medium text-foreground/80 hover:text-gold transition-colors">About</Link>
           <Link to="/features" className="text-sm font-medium text-foreground/80 hover:text-gold transition-colors">Features</Link>
           <Link to="/pricing" className="text-sm font-medium text-foreground/80 hover:text-gold transition-colors">Pricing</Link>
@@ -44,9 +44,9 @@ const Navbar = () => {
           <Link to="/contact" className="text-sm font-medium text-foreground/80 hover:text-gold transition-colors">Contact</Link>
         </nav>
 
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden md:flex items-center gap-2 lg:gap-4">
           {user ? (
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 lg:gap-4">
               <Link to="/jobs">
                 <Button variant="ghost" size="sm" className="text-foreground/80 hover:text-gold">
                   <Film className="h-4 w-4 mr-2" />
@@ -103,7 +103,7 @@ const Navbar = () => {
 
         {/* Mobile Navigation Toggle */}
         <button
-          className="md:hidden text-foreground"
+          className="md:hidden text-foreground p-2"
           onClick={() => setIsOpen(!isOpen)}
           aria-label="Toggle Menu"
         >
@@ -115,7 +115,7 @@ const Navbar = () => {
       {isOpen && (
         <div className="md:hidden bg-cinematic border-t border-gold/10 animate-fade-in">
           <div className="container mx-auto px-4 py-4">
-            <nav className="flex flex-col gap-4">
+            <nav className="flex flex-col gap-3">
               {user ? (
                 <>
                   <div className="flex items-center gap-3 py-2">
