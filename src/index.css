@@ -110,15 +110,34 @@
   }
   
   .hero-card {
-    @apply rounded-xl overflow-hidden shadow-lg bg-card-gradient backdrop-blur-sm border border-gold/10;
+    @apply rounded-xl overflow-hidden shadow-lg border border-gold/10;
   }
 
   .role-card {
-    @apply flex flex-col items-center justify-center p-4 sm:p-6 rounded-xl border border-gold/10 bg-card-gradient hover:border-gold/30 transition-all cursor-pointer h-[120px] sm:h-[160px];
+    @apply flex flex-col items-center justify-center p-4 sm:p-6 rounded-xl border border-gold/10 hover:border-gold/30 transition-all cursor-pointer h-[120px] sm:h-[160px];
   }
 
   .feature-card {
-    @apply rounded-xl overflow-hidden shadow-lg bg-card-gradient backdrop-blur-sm border border-gold/10 p-4 sm:p-6 flex flex-col h-full;
+    @apply rounded-xl overflow-hidden shadow-lg border border-gold/10 p-4 sm:p-6 flex flex-col h-full;
+  }
+  
+  /* Light mode specific styles */
+  .light .hero-card,
+  .light .feature-card,
+  .light .role-card {
+    @apply bg-white shadow-md;
+  }
+  
+  /* Dark mode specific styles */
+  .dark .hero-card,
+  .dark .feature-card,
+  .dark .role-card {
+    @apply bg-card-gradient backdrop-blur-sm;
+  }
+  
+  /* Admin panel light mode styles */
+  .light-mode .bg-card {
+    background-color: white;
   }
   
   .light .job-filters {
@@ -148,6 +167,20 @@
   /* Add specific styles for light theme */
   .light .bg-card-gradient {
     @apply bg-white;
+  }
+  
+  /* Fix for admin panel in light mode */
+  .light-mode .bg-card {
+    background-color: white;
+  }
+  
+  /* Fix light theme for cinematic backgrounds */
+  .light .bg-cinematic {
+    background-color: #f5f5f7;
+  }
+  
+  .light .min-h-screen.bg-cinematic {
+    background-color: #f5f5f7;
   }
   
   /* Responsive padding and margins */

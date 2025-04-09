@@ -47,19 +47,7 @@ const Index = () => {
   // Show landing page for non-logged in users
   return (
     <div className="min-h-screen bg-cinematic text-foreground">
-      {/* Navigation for non-logged in users */}
-      <nav className="border-b border-gold/10 p-4 flex justify-between items-center bg-background/30 backdrop-blur-md">
-        <div className="text-2xl font-bold gold-gradient-text">CastLinker</div>
-        <div className="space-x-2">
-          <Button variant="outline" onClick={() => navigate('/login')} className="border-gold/30 text-gold hover:bg-gold/10 dark:text-gold-light">
-            Log In
-          </Button>
-          <Button onClick={() => navigate('/signup')} className="bg-gold text-white dark:text-black hover:bg-gold/90">
-            Sign Up
-          </Button>
-        </div>
-      </nav>
-      
+      {/* Navigation for non-logged in users is handled by Navbar component in the AppLayout */}
       <Hero />
       <RoleSelection />
       <Features />

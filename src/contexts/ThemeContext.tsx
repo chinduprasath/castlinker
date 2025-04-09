@@ -33,6 +33,15 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     
     root.classList.remove('light', 'dark');
     root.classList.add(theme);
+    
+    // Update body class for admin layout fixes
+    if (theme === 'light') {
+      document.body.classList.add('light-mode');
+      document.body.classList.remove('dark-mode');
+    } else {
+      document.body.classList.add('dark-mode');
+      document.body.classList.remove('light-mode');
+    }
 
     // Save to localStorage
     localStorage.setItem('theme', theme);

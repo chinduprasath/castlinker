@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/components/ui/use-toast";
 import { Separator } from "@/components/ui/separator";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -31,6 +32,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { theme } = useTheme();
 
   const adminNavItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/admin/dashboard" },
