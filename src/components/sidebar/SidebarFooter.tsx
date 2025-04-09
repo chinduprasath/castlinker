@@ -34,7 +34,7 @@ const SidebarFooter = ({ isCollapsed }: SidebarFooterProps) => {
                 </Link>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top">Help</TooltipContent>
+            <TooltipContent side="top" className={theme === 'light' ? 'bg-white border-gray-200 text-gray-800' : ''}>Help</TooltipContent>
           </Tooltip>
         </TooltipProvider>
         

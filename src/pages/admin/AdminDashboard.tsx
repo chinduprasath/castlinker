@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,7 +59,7 @@ const AdminDashboard = () => {
 
   const getCardStyle = () => {
     return theme === 'light' 
-      ? 'bg-white shadow-md border border-gray-100' 
+      ? 'bg-white shadow-sm border border-gray-200' 
       : 'bg-card-gradient backdrop-blur-sm border-gold/10';
   };
 
@@ -76,11 +77,11 @@ const AdminDashboard = () => {
         <div className="flex justify-between items-center mb-6">
           <h1 className={`text-3xl font-bold ${theme === 'light' ? 'text-amber-600' : 'gold-gradient-text'}`}>Admin Dashboard</h1>
           <Tabs defaultValue="7d" className="w-[300px]" onValueChange={setTimeRange}>
-            <TabsList className={`grid w-full grid-cols-4 ${theme === 'light' ? 'bg-amber-100' : 'bg-gold/10'}`}>
-              <TabsTrigger value="24h">24h</TabsTrigger>
-              <TabsTrigger value="7d">7d</TabsTrigger>
-              <TabsTrigger value="30d">30d</TabsTrigger>
-              <TabsTrigger value="90d">90d</TabsTrigger>
+            <TabsList className={`grid w-full grid-cols-4 ${theme === 'light' ? 'bg-amber-100/50 border border-amber-200' : 'bg-gold/10'}`}>
+              <TabsTrigger value="24h" className={theme === 'light' ? 'data-[state=active]:bg-white data-[state=active]:text-amber-600' : ''}>24h</TabsTrigger>
+              <TabsTrigger value="7d" className={theme === 'light' ? 'data-[state=active]:bg-white data-[state=active]:text-amber-600' : ''}>7d</TabsTrigger>
+              <TabsTrigger value="30d" className={theme === 'light' ? 'data-[state=active]:bg-white data-[state=active]:text-amber-600' : ''}>30d</TabsTrigger>
+              <TabsTrigger value="90d" className={theme === 'light' ? 'data-[state=active]:bg-white data-[state=active]:text-amber-600' : ''}>90d</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
@@ -136,7 +137,7 @@ const AdminDashboard = () => {
             <CardContent>
               <div className="text-3xl font-bold">42</div>
               <div className="flex items-center mt-1">
-                <Badge variant="outline" className="text-xs py-0 bg-orange-500/10 text-orange-500 border-orange-500/30">
+                <Badge variant="outline" className={`text-xs py-0 ${theme === 'light' ? 'bg-orange-100 text-orange-600 border-orange-200' : 'bg-orange-500/10 text-orange-500 border-orange-500/30'}`}>
                   Requires Attention
                 </Badge>
               </div>
@@ -154,13 +155,13 @@ const AdminDashboard = () => {
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={userGrowthData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={theme === 'light' ? "#ddd" : "#222"} />
-                    <XAxis dataKey="month" stroke={theme === 'light' ? "#555" : "#888"} />
-                    <YAxis stroke={theme === 'light' ? "#555" : "#888"} />
+                    <CartesianGrid strokeDasharray="3 3" stroke={theme === 'light' ? "#e2e8f0" : "#222"} />
+                    <XAxis dataKey="month" stroke={theme === 'light' ? "#64748b" : "#888"} />
+                    <YAxis stroke={theme === 'light' ? "#64748b" : "#888"} />
                     <Tooltip 
                       contentStyle={{ 
                         backgroundColor: theme === 'light' ? '#fff' : '#333', 
-                        border: theme === 'light' ? '1px solid #ddd' : '1px solid #444',
+                        border: theme === 'light' ? '1px solid #e2e8f0' : '1px solid #444',
                         borderRadius: '8px'
                       }} 
                     />
@@ -168,10 +169,10 @@ const AdminDashboard = () => {
                     <Line 
                       type="monotone" 
                       dataKey="users" 
-                      stroke={theme === 'light' ? "#D4AF37" : "#CFB53B"} 
+                      stroke={theme === 'light' ? "#f59e0b" : "#CFB53B"} 
                       strokeWidth={2} 
-                      dot={{ stroke: theme === 'light' ? "#D4AF37" : "#CFB53B", strokeWidth: 2, r: 4 }}
-                      activeDot={{ r: 6, stroke: theme === 'light' ? "#D4AF37" : "#CFB53B", strokeWidth: 2 }} 
+                      dot={{ stroke: theme === 'light' ? "#f59e0b" : "#CFB53B", strokeWidth: 2, r: 4 }}
+                      activeDot={{ r: 6, stroke: theme === 'light' ? "#f59e0b" : "#CFB53B", strokeWidth: 2 }} 
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -188,19 +189,19 @@ const AdminDashboard = () => {
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={engagementData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={theme === 'light' ? "#ddd" : "#222"} />
-                    <XAxis dataKey="source" stroke={theme === 'light' ? "#555" : "#888"} />
-                    <YAxis stroke={theme === 'light' ? "#555" : "#888"} />
+                    <CartesianGrid strokeDasharray="3 3" stroke={theme === 'light' ? "#e2e8f0" : "#222"} />
+                    <XAxis dataKey="source" stroke={theme === 'light' ? "#64748b" : "#888"} />
+                    <YAxis stroke={theme === 'light' ? "#64748b" : "#888"} />
                     <Tooltip 
                       contentStyle={{ 
                         backgroundColor: theme === 'light' ? '#fff' : '#333', 
-                        border: theme === 'light' ? '1px solid #ddd' : '1px solid #444',
+                        border: theme === 'light' ? '1px solid #e2e8f0' : '1px solid #444',
                         borderRadius: '8px'
                       }} 
                     />
                     <Legend />
-                    <Bar dataKey="views" fill={theme === 'light' ? "#D4AF37" : "#CFB53B"} />
-                    <Bar dataKey="applications" fill={theme === 'light' ? "#F5D76E" : "#D4AF37"} />
+                    <Bar dataKey="views" fill={theme === 'light' ? "#f59e0b" : "#CFB53B"} />
+                    <Bar dataKey="applications" fill={theme === 'light' ? "#fbbf24" : "#D4AF37"} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -271,7 +272,7 @@ const AdminDashboard = () => {
                     <Tooltip 
                       contentStyle={{ 
                         backgroundColor: theme === 'light' ? '#fff' : '#333', 
-                        border: theme === 'light' ? '1px solid #ddd' : '1px solid #444',
+                        border: theme === 'light' ? '1px solid #e2e8f0' : '1px solid #444',
                         borderRadius: '8px'
                       }} 
                     />
@@ -290,7 +291,7 @@ const AdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <Table>
-              <TableHeader>
+              <TableHeader className={theme === 'light' ? 'bg-gray-50 border-b border-gray-200' : ''}>
                 <TableRow>
                   <TableHead>Type</TableHead>
                   <TableHead>Title</TableHead>
@@ -301,7 +302,7 @@ const AdminDashboard = () => {
               </TableHeader>
               <TableBody>
                 {pendingApprovals.map((approval) => (
-                  <TableRow key={approval.id}>
+                  <TableRow key={approval.id} className={theme === 'light' ? 'border-b border-gray-200 hover:bg-gray-50' : ''}>
                     <TableCell className="font-medium">
                       <Badge variant="outline" className={`${theme === 'light' ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-gold/10 text-gold border-gold/30'}`}>
                         {approval.type}
@@ -312,10 +313,10 @@ const AdminDashboard = () => {
                     <TableCell>{approval.submitted}</TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
-                        <Button size="sm" variant="outline" className="h-8 bg-green-500/10 text-green-500 border-green-500/30 hover:bg-green-500/20">
+                        <Button size="sm" variant="outline" className={`h-8 ${theme === 'light' ? 'bg-green-50 text-green-600 border-green-200 hover:bg-green-100' : 'bg-green-500/10 text-green-500 border-green-500/30 hover:bg-green-500/20'}`}>
                           <CheckCircle className="h-4 w-4 mr-1" /> Approve
                         </Button>
-                        <Button size="sm" variant="outline" className="h-8 bg-red-500/10 text-red-500 border-red-500/30 hover:bg-red-500/20">
+                        <Button size="sm" variant="outline" className={`h-8 ${theme === 'light' ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100' : 'bg-red-500/10 text-red-500 border-red-500/30 hover:bg-red-500/20'}`}>
                           <AlertCircle className="h-4 w-4 mr-1" /> Reject
                         </Button>
                       </div>

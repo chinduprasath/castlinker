@@ -14,7 +14,12 @@ import {
   LogOut,
   Menu,
   X,
-  MessagesSquare
+  MessagesSquare,
+  Search,
+  ChevronDown,
+  User,
+  CreditCard,
+  HelpCircle
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -22,6 +27,17 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/components/ui/use-toast";
 import { Separator } from "@/components/ui/separator";
 import { useTheme } from "@/contexts/ThemeContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -33,6 +49,8 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { theme } = useTheme();
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [notifications] = useState(3); // Mock notification count
 
   const adminNavItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/admin/dashboard" },
@@ -71,54 +89,160 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     );
   }
 
+  const initials = user.name
+    ? user.name
+        .split(' ')
+        .map((n: string) => n[0])
+        .join('')
+    : '?';
+
   return (
     <div className={`min-h-screen ${theme === 'light' ? 'bg-gray-50' : 'bg-background'} text-foreground`}>
-      <div className="flex h-screen overflow-hidden">
+      {/* Top Bar */}
+      <div className="w-full border-b border-gray-200 bg-white/90 backdrop-blur-sm fixed top-0 z-50 shadow-sm">
+        <div className="flex h-16 items-center justify-between px-4">
+          {isSearchOpen ? (
+            <div className="absolute left-0 top-0 w-full z-20 p-3 bg-white border-b border-gray-200">
+              <div className="relative flex items-center">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                <Input
+                  type="search"
+                  placeholder="Search..."
+                  className="w-full bg-white/60 pl-9 focus-visible:ring-amber-300/30 rounded-xl"
+                  autoFocus
+                />
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="absolute right-1 top-1" 
+                  onClick={() => setIsSearchOpen(false)}
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Mobile Menu Button */}
+              <div className="flex items-center">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="md:hidden mr-2"
+                  onClick={toggleSidebar}
+                >
+                  <Menu className="h-5 w-5" />
+                </Button>
+
+                <div className="hidden md:flex items-center">
+                  <Shield className="h-6 w-6 text-amber-600 mr-2" />
+                  <span className={`text-xl font-bold ${theme === 'light' ? 'text-amber-600' : 'gold-gradient-text'}`}>
+                    CastLinker Admin
+                  </span>
+                </div>
+              </div>
+              
+              {/* Desktop Search */}
+              <div className="hidden md:block w-1/3 mx-8">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                  <Input
+                    type="search"
+                    placeholder="Search..."
+                    className="w-full bg-white/60 pl-9 focus-visible:ring-amber-300/30 rounded-xl border-gray-200"
+                  />
+                </div>
+              </div>
+              
+              {/* Mobile search button */}
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="md:hidden" 
+                onClick={() => setIsSearchOpen(true)}
+              >
+                <Search className="h-5 w-5" />
+              </Button>
+            </>
+          )}
+          
+          {/* Right Side Actions */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Notifications */}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="relative text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-xl"
+              onClick={() => navigate('/admin/notifications')}
+            >
+              <Bell className="h-5 w-5" />
+              {notifications > 0 && (
+                <Badge 
+                  variant="destructive" 
+                  className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 p-0 flex items-center justify-center text-[10px] rounded-full"
+                >
+                  {notifications}
+                </Badge>
+              )}
+            </Button>
+            
+            {/* User Profile Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-9 gap-1 sm:gap-2 px-1 sm:px-2 rounded-xl hover:bg-gray-100">
+                  <Avatar className="h-7 w-7 sm:h-8 sm:w-8 border border-amber-200">
+                    <AvatarImage src={user.avatar} alt={user.name} />
+                    <AvatarFallback className="bg-amber-100 text-amber-600 text-xs sm:text-sm">
+                      {initials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="hidden sm:flex flex-col items-start text-left">
+                    <span className="text-sm font-medium leading-none text-gray-900">{user.name}</span>
+                    <span className="text-xs text-gray-500">Admin</span>
+                  </div>
+                  <ChevronDown className="h-4 w-4 text-gray-500 hidden sm:block" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56 rounded-xl border-gray-200 bg-white" align="end">
+                <DropdownMenuLabel>Admin Account</DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-gray-200" />
+                <DropdownMenuGroup>
+                  <DropdownMenuItem onClick={() => navigate('/admin/profile')} className="rounded-lg hover:bg-gray-100 text-gray-700">
+                    <User className="mr-2 h-4 w-4" />
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/admin/settings')} className="rounded-lg hover:bg-gray-100 text-gray-700">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+                
+                <DropdownMenuSeparator className="bg-gray-200" />
+                <DropdownMenuItem onClick={() => navigate('/help')} className="rounded-lg hover:bg-gray-100 text-gray-700">
+                  <HelpCircle className="mr-2 h-4 w-4" />
+                  Help & Support
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-gray-200" />
+                <DropdownMenuItem onClick={handleLogout} className="text-red-500 focus:text-red-500 rounded-lg hover:bg-red-50">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex h-screen overflow-hidden pt-16">
         {/* Admin Sidebar */}
         <div 
           className={`${
             collapsed ? "w-16" : "w-60"
-          } ${theme === 'light' ? 'bg-white shadow-md' : 'bg-card'} h-full ${theme === 'light' ? 'border-gray-200' : 'border-gold/10'} border-r transition-all duration-300 ease-in-out fixed left-0 top-0 z-50`}
+          } ${theme === 'light' ? 'bg-white shadow-md' : 'bg-card'} h-full ${theme === 'light' ? 'border-gray-200' : 'border-gold/10'} border-r transition-all duration-300 ease-in-out fixed left-0 top-16 z-40`}
         >
           <div className="flex flex-col h-full">
-            {/* Header */}
-            <div className={`flex items-center justify-between p-4 ${theme === 'light' ? 'border-gray-200' : 'border-gold/10'} border-b`}>
-              <div className="flex items-center">
-                {!collapsed && (
-                  <span className="text-xl font-bold gold-gradient-text mr-2">CastLinker</span>
-                )}
-                <Shield className={`h-6 w-6 text-gold ${collapsed ? 'mx-auto' : ''}`} />
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleSidebar}
-                className={`${theme === 'light' ? 'text-gray-500 hover:text-gray-800' : 'text-muted-foreground hover:text-foreground'}`}
-              >
-                {collapsed ? <Menu /> : <X />}
-              </Button>
-            </div>
-
-            {/* Admin Info */}
-            <div className={`p-4 ${theme === 'light' ? 'border-gray-200' : 'border-gold/10'} border-b ${collapsed ? "items-center" : ""}`}>
-              <div className="flex items-center">
-                <Avatar className={`h-10 w-10 ${theme === 'light' ? 'border-gray-300' : 'border-gold/30'} border-2`}>
-                  <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className={`${theme === 'light' ? 'bg-amber-100 text-amber-600' : 'bg-gold/20 text-gold'}`}>
-                    {user.name.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
-                {!collapsed && (
-                  <div className="ml-3">
-                    <p className={`text-sm font-medium ${theme === 'light' ? 'text-gray-800' : ''}`}>{user.name}</p>
-                    <p className={`text-xs ${theme === 'light' ? 'text-gray-500' : 'text-muted-foreground'}`}>Admin</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
             {/* Navigation */}
-            <ScrollArea className="flex-1 py-2">
+            <ScrollArea className="flex-1 py-4">
               <nav className="px-2 space-y-1">
                 {adminNavItems.map((item) => (
                   <Button
@@ -128,7 +252,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                       collapsed ? "px-2" : "px-3"
                     } ${
                       theme === 'light' 
-                        ? 'hover:bg-amber-50 hover:text-amber-600' 
+                        ? 'hover:bg-amber-50 hover:text-amber-600 text-gray-700' 
                         : 'hover:bg-gold/10 hover:text-gold'
                     } mb-1`}
                     onClick={() => navigate(item.path)}
@@ -143,16 +267,17 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             {/* Footer */}
             <div className={`p-4 ${theme === 'light' ? 'border-gray-200' : 'border-gold/10'} border-t`}>
               <Button
-                variant="ghost"
-                className={`w-full justify-start ${
+                variant="outline"
+                size="icon"
+                onClick={toggleSidebar}
+                className={`w-full flex items-center justify-center h-10 ${
                   theme === 'light' 
-                    ? 'hover:bg-red-50 hover:text-red-500' 
-                    : 'hover:bg-red-500/10 hover:text-red-500'
+                    ? 'border-amber-200 text-amber-600 hover:bg-amber-50' 
+                    : 'hover:bg-gold/10 text-gold border-gold/30'
                 }`}
-                onClick={handleLogout}
               >
-                <LogOut className={`h-5 w-5 ${!collapsed ? "mr-3" : ""}`} />
-                {!collapsed && <span>Sign Out</span>}
+                {collapsed ? <ChevronDown className="h-5 w-5" /> : <ChevronDown className="h-5 w-5 mr-1" />}
+                {!collapsed && <span>Collapse</span>}
               </Button>
             </div>
           </div>
@@ -162,9 +287,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         <main
           className={`flex-1 overflow-auto transition-all duration-300 ease-in-out ${
             collapsed ? "ml-16" : "ml-60"
-          }`}
+          } pt-4 px-4`}
         >
-          <div className="p-4">{children}</div>
+          {children}
         </main>
       </div>
     </div>

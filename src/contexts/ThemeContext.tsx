@@ -38,9 +38,25 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     if (theme === 'light') {
       document.body.classList.add('light-mode');
       document.body.classList.remove('dark-mode');
+      
+      // Apply specific light theme styles
+      document.body.style.setProperty('--background-color', '#f8f9fa');
+      document.body.style.setProperty('--card-bg', '#ffffff');
+      document.body.style.setProperty('--text-color', '#333333');
+      document.body.style.setProperty('--border-color', '#e2e8f0');
+      document.body.style.setProperty('--muted-color', '#64748b');
+      document.body.style.setProperty('--highlight-color', '#f59e0b');
     } else {
       document.body.classList.add('dark-mode');
       document.body.classList.remove('light-mode');
+      
+      // Reset to default dark theme values
+      document.body.style.removeProperty('--background-color');
+      document.body.style.removeProperty('--card-bg');
+      document.body.style.removeProperty('--text-color');
+      document.body.style.removeProperty('--border-color');
+      document.body.style.removeProperty('--muted-color');
+      document.body.style.removeProperty('--highlight-color');
     }
 
     // Save to localStorage

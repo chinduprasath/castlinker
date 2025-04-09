@@ -27,7 +27,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   const isAdminPage = location.pathname.startsWith('/admin');
   
   const isPublicPage = publicPages.includes(location.pathname);
-  // Only show the navbar on true public pages when not logged in (excluding the landing page which has its own navbar)
+  // Only show the navbar on true public pages when not logged in
   const showNavbar = isPublicPage && !user && location.pathname !== '/';
   // Show sidebar when logged in and not on a public page and not on admin pages
   const showSidebar = user && !isPublicPage && !isAdminPage;
@@ -48,6 +48,11 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
+
+  // Don't render anything for admin pages as they have their own layout
+  if (isAdminPage && location.pathname !== '/admin/login') {
+    return children;
+  }
 
   return (
     <div className={`min-h-screen ${theme === 'light' ? 'bg-gray-50' : 'bg-background'} text-foreground transition-colors duration-300`}>
