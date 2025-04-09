@@ -34,7 +34,7 @@ const Hero = () => {
       <div className="container mx-auto px-4 py-20 md:py-32 relative z-10">
         <div className="max-w-4xl mx-auto text-center">
           <motion.h1 
-            className="text-4xl md:text-6xl font-bold mb-6 leading-tight"
+            className="text-3xl sm:text-4xl md:text-6xl font-bold mb-6 leading-tight"
             variants={fadeIn}
             initial="hidden"
             animate="visible"
@@ -43,7 +43,7 @@ const Hero = () => {
           </motion.h1>
           
           <motion.p 
-            className="text-lg md:text-xl text-foreground/80 mb-8 max-w-2xl mx-auto"
+            className="text-base sm:text-lg md:text-xl text-foreground/80 mb-8 max-w-2xl mx-auto"
             variants={fadeIn}
             initial="hidden"
             animate="visible"
@@ -59,8 +59,8 @@ const Hero = () => {
             animate="visible"
             transition={{ delay: 0.4 }}
           >
-            <Link to="/signup">
-              <Button size="lg" className="bg-gold hover:bg-gold-dark text-cinematic px-8">
+            <Link to="/signup" className="w-full sm:w-auto">
+              <Button size="lg" className="bg-gold hover:bg-gold-dark text-cinematic px-8 w-full sm:w-auto">
                 Get Started Free
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -68,7 +68,7 @@ const Hero = () => {
             <Button 
               variant="outline" 
               size="lg" 
-              className="border-gold/30 hover:border-gold"
+              className="border-gold/30 hover:border-gold w-full sm:w-auto"
               onClick={() => setIsDemoOpen(true)}
             >
               Watch Demo
@@ -77,34 +77,34 @@ const Hero = () => {
           </motion.div>
           
           <motion.div 
-            className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16"
+            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mt-16"
             variants={fadeIn}
             initial="hidden"
             animate="visible"
             transition={{ delay: 0.6 }}
           >
-            <div className="hero-card p-6 flex flex-col items-center">
-              <div className="w-12 h-12 rounded-full bg-gold/20 flex items-center justify-center mb-4">
-                <UserCheck className="h-6 w-6 text-gold" />
+            <div className="hero-card p-4 sm:p-6 flex flex-col items-center">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gold/20 flex items-center justify-center mb-4">
+                <UserCheck className="h-5 w-5 sm:h-6 sm:w-6 text-gold" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Industry Verified</h3>
-              <p className="text-foreground/70 text-center">Connect with verified film industry professionals and production houses.</p>
+              <h3 className="text-lg sm:text-xl font-semibold mb-2">Industry Verified</h3>
+              <p className="text-sm sm:text-base text-foreground/70 text-center">Connect with verified film industry professionals and production houses.</p>
             </div>
             
-            <div className="hero-card p-6 flex flex-col items-center">
-              <div className="w-12 h-12 rounded-full bg-gold/20 flex items-center justify-center mb-4">
-                <Award className="h-6 w-6 text-gold" />
+            <div className="hero-card p-4 sm:p-6 flex flex-col items-center">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gold/20 flex items-center justify-center mb-4">
+                <Award className="h-5 w-5 sm:h-6 sm:w-6 text-gold" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Showcase Talent</h3>
-              <p className="text-foreground/70 text-center">Build a stunning portfolio to highlight your skills and previous work.</p>
+              <h3 className="text-lg sm:text-xl font-semibold mb-2">Showcase Talent</h3>
+              <p className="text-sm sm:text-base text-foreground/70 text-center">Build a stunning portfolio to highlight your skills and previous work.</p>
             </div>
             
-            <div className="hero-card p-6 flex flex-col items-center">
-              <div className="w-12 h-12 rounded-full bg-gold/20 flex items-center justify-center mb-4">
-                <Video className="h-6 w-6 text-gold" />
+            <div className="hero-card p-4 sm:p-6 flex flex-col items-center sm:col-span-2 md:col-span-1">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gold/20 flex items-center justify-center mb-4">
+                <Video className="h-5 w-5 sm:h-6 sm:w-6 text-gold" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Virtual Auditions</h3>
-              <p className="text-foreground/70 text-center">Submit and review audition videos with advanced feedback tools.</p>
+              <h3 className="text-lg sm:text-xl font-semibold mb-2">Virtual Auditions</h3>
+              <p className="text-sm sm:text-base text-foreground/70 text-center">Submit and review audition videos with advanced feedback tools.</p>
             </div>
           </motion.div>
         </div>

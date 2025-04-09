@@ -23,7 +23,7 @@ const DashboardSidebar = ({ onToggle, isCollapsed = false }: DashboardSidebarPro
   return (
     <Sidebar 
       className={`
-        fixed top-0 left-0 h-full z-10
+        fixed top-0 left-0 h-full z-30
         border-r border-gold/15
         transition-all duration-300 ease-in-out
         bg-gradient-to-b from-background to-background/90

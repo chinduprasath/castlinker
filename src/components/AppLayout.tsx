@@ -38,6 +38,8 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   useEffect(() => {
     if (isMobile) {
       setSidebarCollapsed(true);
+    } else {
+      setSidebarCollapsed(false);
     }
   }, [isMobile]);
 
@@ -53,9 +55,9 @@ const AppLayout = ({ children }: AppLayoutProps) => {
         <SidebarProvider defaultOpen={!sidebarCollapsed}>
           <div className="flex min-h-screen w-full">
             <DashboardSidebar onToggle={toggleSidebar} isCollapsed={sidebarCollapsed} />
-            <div className={`flex-1 transition-all duration-300 ease-in-out ${sidebarCollapsed ? 'pl-[-90px]' : 'pl-[10px]'}`}>
+            <div className={`flex-1 transition-all duration-300 ease-in-out ${sidebarCollapsed ? 'ml-[70px]' : 'ml-[250px]'} w-[calc(100%-${sidebarCollapsed ? '70px' : '250px'})]`}>
               {showTopBar && <TopBar />}
-              <main className="p-4">
+              <main className="p-2 sm:p-4 overflow-x-hidden">
                 {children}
               </main>
             </div>
@@ -64,7 +66,9 @@ const AppLayout = ({ children }: AppLayoutProps) => {
       ) : (
         <div>
           {showTopBar && <TopBar />}
-          {children}
+          <div className={showNavbar ? "pt-16" : ""}>
+            {children}
+          </div>
         </div>
       )}
     </div>

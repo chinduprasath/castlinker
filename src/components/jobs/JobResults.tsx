@@ -77,10 +77,10 @@ const JobResults = memo(({
   return (
     <>
       <div className="space-y-4">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <h3 className="text-lg font-medium">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+          <h3 className="text-base sm:text-lg font-medium">
             {error ? 'Job Search' : `${totalCount} ${totalCount === 1 ? 'Job' : 'Jobs'} Found`}
-            <span className="text-sm font-normal text-muted-foreground ml-2">
+            <span className="text-xs sm:text-sm font-normal text-muted-foreground ml-1 sm:ml-2 block sm:inline">
               {error ? 'An error occurred' : 'Showing available opportunities'}
             </span>
           </h3>
@@ -92,7 +92,7 @@ const JobResults = memo(({
           <Alert variant="destructive" className="animate-none">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Error fetching jobs</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription className="text-sm">{error}</AlertDescription>
             {refetchJobs && (
               <Button 
                 onClick={() => refetchJobs()} 
@@ -110,7 +110,7 @@ const JobResults = memo(({
         ) : jobs.length === 0 ? (
           <NoJobsFound />
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {jobs.map((job) => (
               <JobCard
                 key={job.id}
