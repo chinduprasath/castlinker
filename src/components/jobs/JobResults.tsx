@@ -1,5 +1,5 @@
 
-import { useState, memo, useCallback } from "react";
+import { useState, memo, useCallback, useEffect } from "react";
 import { Job, JobSort } from "@/types/jobTypes";
 import JobDetail from "./JobDetail";
 import JobApplicationForm from "./JobApplicationForm";
@@ -38,6 +38,7 @@ const JobResults = memo(({
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isApplyFormOpen, setIsApplyFormOpen] = useState(false);
   const [retryCount, setRetryCount] = useState(0); // Track retry attempts
+  const [isRetrying, setIsRetrying] = useState(false);
   
   const handleJobClick = useCallback((job: Job) => {
     setSelectedJob(job);
@@ -78,16 +79,26 @@ const JobResults = memo(({
   
   // Handle retry with exponential backoff
   const handleRetry = useCallback(async () => {
-    if (!refetchJobs) return;
+    if (!refetchJobs || isRetrying) return;
     
+    setIsRetrying(true);
     setRetryCount(prev => prev + 1);
     
     try {
       await refetchJobs();
     } catch (err) {
       console.error("Retry failed:", err);
+    } finally {
+      setIsRetrying(false);
     }
-  }, [refetchJobs]);
+  }, [refetchJobs, isRetrying]);
+
+  // Reset retry count when jobs change
+  useEffect(() => {
+    if (jobs.length > 0) {
+      setRetryCount(0);
+    }
+  }, [jobs]);
 
   return (
     <>
@@ -115,9 +126,9 @@ const JobResults = memo(({
                   variant="outline" 
                   size="sm"
                   className="mt-2"
-                  disabled={isLoading}
+                  disabled={isLoading || isRetrying}
                 >
-                  <RefreshCcw className={`mr-1 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                  <RefreshCcw className={`mr-1 h-4 w-4 ${(isLoading || isRetrying) ? 'animate-spin' : ''}`} />
                   Try Again
                 </Button>
               )}

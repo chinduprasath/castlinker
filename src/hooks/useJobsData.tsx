@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
@@ -22,9 +22,18 @@ export const useJobsData = () => {
   const [totalCount, setTotalCount] = useState(0);
   const { toast } = useToast();
   const { user } = useAuth();
+  
+  // Add a ref to track if this is the initial render
+  const initialRenderCompleted = useRef(false);
+  // Add a ref for ongoing fetch operations
+  const fetchInProgress = useRef(false);
 
   // Fetch jobs based on filters and sorting
   const getJobs = useCallback(async () => {
+    // If a fetch is already in progress, don't start another one
+    if (fetchInProgress.current) return;
+    
+    fetchInProgress.current = true;
     setIsLoading(true);
     setError(null);
     try {
@@ -59,6 +68,7 @@ export const useJobsData = () => {
       setTotalCount(0);
     } finally {
       setIsLoading(false);
+      fetchInProgress.current = false;
     }
   }, [filters, sort, toast]);
 
@@ -142,30 +152,26 @@ export const useJobsData = () => {
     setFilters({});
   }, []);
 
-  // Effect to fetch jobs when filters or sort changes
+  // Effect to fetch jobs when filters or sort changes, but not on initial render
   useEffect(() => {
-    const fetchJobsData = async () => {
-      try {
-        await getJobs();
-      } catch (err) {
-        console.error('Error in fetchJobsData effect:', err);
-      }
-    };
+    // If this is the first render, mark it as completed and fetch jobs
+    if (!initialRenderCompleted.current) {
+      initialRenderCompleted.current = true;
+      getJobs();
+      return;
+    }
     
-    fetchJobsData();
-  }, [getJobs]);
+    // For subsequent filter/sort changes, fetch jobs after a small delay
+    const timer = setTimeout(() => {
+      getJobs();
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, [getJobs, filters, sort]);
 
   // Effect to fetch saved jobs on mount and when user changes
   useEffect(() => {
-    const fetchSavedJobsData = async () => {
-      try {
-        await getSavedJobs();
-      } catch (err) {
-        console.error('Error in fetchSavedJobsData effect:', err);
-      }
-    };
-    
-    fetchSavedJobsData();
+    getSavedJobs();
   }, [getSavedJobs]);
 
   return {
