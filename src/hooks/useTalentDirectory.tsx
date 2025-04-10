@@ -117,13 +117,13 @@ export const useTalentDirectory = () => {
       // Apply sorting
       switch (filters.sortBy) {
         case 'rating':
-          dataQuery.order('rating', { ascending: false, nullsLast: true });
+          dataQuery.order('rating', { ascending: false });
           break;
         case 'experience':
-          dataQuery.order('experience', { ascending: false, nullsLast: true });
+          dataQuery.order('experience', { ascending: false });
           break;
         case 'reviews':
-          dataQuery.order('reviews', { ascending: false, nullsLast: true });
+          dataQuery.order('reviews', { ascending: false });
           break;
         case 'likes':
           // For now sorting by likes is handled in JS after fetching,
@@ -227,7 +227,8 @@ export const useTalentDirectory = () => {
       
       if (error) throw error;
       
-      setLikedProfiles(data?.map(item => item.talent_id) || []);
+      const likedIds = data?.map(item => item.talent_id) || [];
+      setLikedProfiles(likedIds);
     } catch (error) {
       console.error('Error fetching user likes:', error);
     }
@@ -245,7 +246,8 @@ export const useTalentDirectory = () => {
       
       if (error) throw error;
       
-      setWishlistedProfiles(data?.map(item => item.talent_id) || []);
+      const wishlistedIds = data?.map(item => item.talent_id) || [];
+      setWishlistedProfiles(wishlistedIds);
     } catch (error) {
       console.error('Error fetching user wishlists:', error);
     }
@@ -270,7 +272,8 @@ export const useTalentDirectory = () => {
         const { error } = await supabase
           .from('talent_likes')
           .delete()
-          .match({ talent_id: talentId, liker_id: user.id });
+          .eq('talent_id', talentId)
+          .eq('liker_id', user.id);
         
         if (error) throw error;
         
@@ -285,7 +288,10 @@ export const useTalentDirectory = () => {
         // Like the profile
         const { error } = await supabase
           .from('talent_likes')
-          .insert({ talent_id: talentId, liker_id: user.id });
+          .insert({ 
+            talent_id: talentId, 
+            liker_id: user.id 
+          });
         
         if (error) throw error;
         
@@ -329,7 +335,8 @@ export const useTalentDirectory = () => {
         const { error } = await supabase
           .from('talent_wishlists')
           .delete()
-          .match({ talent_id: talentId, user_id: user.id });
+          .eq('talent_id', talentId)
+          .eq('user_id', user.id);
         
         if (error) throw error;
         
@@ -344,7 +351,10 @@ export const useTalentDirectory = () => {
         // Add to wishlist
         const { error } = await supabase
           .from('talent_wishlists')
-          .insert({ talent_id: talentId, user_id: user.id });
+          .insert({
+            talent_id: talentId, 
+            user_id: user.id
+          });
         
         if (error) throw error;
         
