@@ -7,7 +7,7 @@ import {
   fetchSavedJobs,
   toggleSaveJob as toggleSaveJobService,
   applyForJob as applyForJobService
-} from '@/services/jobsService';
+} from '@/services/jobs';
 import { Job, JobFilters, JobSort } from '@/types/jobTypes';
 
 export type { Job, JobFilters, JobSort, JobType, LocationType, RoleCategory, ExperienceLevel, PostedWithin } from '@/types/jobTypes';
