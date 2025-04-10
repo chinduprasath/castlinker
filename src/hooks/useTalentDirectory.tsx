@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -50,6 +49,10 @@ export type ConnectionRequest = {
   message?: string;
 };
 
+type GenericTable = {
+  [key: string]: any;
+};
+
 export const useTalentDirectory = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -67,30 +70,24 @@ export const useTalentDirectory = () => {
     sortBy: 'rating'
   });
 
-  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [pageSize] = useState(10);
   
-  // User interaction states
   const [likedProfiles, setLikedProfiles] = useState<string[]>([]);
   const [wishlistedProfiles, setWishlistedProfiles] = useState<string[]>([]);
   const [connectionRequests, setConnectionRequests] = useState<ConnectionRequest[]>([]);
 
-  // Fetch talent profiles
   const fetchProfiles = async () => {
     setIsLoading(true);
     try {
-      // Calculate pagination offsets
       const from = (currentPage - 1) * pageSize;
       const to = from + pageSize - 1;
       
-      // First get the total count without pagination
       const countQuery = supabase
         .from('talent_profiles')
         .select('id', { count: 'exact' });
       
-      // Apply standard filters to the count query
       if (filters.verifiedOnly) {
         countQuery.eq('is_verified', true);
       }
@@ -103,10 +100,8 @@ export const useTalentDirectory = () => {
       
       if (countError) throw countError;
       
-      // Set the total count for pagination
       setTotalCount(count || 0);
 
-      // Now fetch the actual data with pagination
       const dataQuery = supabase
         .from('talent_profiles')
         .select(`
@@ -115,7 +110,6 @@ export const useTalentDirectory = () => {
         `)
         .range(from, to);
       
-      // Apply filters
       if (filters.verifiedOnly) {
         dataQuery.eq('is_verified', true);
       }
@@ -124,7 +118,6 @@ export const useTalentDirectory = () => {
         dataQuery.eq('is_available', true);
       }
       
-      // Apply sorting
       switch (filters.sortBy) {
         case 'rating':
           dataQuery.order('rating', { ascending: false });
@@ -136,8 +129,6 @@ export const useTalentDirectory = () => {
           dataQuery.order('reviews', { ascending: false });
           break;
         case 'likes':
-          // For now sorting by likes is handled in JS after fetching,
-          // since we need to count related records
           break;
       }
       
@@ -166,10 +157,8 @@ export const useTalentDirectory = () => {
           likesCount: item.talent_likes?.length || 0
         }));
         
-        // Apply more complex JS filters
         let filteredProfiles = [...formattedProfiles];
         
-        // Apply search filter
         if (filters.searchTerm) {
           const term = filters.searchTerm.toLowerCase();
           filteredProfiles = filteredProfiles.filter(profile => 
@@ -179,34 +168,29 @@ export const useTalentDirectory = () => {
           );
         }
         
-        // Apply role filter
         if (filters.selectedRoles.length > 0) {
           filteredProfiles = filteredProfiles.filter(profile => 
             filters.selectedRoles.includes(profile.role)
           );
         }
         
-        // Apply location filter
         if (filters.selectedLocations.length > 0) {
           filteredProfiles = filteredProfiles.filter(profile => 
             filters.selectedLocations.includes(profile.location)
           );
         }
         
-        // Apply experience range filter
         filteredProfiles = filteredProfiles.filter(profile => 
           profile.experience >= filters.experienceRange[0] && 
           profile.experience <= filters.experienceRange[1]
         );
         
-        // Apply likes minimum filter
         if (filters.likesMinimum > 0) {
           filteredProfiles = filteredProfiles.filter(profile => 
             profile.likesCount >= filters.likesMinimum
           );
         }
         
-        // If sorting by likes, do it here
         if (filters.sortBy === 'likes') {
           filteredProfiles.sort((a, b) => b.likesCount - a.likesCount);
         }
@@ -225,7 +209,6 @@ export const useTalentDirectory = () => {
     }
   };
 
-  // Fetch user's liked profiles
   const fetchUserLikes = async () => {
     if (!user) return;
     
@@ -244,7 +227,6 @@ export const useTalentDirectory = () => {
     }
   };
 
-  // Fetch user's wishlisted profiles
   const fetchUserWishlists = async () => {
     if (!user) return;
     
@@ -263,7 +245,6 @@ export const useTalentDirectory = () => {
     }
   };
 
-  // Toggle like on a talent profile
   const toggleLike = async (talentId: string) => {
     if (!user) {
       toast({
@@ -278,7 +259,6 @@ export const useTalentDirectory = () => {
     
     try {
       if (isLiked) {
-        // Unlike the profile
         const { error } = await supabase
           .from('talent_likes')
           .delete()
@@ -287,7 +267,6 @@ export const useTalentDirectory = () => {
         
         if (error) throw error;
         
-        // Update local state
         setLikedProfiles(prev => prev.filter(id => id !== talentId));
         
         toast({
@@ -295,7 +274,6 @@ export const useTalentDirectory = () => {
           description: "Removed like from profile",
         });
       } else {
-        // Like the profile
         const { error } = await supabase
           .from('talent_likes')
           .insert({ 
@@ -305,7 +283,6 @@ export const useTalentDirectory = () => {
         
         if (error) throw error;
         
-        // Update local state
         setLikedProfiles(prev => [...prev, talentId]);
         
         toast({
@@ -314,7 +291,6 @@ export const useTalentDirectory = () => {
         });
       }
       
-      // Refresh to update the likes count
       fetchProfiles();
     } catch (error) {
       console.error('Error toggling like:', error);
@@ -326,7 +302,6 @@ export const useTalentDirectory = () => {
     }
   };
 
-  // Toggle wishlist on a talent profile
   const toggleWishlist = async (talentId: string) => {
     if (!user) {
       toast({
@@ -341,7 +316,6 @@ export const useTalentDirectory = () => {
     
     try {
       if (isWishlisted) {
-        // Remove from wishlist
         const { error } = await supabase
           .from('talent_wishlists')
           .delete()
@@ -350,7 +324,6 @@ export const useTalentDirectory = () => {
         
         if (error) throw error;
         
-        // Update local state
         setWishlistedProfiles(prev => prev.filter(id => id !== talentId));
         
         toast({
@@ -358,7 +331,6 @@ export const useTalentDirectory = () => {
           description: "Removed from wishlist",
         });
       } else {
-        // Add to wishlist
         const { error } = await supabase
           .from('talent_wishlists')
           .insert({
@@ -368,7 +340,6 @@ export const useTalentDirectory = () => {
         
         if (error) throw error;
         
-        // Update local state
         setWishlistedProfiles(prev => [...prev, talentId]);
         
         toast({
@@ -386,7 +357,6 @@ export const useTalentDirectory = () => {
     }
   };
 
-  // Send connection request
   const sendConnectionRequest = async (recipientId: string, message: string = '') => {
     if (!user) {
       toast({
@@ -397,7 +367,6 @@ export const useTalentDirectory = () => {
       return;
     }
     
-    // Check if a connection request already exists
     const existingConnection = connectionRequests.find(
       conn => (conn.requesterId === user.id && conn.recipientId === recipientId) ||
              (conn.requesterId === recipientId && conn.recipientId === user.id)
@@ -413,22 +382,19 @@ export const useTalentDirectory = () => {
     }
     
     try {
-      // Since the talent_connections table isn't in the generated types,
-      // we'll use the generic insert method with explicit typing
-      const { error } = await supabase
-        .from('talent_connections')
+      const { error } = await (supabase
+        .from('talent_connections' as any)
         .insert({
           requester_id: user.id,
           recipient_id: recipientId,
           status: 'pending',
           message: message
-        } as any); // Use 'as any' to bypass TypeScript errors
+        }) as unknown as { error: any });
       
       if (error) throw error;
       
-      // Update the connection requests state
       const newConnection: ConnectionRequest = {
-        id: 'temp-id', // Will be replaced when we fetch again
+        id: 'temp-id',
         requesterId: user.id,
         recipientId: recipientId,
         status: 'pending',
@@ -452,9 +418,7 @@ export const useTalentDirectory = () => {
     }
   };
 
-  // Share a talent profile
   const shareProfile = (profile: TalentProfile) => {
-    // On the web, use the Web Share API if available, otherwise copy to clipboard
     if (navigator.share) {
       navigator.share({
         title: `Check out ${profile.name} on Cinema Connect`,
@@ -476,7 +440,6 @@ export const useTalentDirectory = () => {
     }
   };
 
-  // Helper function to copy profile info to clipboard
   const copyToClipboard = (profile: TalentProfile) => {
     const text = `${profile.name} - ${profile.role}\n${window.location.href}`;
     navigator.clipboard.writeText(text)
@@ -496,7 +459,6 @@ export const useTalentDirectory = () => {
       });
   };
 
-  // Send message to talent
   const sendMessage = async (talentId: string, message: string) => {
     if (!user) {
       toast({
@@ -508,7 +470,6 @@ export const useTalentDirectory = () => {
     }
     
     try {
-      // Get the user_id for the talent profile
       const { data: profileData, error: profileError } = await supabase
         .from('talent_profiles')
         .select('user_id')
@@ -518,7 +479,6 @@ export const useTalentDirectory = () => {
       if (profileError) throw profileError;
       if (!profileData) throw new Error('Talent profile not found');
       
-      // Insert message
       const { data, error } = await supabase
         .from('talent_messages')
         .insert({
@@ -546,14 +506,11 @@ export const useTalentDirectory = () => {
     }
   };
 
-  // Update filters
   const updateFilters = (newFilters: Partial<TalentFilters>) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
-    // Reset to first page when filters change
     setCurrentPage(1);
   };
 
-  // Reset filters
   const resetFilters = () => {
     setFilters({
       searchTerm: '',
@@ -568,25 +525,20 @@ export const useTalentDirectory = () => {
     setCurrentPage(1);
   };
 
-  // Change page
   const changePage = (page: number) => {
     setCurrentPage(page);
   };
 
-  // Calculate total pages
   const totalPages = Math.ceil(totalCount / pageSize);
 
-  // Fetch connection requests - modified to handle custom table structure
   const fetchConnectionRequests = async () => {
     if (!user) return;
     
     try {
-      // Use a more direct approach since the RPC function might not exist
-      // and the talent_connections table isn't in the types
-      const { data, error } = await supabase
-        .from('talent_connections')
+      const { data, error } = await (supabase
+        .from('talent_connections' as any)
         .select('*')
-        .or(`requester_id.eq.${user.id},recipient_id.eq.${user.id}`);
+        .or(`requester_id.eq.${user.id},recipient_id.eq.${user.id})`) as unknown as { data: any[], error: any });
       
       if (error) {
         console.error("Couldn't fetch connection requests:", error);
@@ -594,7 +546,6 @@ export const useTalentDirectory = () => {
       }
       
       if (data) {
-        // Format the connection data to match our ConnectionRequest type
         const formattedConnections: ConnectionRequest[] = data.map((item: any) => ({
           id: item.id,
           requesterId: item.requester_id,
@@ -611,12 +562,10 @@ export const useTalentDirectory = () => {
     }
   };
 
-  // Load talent profiles on initial render and when filters or pagination changes
   useEffect(() => {
     fetchProfiles();
   }, [filters, currentPage]);
 
-  // Load user interactions on mount and when user changes
   useEffect(() => {
     fetchUserLikes();
     fetchUserWishlists();
