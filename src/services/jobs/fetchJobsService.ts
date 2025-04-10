@@ -1,10 +1,21 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { JobFilters } from '@/types/jobTypes';
 
 // Set a reasonable limit to prevent timeout issues
 const PAGE_SIZE = 20;
 
-export const fetchJobs = async (filters: JobFilters, sort: { field: string; direction: string }) => {
+// Define a consistent return type for all our functions
+type JobsQueryResult = {
+  data: any[];
+  count: number;
+  error?: {
+    message: string;
+    originalError?: any;
+  };
+};
+
+export const fetchJobs = async (filters: JobFilters, sort: { field: string; direction: string }): Promise<JobsQueryResult> => {
   try {
     console.log('Fetching jobs with filters:', filters, 'and sort:', sort);
     
@@ -30,7 +41,7 @@ export const fetchJobs = async (filters: JobFilters, sort: { field: string; dire
 };
 
 // Specialized function for text search
-const searchJobs = async (searchTerm: string) => {
+const searchJobs = async (searchTerm: string): Promise<JobsQueryResult> => {
   console.log('Using search term:', searchTerm);
   
   try {
@@ -52,7 +63,7 @@ const searchJobs = async (searchTerm: string) => {
 };
 
 // Specialized function for filtering jobs
-const filterJobs = async (filters: JobFilters, sort: { field: string; direction: string }) => {
+const filterJobs = async (filters: JobFilters, sort: { field: string; direction: string }): Promise<JobsQueryResult> => {
   try {
     let query = supabase.from('film_jobs').select('*', { count: 'exact' }).limit(PAGE_SIZE) as any;
 
@@ -146,7 +157,14 @@ const filterJobs = async (filters: JobFilters, sort: { field: string; direction:
 
     if (error) {
       console.error('Query error:', error);
-      throw new Error(`Query failed: ${error.message}`);
+      return { 
+        data: [], 
+        count: 0, 
+        error: {
+          message: `Query failed: ${error.message}`,
+          originalError: error
+        }
+      };
     }
     
     console.log('Query results:', data?.length || 0, 'jobs found');

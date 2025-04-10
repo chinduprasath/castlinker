@@ -37,23 +37,23 @@ export const useJobsData = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const { data, count, error } = await fetchJobs(filters, sort);
+      const result = await fetchJobs(filters, sort);
       
-      if (error) {
-        setError(error.message);
-        console.error('Error fetching jobs:', error);
+      if (result.error) {
+        setError(result.error.message);
+        console.error('Error fetching jobs:', result.error);
         toast({
           title: 'Error fetching jobs',
-          description: error.message,
+          description: result.error.message,
           variant: 'destructive',
         });
         // Still set empty array to prevent endless loading state
         setJobs([]);
         setTotalCount(0);
       } else {
-        console.log('Job data fetched:', data.length, 'jobs');
-        setJobs(data);
-        setTotalCount(count);
+        console.log('Job data fetched:', result.data.length, 'jobs');
+        setJobs(result.data);
+        setTotalCount(result.count);
       }
     } catch (error: any) {
       console.error('Error in getJobs:', error);
