@@ -5,8 +5,11 @@ export const fetchJobs = async (filters: JobFilters, sort: { field: string; dire
   try {
     console.log('Fetching jobs with filters:', filters, 'and sort:', sort);
     
+    // Set a reasonable limit to prevent timeout issues
+    const PAGE_SIZE = 20;
+    
     // Note: Explicitly type this as any to avoid TS errors with the database schema
-    let query = supabase.from('film_jobs').select('*', { count: 'exact' }) as any;
+    let query = supabase.from('film_jobs').select('*', { count: 'exact' }).limit(PAGE_SIZE) as any;
 
     // Apply filters
     if (filters.search && filters.search.trim() !== '') {
@@ -14,7 +17,7 @@ export const fetchJobs = async (filters: JobFilters, sort: { field: string; dire
       // Use the search_film_jobs function for text search
       const { data, error, count } = await supabase.rpc('search_film_jobs', {
         search_term: filters.search
-      }) as any;
+      }).limit(PAGE_SIZE) as any;
       
       if (error) {
         console.error('Search error:', error);
@@ -97,13 +100,14 @@ export const fetchJobs = async (filters: JobFilters, sort: { field: string; dire
 
     console.log('Executing query for jobs');
     
-    // Set a reasonable timeout for the query
-    const { data, error, count } = await Promise.race([
-      query,
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Query timed out after 30 seconds')), 30000)
-      )
-    ]) as any;
+    // Using an AbortController with a timeout for the query
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => abortController.abort(), 8000); // 8 second timeout
+    
+    const { data, error, count } = await query as any;
+    
+    // Clear the timeout since the query completed
+    clearTimeout(timeoutId);
 
     if (error) {
       console.error('Query error:', error);

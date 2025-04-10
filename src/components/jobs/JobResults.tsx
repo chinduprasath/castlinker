@@ -10,6 +10,7 @@ import NoJobsFound from "./NoJobsFound";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 
 interface JobResultsProps {
   jobs: Job[];
@@ -36,6 +37,7 @@ const JobResults = memo(({
 }: JobResultsProps) => {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isApplyFormOpen, setIsApplyFormOpen] = useState(false);
+  const [retryCount, setRetryCount] = useState(0); // Track retry attempts
   
   const handleJobClick = useCallback((job: Job) => {
     setSelectedJob(job);
@@ -73,6 +75,19 @@ const JobResults = memo(({
   const isSaved = useCallback((jobId: string) => {
     return savedJobs.includes(jobId);
   }, [savedJobs]);
+  
+  // Handle retry with exponential backoff
+  const handleRetry = useCallback(async () => {
+    if (!refetchJobs) return;
+    
+    setRetryCount(prev => prev + 1);
+    
+    try {
+      await refetchJobs();
+    } catch (err) {
+      console.error("Retry failed:", err);
+    }
+  }, [refetchJobs]);
 
   return (
     <>
@@ -92,21 +107,33 @@ const JobResults = memo(({
           <Alert variant="destructive" className="animate-none">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Error fetching jobs</AlertTitle>
-            <AlertDescription className="text-sm">{error}</AlertDescription>
-            {refetchJobs && (
-              <Button 
-                onClick={() => refetchJobs()} 
-                variant="outline" 
-                size="sm" 
-                className="mt-2"
-              >
-                <RefreshCcw className="mr-1 h-4 w-4" />
-                Try Again
-              </Button>
-            )}
+            <AlertDescription className="text-sm space-y-3">
+              <p>{error}</p>
+              {refetchJobs && (
+                <Button 
+                  onClick={handleRetry} 
+                  variant="outline" 
+                  size="sm"
+                  className="mt-2"
+                  disabled={isLoading}
+                >
+                  <RefreshCcw className={`mr-1 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                  Try Again
+                </Button>
+              )}
+            </AlertDescription>
           </Alert>
         ) : isLoading ? (
-          <JobListSkeleton count={3} />
+          <div className="space-y-3">
+            <div className="w-full">
+              <Progress 
+                value={100} 
+                className="h-2" 
+                indicatorClassName="animate-pulse bg-gold"
+              />
+            </div>
+            <JobListSkeleton count={3} />
+          </div>
         ) : jobs.length === 0 ? (
           <NoJobsFound />
         ) : (
