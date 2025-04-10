@@ -41,6 +41,14 @@ export type TalentMessage = {
   message: string;
 };
 
+export type ConnectionRequest = {
+  id: string;
+  requesterId: string;
+  recipientId: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  createdAt: string;
+};
+
 export const useTalentDirectory = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -66,6 +74,7 @@ export const useTalentDirectory = () => {
   // User interaction states
   const [likedProfiles, setLikedProfiles] = useState<string[]>([]);
   const [wishlistedProfiles, setWishlistedProfiles] = useState<string[]>([]);
+  const [connectionRequests, setConnectionRequests] = useState<ConnectionRequest[]>([]);
 
   // Fetch talent profiles
   const fetchProfiles = async () => {
@@ -253,6 +262,32 @@ export const useTalentDirectory = () => {
     }
   };
 
+  // Fetch connection requests
+  const fetchConnectionRequests = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('talent_connections')
+        .select('*')
+        .or(`requester_id.eq.${user.id},recipient_id.eq.${user.id}`);
+      
+      if (error) throw error;
+      
+      setConnectionRequests(
+        data?.map(item => ({
+          id: item.id,
+          requesterId: item.requester_id,
+          recipientId: item.recipient_id,
+          status: item.status,
+          createdAt: item.created_at
+        })) || []
+      );
+    } catch (error) {
+      console.error('Error fetching connection requests:', error);
+    }
+  };
+
   // Toggle like on a talent profile
   const toggleLike = async (talentId: string) => {
     if (!user) {
@@ -371,6 +406,60 @@ export const useTalentDirectory = () => {
       toast({
         title: "Error",
         description: "Failed to update wishlist",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Send connection request
+  const sendConnectionRequest = async (recipientId: string) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "You must be logged in to send connection requests",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Check if a connection request already exists
+    const existingConnection = connectionRequests.find(
+      conn => (conn.requesterId === user.id && conn.recipientId === recipientId) ||
+             (conn.requesterId === recipientId && conn.recipientId === user.id)
+    );
+    
+    if (existingConnection) {
+      toast({
+        title: "Connection Request Exists",
+        description: `A connection request already exists with this user`,
+        variant: "default"
+      });
+      return;
+    }
+    
+    try {
+      const { error } = await supabase
+        .from('talent_connections')
+        .insert({
+          requester_id: user.id,
+          recipient_id: recipientId,
+          status: 'pending'
+        });
+      
+      if (error) throw error;
+      
+      // Refresh connection requests
+      fetchConnectionRequests();
+      
+      toast({
+        title: "Success",
+        description: "Connection request sent",
+      });
+    } catch (error) {
+      console.error('Error sending connection request:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send connection request",
         variant: "destructive"
       });
     }
@@ -509,6 +598,7 @@ export const useTalentDirectory = () => {
   useEffect(() => {
     fetchUserLikes();
     fetchUserWishlists();
+    fetchConnectionRequests();
   }, [user]);
 
   return {
@@ -517,6 +607,7 @@ export const useTalentDirectory = () => {
     filters,
     likedProfiles,
     wishlistedProfiles,
+    connectionRequests,
     totalCount,
     pageSize,
     currentPage,
@@ -528,6 +619,7 @@ export const useTalentDirectory = () => {
     toggleWishlist,
     shareProfile,
     changePage,
+    sendConnectionRequest,
     refetchProfiles: fetchProfiles
   };
 };

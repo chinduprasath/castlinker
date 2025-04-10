@@ -36,11 +36,11 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTalentDirectory, TalentProfile } from "@/hooks/useTalentDirectory";
 import { MessageDialog } from "@/components/talent/MessageDialog";
 import { ProfileDialog } from "@/components/talent/ProfileDialog";
+import { ConnectDialog } from "@/components/talent/ConnectDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // Roles available in the film industry
@@ -64,6 +64,7 @@ const TalentDirectory = () => {
     filters,
     likedProfiles,
     wishlistedProfiles,
+    connectionRequests,
     totalCount,
     pageSize,
     currentPage,
@@ -74,13 +75,15 @@ const TalentDirectory = () => {
     toggleLike,
     toggleWishlist,
     shareProfile,
-    changePage
+    changePage,
+    sendConnectionRequest
   } = useTalentDirectory();
   
   // UI state
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+  const [connectDialogOpen, setConnectDialogOpen] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<TalentProfile | null>(null);
   
   const handleMessageClick = (profile: TalentProfile) => {
@@ -91,6 +94,11 @@ const TalentDirectory = () => {
   const handleViewProfile = (profile: TalentProfile) => {
     setSelectedProfile(profile);
     setProfileDialogOpen(true);
+  };
+  
+  const handleConnectClick = (profile: TalentProfile) => {
+    setSelectedProfile(profile);
+    setConnectDialogOpen(true);
   };
   
   const toggleRole = (role: string) => {
@@ -107,6 +115,19 @@ const TalentDirectory = () => {
         ? filters.selectedLocations.filter(l => l !== location)
         : [...filters.selectedLocations, location]
     });
+  };
+  
+  // Check if a connection request exists for this profile
+  const getConnectionStatus = (profile: TalentProfile) => {
+    if (!user) return null;
+    
+    const connection = connectionRequests.find(
+      conn => 
+        (conn.requesterId === user.id && conn.recipientId === profile.userId) ||
+        (conn.requesterId === profile.userId && conn.recipientId === user.id)
+    );
+    
+    return connection ? connection.status : null;
   };
   
   // Generate array of page numbers for pagination display
@@ -579,13 +600,47 @@ const TalentDirectory = () => {
                   <MessageCircle className="h-3.5 w-3.5" />
                   Message
                 </Button>
-                <Button 
-                  size="sm" 
-                  className="gap-1 bg-gold text-black hover:bg-gold/90"
-                  onClick={() => handleViewProfile(profile)}
-                >
-                  View Profile
-                </Button>
+                
+                <div className="flex gap-2">
+                  {getConnectionStatus(profile) === 'pending' ? (
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="gap-1 border-gold/20 bg-gold/10 text-gold" 
+                      disabled
+                    >
+                      <UserPlus className="h-3.5 w-3.5" />
+                      Pending
+                    </Button>
+                  ) : getConnectionStatus(profile) === 'accepted' ? (
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="gap-1 border-green-500/20 bg-green-950/20 text-green-500" 
+                      disabled
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                      Connected
+                    </Button>
+                  ) : (
+                    <Button 
+                      size="sm" 
+                      className="gap-1 bg-gold text-black hover:bg-gold/90"
+                      onClick={() => handleConnectClick(profile)}
+                    >
+                      <UserPlus className="h-3.5 w-3.5" />
+                      Connect
+                    </Button>
+                  )}
+                  
+                  <Button 
+                    size="sm" 
+                    className="bg-gold text-black hover:bg-gold/90"
+                    onClick={() => handleViewProfile(profile)}
+                  >
+                    View Profile
+                  </Button>
+                </div>
               </CardFooter>
             </Card>
           ))
@@ -656,6 +711,13 @@ const TalentDirectory = () => {
         onClose={() => setProfileDialogOpen(false)}
         profile={selectedProfile}
         onMessage={handleMessageClick}
+      />
+      
+      <ConnectDialog 
+        isOpen={connectDialogOpen}
+        onClose={() => setConnectDialogOpen(false)}
+        profile={selectedProfile}
+        onConnect={sendConnectionRequest}
       />
     </div>
   );
