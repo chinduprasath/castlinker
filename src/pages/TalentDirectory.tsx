@@ -15,8 +15,17 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { 
   Search, Check, Star, MessageCircle, Bookmark, ArrowUpDown, 
-  MapPin, Filter, UserPlus, Badge as BadgeIcon
+  MapPin, Filter, UserPlus, Badge as BadgeIcon, Heart, Share
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { 
@@ -53,9 +62,19 @@ const TalentDirectory = () => {
     profiles,
     isLoading,
     filters,
+    likedProfiles,
+    wishlistedProfiles,
+    totalCount,
+    pageSize,
+    currentPage,
+    totalPages,
     updateFilters,
     resetFilters,
-    sendMessage
+    sendMessage,
+    toggleLike,
+    toggleWishlist,
+    shareProfile,
+    changePage
   } = useTalentDirectory();
   
   // UI state
@@ -88,6 +107,33 @@ const TalentDirectory = () => {
         ? filters.selectedLocations.filter(l => l !== location)
         : [...filters.selectedLocations, location]
     });
+  };
+  
+  // Generate array of page numbers for pagination display
+  const getPageNumbers = () => {
+    const pages = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(1);
+      
+      if (currentPage > 3) pages.push('ellipsis');
+      
+      // Pages around the current page
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+      
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+      
+      if (currentPage < totalPages - 2) pages.push('ellipsis');
+      
+      pages.push(totalPages);
+    }
+    return pages;
   };
 
   return (
@@ -131,7 +177,7 @@ const TalentDirectory = () => {
             <div className="flex gap-2">
               <Select 
                 value={filters.sortBy} 
-                onValueChange={(value) => updateFilters({ sortBy: value as 'rating' | 'experience' | 'reviews' })}
+                onValueChange={(value) => updateFilters({ sortBy: value as 'rating' | 'experience' | 'reviews' | 'likes' })}
               >
                 <SelectTrigger className="w-[180px] border-gold/10 focus:ring-gold/30 bg-background/50">
                   <div className="flex items-center gap-2">
@@ -143,6 +189,7 @@ const TalentDirectory = () => {
                   <SelectItem value="rating">Highest Rated</SelectItem>
                   <SelectItem value="experience">Most Experienced</SelectItem>
                   <SelectItem value="reviews">Most Reviewed</SelectItem>
+                  <SelectItem value="likes">Most Liked</SelectItem>
                 </SelectContent>
               </Select>
               
@@ -219,6 +266,25 @@ const TalentDirectory = () => {
                     <Separator className="bg-gold/10" />
                     
                     <div className="space-y-3">
+                      <h3 className="font-medium text-sm text-foreground/80">Likes Filter</h3>
+                      <div className="space-y-4">
+                        <div className="flex items-center space-x-2">
+                          <Label htmlFor="likesMinimum" className="min-w-20 text-sm">Minimum Likes:</Label>
+                          <Input
+                            id="likesMinimum"
+                            type="number"
+                            min={0}
+                            value={filters.likesMinimum}
+                            onChange={(e) => updateFilters({ likesMinimum: parseInt(e.target.value) || 0 })}
+                            className="h-8 w-24"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <Separator className="bg-gold/10" />
+                    
+                    <div className="space-y-3">
                       <h3 className="font-medium text-sm text-foreground/80">Additional Filters</h3>
                       <div className="space-y-2">
                         <div className="flex items-center space-x-2">
@@ -259,7 +325,9 @@ const TalentDirectory = () => {
       </Card>
       
       {/* Applied Filters */}
-      {(filters.selectedRoles.length > 0 || filters.selectedLocations.length > 0 || filters.verifiedOnly || filters.availableOnly || filters.experienceRange[0] > 0 || filters.experienceRange[1] < 20) && (
+      {(filters.selectedRoles.length > 0 || filters.selectedLocations.length > 0 || filters.verifiedOnly || 
+        filters.availableOnly || filters.experienceRange[0] > 0 || filters.experienceRange[1] < 20 ||
+        filters.likesMinimum > 0) && (
         <div className="flex flex-wrap items-center gap-2 mt-3">
           <span className="text-sm text-foreground/70">Active filters:</span>
           
@@ -325,6 +393,18 @@ const TalentDirectory = () => {
             </Button>
           )}
           
+          {filters.likesMinimum > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs h-7 px-2 py-1 bg-gold/10 border-gold/20 hover:bg-gold/20"
+              onClick={() => updateFilters({ likesMinimum: 0 })}
+            >
+              Min Likes: {filters.likesMinimum}+
+              <span className="ml-1 text-xs">×</span>
+            </Button>
+          )}
+          
           <Button
             variant="outline"
             size="sm"
@@ -339,7 +419,7 @@ const TalentDirectory = () => {
       {/* Results Count */}
       <div className="flex justify-between items-center mt-3">
         <p className="text-sm text-foreground/70">
-          Found <span className="text-gold font-medium">{profiles.length}</span> talents
+          Found <span className="text-gold font-medium">{totalCount}</span> talents
         </p>
       </div>
       
@@ -402,12 +482,15 @@ const TalentDirectory = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="flex flex-col items-end">
+                  <div className="flex flex-col items-end gap-1">
                     <div className="flex items-center">
                       <Star className="h-4 w-4 text-gold mr-1 fill-gold" />
                       <span className="text-sm font-medium">{profile.rating}</span>
                     </div>
-                    <span className="text-xs text-foreground/60">{profile.reviews} reviews</span>
+                    <div className="flex items-center">
+                      <Heart className="h-3.5 w-3.5 text-rose-400 mr-1" />
+                      <span className="text-xs text-foreground/60">{profile.likesCount}</span>
+                    </div>
                   </div>
                 </div>
               </CardHeader>
@@ -444,6 +527,47 @@ const TalentDirectory = () => {
                     </span>
                   </div>
                 </div>
+                
+                {/* User Interaction Buttons */}
+                <div className="flex justify-between mt-4">
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    className={`px-3 border-gold/20 ${
+                      likedProfiles.includes(profile.id) ? 'bg-rose-950/30 text-rose-400' : 'hover:bg-rose-950/20 hover:text-rose-400'
+                    }`}
+                    onClick={() => toggleLike(profile.id)}
+                  >
+                    <Heart 
+                      className={`h-4 w-4 mr-1 ${likedProfiles.includes(profile.id) ? 'fill-rose-400' : ''}`} 
+                    />
+                    {likedProfiles.includes(profile.id) ? 'Liked' : 'Like'}
+                  </Button>
+                  
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    className={`px-3 border-gold/20 ${
+                      wishlistedProfiles.includes(profile.id) ? 'bg-amber-950/30 text-amber-400' : 'hover:bg-amber-950/20 hover:text-amber-400'
+                    }`}
+                    onClick={() => toggleWishlist(profile.id)}
+                  >
+                    <Bookmark 
+                      className={`h-4 w-4 mr-1 ${wishlistedProfiles.includes(profile.id) ? 'fill-amber-400' : ''}`} 
+                    />
+                    {wishlistedProfiles.includes(profile.id) ? 'Saved' : 'Save'}
+                  </Button>
+                  
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    className="px-3 border-gold/20 hover:bg-blue-950/20 hover:text-blue-400"
+                    onClick={() => shareProfile(profile)}
+                  >
+                    <Share className="h-4 w-4 mr-1" />
+                    Share
+                  </Button>
+                </div>
               </CardContent>
               <CardFooter className="px-4 py-3 border-t border-gold/10 flex justify-between bg-gradient-to-r from-transparent to-gold/5">
                 <Button 
@@ -478,6 +602,46 @@ const TalentDirectory = () => {
           </div>
         )}
       </div>
+      
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-center mt-6">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious 
+                  onClick={() => changePage(Math.max(1, currentPage - 1))}
+                  className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+              
+              {getPageNumbers().map((page, index) => 
+                page === 'ellipsis' ? (
+                  <PaginationItem key={`ellipsis-${index}`}>
+                    <PaginationEllipsis />
+                  </PaginationItem>
+                ) : (
+                  <PaginationItem key={`page-${page}`}>
+                    <PaginationLink 
+                      isActive={currentPage === page}
+                      onClick={() => typeof page === 'number' && changePage(page)}
+                    >
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                )
+              )}
+              
+              <PaginationItem>
+                <PaginationNext 
+                  onClick={() => changePage(Math.min(totalPages, currentPage + 1))}
+                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
 
       {/* Dialogs */}
       <MessageDialog 

@@ -21,6 +21,7 @@ export type TalentProfile = {
   languages: string[];
   bio: string;
   featuredIn: string[];
+  likesCount: number;
 };
 
 export type TalentFilters = {
@@ -30,7 +31,8 @@ export type TalentFilters = {
   experienceRange: [number, number];
   verifiedOnly: boolean;
   availableOnly: boolean;
-  sortBy: 'rating' | 'experience' | 'reviews';
+  likesMinimum: number;
+  sortBy: 'rating' | 'experience' | 'reviews' | 'likes';
 };
 
 export type TalentMessage = {
@@ -52,22 +54,89 @@ export const useTalentDirectory = () => {
     experienceRange: [0, 20],
     verifiedOnly: false,
     availableOnly: false,
+    likesMinimum: 0,
     sortBy: 'rating'
   });
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [pageSize] = useState(10);
+  
+  // User interaction states
+  const [likedProfiles, setLikedProfiles] = useState<string[]>([]);
+  const [wishlistedProfiles, setWishlistedProfiles] = useState<string[]>([]);
 
   // Fetch talent profiles
   const fetchProfiles = async () => {
     setIsLoading(true);
     try {
-      // Use a typed query to avoid type issues
-      const { data, error } = await supabase
+      // Calculate pagination offsets
+      const from = (currentPage - 1) * pageSize;
+      const to = from + pageSize - 1;
+      
+      // First get the total count without pagination
+      const countQuery = supabase
         .from('talent_profiles')
-        .select('*');
+        .select('id', { count: 'exact' });
+      
+      // Apply standard filters to the count query
+      if (filters.verifiedOnly) {
+        countQuery.eq('is_verified', true);
+      }
+      
+      if (filters.availableOnly) {
+        countQuery.eq('is_available', true);
+      }
+      
+      const { count, error: countError } = await countQuery;
+      
+      if (countError) throw countError;
+      
+      // Set the total count for pagination
+      setTotalCount(count || 0);
+
+      // Now fetch the actual data with pagination
+      const dataQuery = supabase
+        .from('talent_profiles')
+        .select(`
+          *,
+          talent_likes(count)
+        `)
+        .range(from, to);
+      
+      // Apply filters
+      if (filters.verifiedOnly) {
+        dataQuery.eq('is_verified', true);
+      }
+      
+      if (filters.availableOnly) {
+        dataQuery.eq('is_available', true);
+      }
+      
+      // Apply sorting
+      switch (filters.sortBy) {
+        case 'rating':
+          dataQuery.order('rating', { ascending: false, nullsLast: true });
+          break;
+        case 'experience':
+          dataQuery.order('experience', { ascending: false, nullsLast: true });
+          break;
+        case 'reviews':
+          dataQuery.order('reviews', { ascending: false, nullsLast: true });
+          break;
+        case 'likes':
+          // For now sorting by likes is handled in JS after fetching,
+          // since we need to count related records
+          break;
+      }
+      
+      const { data: talentData, error } = await dataQuery;
       
       if (error) throw error;
       
-      if (data) {
-        const formattedProfiles = data.map(item => ({
+      if (talentData) {
+        const formattedProfiles = talentData.map(item => ({
           id: item.id,
           userId: item.user_id,
           name: item.name,
@@ -83,10 +152,11 @@ export const useTalentDirectory = () => {
           experience: item.experience || 0,
           languages: item.languages || [],
           bio: item.bio || '',
-          featuredIn: item.featured_in || []
+          featuredIn: item.featured_in || [],
+          likesCount: item.talent_likes?.length || 0
         }));
         
-        // Apply filters in JavaScript for now
+        // Apply more complex JS filters
         let filteredProfiles = [...formattedProfiles];
         
         // Apply search filter
@@ -119,29 +189,17 @@ export const useTalentDirectory = () => {
           profile.experience <= filters.experienceRange[1]
         );
         
-        // Apply verified only filter
-        if (filters.verifiedOnly) {
-          filteredProfiles = filteredProfiles.filter(profile => profile.isVerified);
+        // Apply likes minimum filter
+        if (filters.likesMinimum > 0) {
+          filteredProfiles = filteredProfiles.filter(profile => 
+            profile.likesCount >= filters.likesMinimum
+          );
         }
         
-        // Apply available only filter
-        if (filters.availableOnly) {
-          filteredProfiles = filteredProfiles.filter(profile => profile.isAvailable);
+        // If sorting by likes, do it here
+        if (filters.sortBy === 'likes') {
+          filteredProfiles.sort((a, b) => b.likesCount - a.likesCount);
         }
-        
-        // Apply sorting
-        filteredProfiles.sort((a, b) => {
-          switch (filters.sortBy) {
-            case 'rating':
-              return b.rating - a.rating;
-            case 'experience':
-              return b.experience - a.experience;
-            case 'reviews':
-              return b.reviews - a.reviews;
-            default:
-              return 0;
-          }
-        });
         
         setProfiles(filteredProfiles);
       }
@@ -155,6 +213,201 @@ export const useTalentDirectory = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Fetch user's liked profiles
+  const fetchUserLikes = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('talent_likes')
+        .select('talent_id')
+        .eq('liker_id', user.id);
+      
+      if (error) throw error;
+      
+      setLikedProfiles(data?.map(item => item.talent_id) || []);
+    } catch (error) {
+      console.error('Error fetching user likes:', error);
+    }
+  };
+
+  // Fetch user's wishlisted profiles
+  const fetchUserWishlists = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('talent_wishlists')
+        .select('talent_id')
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      
+      setWishlistedProfiles(data?.map(item => item.talent_id) || []);
+    } catch (error) {
+      console.error('Error fetching user wishlists:', error);
+    }
+  };
+
+  // Toggle like on a talent profile
+  const toggleLike = async (talentId: string) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "You must be logged in to like profiles",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const isLiked = likedProfiles.includes(talentId);
+    
+    try {
+      if (isLiked) {
+        // Unlike the profile
+        const { error } = await supabase
+          .from('talent_likes')
+          .delete()
+          .match({ talent_id: talentId, liker_id: user.id });
+        
+        if (error) throw error;
+        
+        // Update local state
+        setLikedProfiles(prev => prev.filter(id => id !== talentId));
+        
+        toast({
+          title: "Success",
+          description: "Removed like from profile",
+        });
+      } else {
+        // Like the profile
+        const { error } = await supabase
+          .from('talent_likes')
+          .insert({ talent_id: talentId, liker_id: user.id });
+        
+        if (error) throw error;
+        
+        // Update local state
+        setLikedProfiles(prev => [...prev, talentId]);
+        
+        toast({
+          title: "Success",
+          description: "Profile liked successfully",
+        });
+      }
+      
+      // Refresh to update the likes count
+      fetchProfiles();
+    } catch (error) {
+      console.error('Error toggling like:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update like status",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Toggle wishlist on a talent profile
+  const toggleWishlist = async (talentId: string) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "You must be logged in to add profiles to your wishlist",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const isWishlisted = wishlistedProfiles.includes(talentId);
+    
+    try {
+      if (isWishlisted) {
+        // Remove from wishlist
+        const { error } = await supabase
+          .from('talent_wishlists')
+          .delete()
+          .match({ talent_id: talentId, user_id: user.id });
+        
+        if (error) throw error;
+        
+        // Update local state
+        setWishlistedProfiles(prev => prev.filter(id => id !== talentId));
+        
+        toast({
+          title: "Success",
+          description: "Removed from wishlist",
+        });
+      } else {
+        // Add to wishlist
+        const { error } = await supabase
+          .from('talent_wishlists')
+          .insert({ talent_id: talentId, user_id: user.id });
+        
+        if (error) throw error;
+        
+        // Update local state
+        setWishlistedProfiles(prev => [...prev, talentId]);
+        
+        toast({
+          title: "Success",
+          description: "Added to wishlist",
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling wishlist:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update wishlist",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Share a talent profile
+  const shareProfile = (profile: TalentProfile) => {
+    // On the web, use the Web Share API if available, otherwise copy to clipboard
+    if (navigator.share) {
+      navigator.share({
+        title: `Check out ${profile.name} on Cinema Connect`,
+        text: `${profile.name} - ${profile.role} with ${profile.experience} years of experience`,
+        url: window.location.href
+      })
+      .then(() => {
+        toast({
+          title: "Shared",
+          description: "Profile shared successfully",
+        });
+      })
+      .catch(error => {
+        console.error('Error sharing:', error);
+        copyToClipboard(profile);
+      });
+    } else {
+      copyToClipboard(profile);
+    }
+  };
+
+  // Helper function to copy profile info to clipboard
+  const copyToClipboard = (profile: TalentProfile) => {
+    const text = `${profile.name} - ${profile.role}\n${window.location.href}`;
+    navigator.clipboard.writeText(text)
+      .then(() => {
+        toast({
+          title: "Copied",
+          description: "Profile link copied to clipboard",
+        });
+      })
+      .catch(err => {
+        console.error('Failed to copy:', err);
+        toast({
+          title: "Error",
+          description: "Failed to copy profile link",
+          variant: "destructive"
+        });
+      });
   };
 
   // Send message to talent
@@ -210,6 +463,8 @@ export const useTalentDirectory = () => {
   // Update filters
   const updateFilters = (newFilters: Partial<TalentFilters>) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
+    // Reset to first page when filters change
+    setCurrentPage(1);
   };
 
   // Reset filters
@@ -221,22 +476,48 @@ export const useTalentDirectory = () => {
       experienceRange: [0, 20],
       verifiedOnly: false,
       availableOnly: false,
+      likesMinimum: 0,
       sortBy: 'rating'
     });
+    setCurrentPage(1);
   };
 
-  // Load talent profiles on initial render and when filters change
+  // Change page
+  const changePage = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  // Calculate total pages
+  const totalPages = Math.ceil(totalCount / pageSize);
+
+  // Load talent profiles on initial render and when filters or pagination changes
   useEffect(() => {
     fetchProfiles();
-  }, [filters]);
+  }, [filters, currentPage]);
+
+  // Load user interactions on mount and when user changes
+  useEffect(() => {
+    fetchUserLikes();
+    fetchUserWishlists();
+  }, [user]);
 
   return {
     profiles,
     isLoading,
     filters,
+    likedProfiles,
+    wishlistedProfiles,
+    totalCount,
+    pageSize,
+    currentPage,
+    totalPages,
     updateFilters,
     resetFilters,
     sendMessage,
+    toggleLike,
+    toggleWishlist,
+    shareProfile,
+    changePage,
     refetchProfiles: fetchProfiles
   };
 };

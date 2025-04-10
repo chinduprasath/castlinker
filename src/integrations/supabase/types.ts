@@ -499,6 +499,35 @@ export type Database = {
           },
         ]
       }
+      talent_likes: {
+        Row: {
+          created_at: string | null
+          id: string
+          liker_id: string
+          talent_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          liker_id: string
+          talent_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          liker_id?: string
+          talent_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "talent_likes_talent_id_fkey"
+            columns: ["talent_id"]
+            isOneToOne: false
+            referencedRelation: "talent_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       talent_messages: {
         Row: {
           created_at: string | null
@@ -588,6 +617,35 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      talent_wishlists: {
+        Row: {
+          created_at: string | null
+          id: string
+          talent_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          talent_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          talent_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "talent_wishlists_talent_id_fkey"
+            columns: ["talent_id"]
+            isOneToOne: false
+            referencedRelation: "talent_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       users_management: {
         Row: {
