@@ -14,6 +14,7 @@ type ConnectDialogProps = {
 
 export function ConnectDialog({ isOpen, onClose, profile, onConnect }: ConnectDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [message, setMessage] = useState('');
   
   const handleConnect = async () => {
     if (!profile) return;
@@ -22,6 +23,7 @@ export function ConnectDialog({ isOpen, onClose, profile, onConnect }: ConnectDi
     try {
       await onConnect(profile.userId);
       onClose();
+      setMessage(''); // Clear message after successful connection
     } catch (error) {
       console.error('Error sending connection request:', error);
     } finally {
@@ -49,6 +51,18 @@ export function ConnectDialog({ isOpen, onClose, profile, onConnect }: ConnectDi
             <p className="text-sm text-foreground/70 mb-2">You'll be connecting with:</p>
             <p className="font-medium">{profile.name}</p>
             <p className="text-sm">{profile.role} • {profile.location}</p>
+          </div>
+          
+          <div className="space-y-2">
+            <Textarea
+              placeholder={`Add a personal message to ${profile.name}... (optional)`}
+              className="bg-background/50 border-gold/20 resize-none h-24"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+            />
+            <p className="text-xs text-foreground/60 italic">
+              Adding a note helps increase the chance of your connection being accepted
+            </p>
           </div>
         </div>
         
