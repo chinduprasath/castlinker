@@ -9,7 +9,7 @@ type ConnectDialogProps = {
   isOpen: boolean;
   onClose: () => void;
   profile: TalentProfile | null;
-  onConnect: (talentId: string) => Promise<void>;
+  onConnect: (talentId: string, message?: string) => Promise<void>;
 };
 
 export function ConnectDialog({ isOpen, onClose, profile, onConnect }: ConnectDialogProps) {
@@ -21,7 +21,7 @@ export function ConnectDialog({ isOpen, onClose, profile, onConnect }: ConnectDi
     
     setIsSubmitting(true);
     try {
-      await onConnect(profile.userId);
+      await onConnect(profile.userId, message);
       onClose();
       setMessage(''); // Clear message after successful connection
     } catch (error) {

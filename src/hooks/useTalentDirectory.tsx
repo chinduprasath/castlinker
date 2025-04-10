@@ -47,6 +47,7 @@ export type ConnectionRequest = {
   recipientId: string;
   status: 'pending' | 'accepted' | 'rejected';
   createdAt: string;
+  message?: string;
 };
 
 export const useTalentDirectory = () => {
@@ -386,7 +387,7 @@ export const useTalentDirectory = () => {
   };
 
   // Send connection request
-  const sendConnectionRequest = async (recipientId: string) => {
+  const sendConnectionRequest = async (recipientId: string, message: string = '') => {
     if (!user) {
       toast({
         title: "Authentication Required",
@@ -412,15 +413,16 @@ export const useTalentDirectory = () => {
     }
     
     try {
-      // Since we can't directly access the talent_connections table through the generated types,
-      // we'll use a more generic approach
+      // Since the talent_connections table isn't in the generated types,
+      // we'll use the generic insert method with explicit typing
       const { error } = await supabase
         .from('talent_connections')
         .insert({
           requester_id: user.id,
           recipient_id: recipientId,
-          status: 'pending'
-        } as any); // Use 'as any' to bypass the TypeScript error
+          status: 'pending',
+          message: message
+        } as any); // Use 'as any' to bypass TypeScript errors
       
       if (error) throw error;
       
@@ -430,7 +432,8 @@ export const useTalentDirectory = () => {
         requesterId: user.id,
         recipientId: recipientId,
         status: 'pending',
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        message: message
       };
       
       setConnectionRequests(prev => [...prev, newConnection]);
@@ -578,25 +581,29 @@ export const useTalentDirectory = () => {
     if (!user) return;
     
     try {
-      // Since we can't directly access the talent_connections table through the generated types,
-      // we'll use a raw SQL query via a function or a more generic approach
+      // Use a more direct approach since the RPC function might not exist
+      // and the talent_connections table isn't in the types
       const { data, error } = await supabase
-        .rpc('get_user_connections', { user_id: user.id });
+        .from('talent_connections')
+        .select('*')
+        .or(`requester_id.eq.${user.id},recipient_id.eq.${user.id}`);
       
-      if (!error && data) {
+      if (error) {
+        console.error("Couldn't fetch connection requests:", error);
+        return;
+      }
+      
+      if (data) {
+        // Format the connection data to match our ConnectionRequest type
         const formattedConnections: ConnectionRequest[] = data.map((item: any) => ({
           id: item.id,
           requesterId: item.requester_id,
           recipientId: item.recipient_id,
           status: item.status,
-          createdAt: item.created_at
+          createdAt: item.created_at,
+          message: item.message
         }));
         setConnectionRequests(formattedConnections);
-      } else {
-        // Fallback if the RPC function doesn't exist
-        // Just store an empty array for now - in production we would handle this properly
-        setConnectionRequests([]);
-        console.error("Couldn't fetch connection requests:", error);
       }
     } catch (error) {
       console.error('Error fetching connection requests:', error);
