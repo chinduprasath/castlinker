@@ -8,12 +8,13 @@ import SidebarMenuGroup from '@/components/sidebar/SidebarMenuGroup';
 import SidebarFooter from '@/components/sidebar/SidebarFooter';
 import { mainMenuItems, pageMenuItems } from '@/components/sidebar/menuItems';
 import { useState } from 'react';
+import { LucideIcon } from 'lucide-react';
 
 interface DashboardSidebarProps {
   onToggle?: () => void;
   isCollapsed?: boolean;
   adminItems?: Array<{
-    icon: React.ElementType; 
+    icon: LucideIcon; 
     label: string;
     path: string;
   }>;
