@@ -1,6 +1,5 @@
 
 import { useLocation } from 'react-router-dom';
-import { Sidebar } from "@/components/ui/sidebar";
 import SidebarHeader from '@/components/sidebar/SidebarHeader';
 import SidebarProfile from '@/components/sidebar/SidebarProfile';
 import SidebarMenuItem from '@/components/sidebar/SidebarMenuItem';
@@ -34,7 +33,7 @@ const DashboardSidebar = ({ onToggle, isCollapsed: propIsCollapsed }: DashboardS
   };
 
   return (
-    <Sidebar 
+    <div 
       className={`
         fixed top-0 left-0 h-full z-30
         border-r border-gold/15
@@ -82,7 +81,7 @@ const DashboardSidebar = ({ onToggle, isCollapsed: propIsCollapsed }: DashboardS
 
         <SidebarFooter isCollapsed={isCollapsed} />
       </div>
-    </Sidebar>
+    </div>
   );
 };
 

@@ -1,10 +1,4 @@
 
-import {
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarMenu
-} from "@/components/ui/sidebar";
-
 interface SidebarMenuGroupProps {
   label: string;
   isCollapsed: boolean;
@@ -13,7 +7,7 @@ interface SidebarMenuGroupProps {
 
 const SidebarMenuGroup = ({ label, isCollapsed, children }: SidebarMenuGroupProps) => {
   return (
-    <SidebarGroup>
+    <div className="relative">
       {!isCollapsed && (
         <div className="px-4 py-2">
           <div className="flex items-center">
@@ -30,12 +24,10 @@ const SidebarMenuGroup = ({ label, isCollapsed, children }: SidebarMenuGroupProp
           <div className="h-px bg-gold/10"></div>
         </div>
       )}
-      <SidebarGroupContent>
-        <SidebarMenu className="space-y-0.5 mt-1 mb-4">
-          {children}
-        </SidebarMenu>
-      </SidebarGroupContent>
-    </SidebarGroup>
+      <div className="space-y-0.5 mt-1 mb-4">
+        {children}
+      </div>
+    </div>
   );
 };
 
