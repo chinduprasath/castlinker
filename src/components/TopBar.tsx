@@ -30,7 +30,11 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 
-const TopBar = () => {
+interface TopBarProps {
+  onMenuClick?: () => void;
+}
+
+const TopBar = ({ onMenuClick }: TopBarProps) => {
   const { user, logout } = useAuth();
   const { isAdmin } = useAdminAuth();
   const navigate = useNavigate();
@@ -82,6 +86,7 @@ const TopBar = () => {
               variant="ghost" 
               size="icon" 
               className="md:hidden"
+              onClick={onMenuClick}
             >
               <Menu className="h-5 w-5" />
             </Button>

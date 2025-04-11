@@ -12,9 +12,20 @@ import { useState } from 'react';
 interface DashboardSidebarProps {
   onToggle?: () => void;
   isCollapsed?: boolean;
+  adminItems?: Array<{
+    icon: React.ElementType; 
+    label: string;
+    path: string;
+  }>;
+  showAdminItems?: boolean;
 }
 
-const DashboardSidebar = ({ onToggle, isCollapsed: propIsCollapsed }: DashboardSidebarProps) => {
+const DashboardSidebar = ({ 
+  onToggle, 
+  isCollapsed: propIsCollapsed,
+  adminItems,
+  showAdminItems = false
+}: DashboardSidebarProps) => {
   const location = useLocation();
   const [localIsCollapsed, setLocalIsCollapsed] = useState(false);
   
@@ -51,32 +62,49 @@ const DashboardSidebar = ({ onToggle, isCollapsed: propIsCollapsed }: DashboardS
         <SidebarProfile isCollapsed={isCollapsed} />
 
         <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gold/10 scrollbar-track-transparent px-2">
-          <SidebarMenuGroup label="MAIN" isCollapsed={isCollapsed}>
-            {mainMenuItems.map((item) => (
-              <SidebarMenuItem 
-                key={item.path}
-                icon={item.icon}
-                text={item.text}
-                path={item.path}
-                isActive={isActive(item.path)}
-                isCollapsed={isCollapsed}
-              />
-            ))}
-          </SidebarMenuGroup>
-
-          {pageMenuItems.length > 0 && (
-            <SidebarMenuGroup label="PAGES" isCollapsed={isCollapsed}>
-              {pageMenuItems.map((item) => (
+          {showAdminItems && adminItems ? (
+            <SidebarMenuGroup label="ADMIN" isCollapsed={isCollapsed}>
+              {adminItems.map((item) => (
                 <SidebarMenuItem 
                   key={item.path}
                   icon={item.icon}
-                  text={item.text}
+                  text={item.label}
                   path={item.path}
                   isActive={isActive(item.path)}
                   isCollapsed={isCollapsed}
                 />
               ))}
             </SidebarMenuGroup>
+          ) : (
+            <>
+              <SidebarMenuGroup label="MAIN" isCollapsed={isCollapsed}>
+                {mainMenuItems.map((item) => (
+                  <SidebarMenuItem 
+                    key={item.path}
+                    icon={item.icon}
+                    text={item.text}
+                    path={item.path}
+                    isActive={isActive(item.path)}
+                    isCollapsed={isCollapsed}
+                  />
+                ))}
+              </SidebarMenuGroup>
+
+              {pageMenuItems.length > 0 && (
+                <SidebarMenuGroup label="PAGES" isCollapsed={isCollapsed}>
+                  {pageMenuItems.map((item) => (
+                    <SidebarMenuItem 
+                      key={item.path}
+                      icon={item.icon}
+                      text={item.text}
+                      path={item.path}
+                      isActive={isActive(item.path)}
+                      isCollapsed={isCollapsed}
+                    />
+                  ))}
+                </SidebarMenuGroup>
+              )}
+            </>
           )}
         </div>
 
