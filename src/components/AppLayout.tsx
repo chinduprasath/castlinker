@@ -22,7 +22,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   // Public pages (don't need authentication and don't show sidebar)
   const publicPages = ['/', '/login', '/signup', '/about', '/features', '/pricing', '/contact', '/privacy', '/help'];
   
-  // Check if current path is an admin path - THIS IS THE KEY CHECK
+  // Check if current path is an admin path
   const isAdminPage = location.pathname.startsWith('/admin');
   
   // If we're on an admin page, just return the children without any AppLayout wrapping
