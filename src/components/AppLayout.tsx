@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { SidebarProvider } from "@/components/ui/sidebar";
@@ -64,21 +65,19 @@ const AppLayout = ({ children }: AppLayoutProps) => {
       {(showNavbar || isLandingPage && !user) && <Navbar />}
       
       {showSidebar ? (
-        <SidebarProvider defaultOpen={!sidebarCollapsed}>
-          <div className="flex min-h-screen w-full">
-            <DashboardSidebar onToggle={toggleSidebar} isCollapsed={sidebarCollapsed} />
-            <div className={`flex-1 transition-all duration-300 ease-in-out ${
-              sidebarCollapsed 
-                ? 'pl-0 md:pl-[20px] w-[calc(100%-70px)]' 
-                : 'pl-0 md:pl-[20px] w-[calc(100%-250px)]'
-            }`}>
-              {showTopBar && <TopBar />}
-              <main className="p-2 sm:p-4 md:p-6 max-w-[2000px] mx-auto overflow-x-hidden">
-                {children}
-              </main>
-            </div>
+        <div className="flex min-h-screen w-full">
+          <DashboardSidebar onToggle={toggleSidebar} isCollapsed={sidebarCollapsed} />
+          <div className={`flex-1 transition-all duration-300 ease-in-out ${
+            sidebarCollapsed 
+              ? 'ml-[70px]' 
+              : 'ml-[250px]'
+          }`}>
+            {showTopBar && <TopBar />}
+            <main className="p-2 sm:p-4 md:p-6 max-w-[2000px] mx-auto overflow-x-hidden">
+              {children}
+            </main>
           </div>
-        </SidebarProvider>
+        </div>
       ) : (
         <div className="max-w-[2000px] mx-auto">
           {showTopBar && <TopBar />}
