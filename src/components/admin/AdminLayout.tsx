@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -126,44 +125,40 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             </div>
           ) : (
             <>
-              {/* Mobile Menu Button */}
-              <div className="flex items-center">
+              {/* Mobile Menu Button and Site Title */}
+              <div className="flex items-center gap-3">
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="md:hidden mr-2"
+                  className="md:hidden"
                   onClick={toggleSidebar}
                 >
                   <Menu className="h-5 w-5" />
                 </Button>
-
-                {/* Search section - moved from the right side */}
-                <div className="hidden md:block w-64 ml-2">
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                    <Input
-                      type="search"
-                      placeholder="Search..."
-                      className={`w-full ${theme === 'light' ? 'bg-white/60 border-gray-200' : 'bg-background/60'} pl-9 focus-visible:ring-amber-300/30 rounded-xl`}
-                    />
-                  </div>
+                <div className="hidden md:flex items-center">
+                  <Shield className={`h-5 w-5 ${theme === 'light' ? 'text-amber-600' : 'text-gold'} mr-2`} />
+                  <span className={`text-lg font-bold ${theme === 'light' ? 'text-amber-600' : 'gold-gradient-text'}`}>
+                    Admin
+                  </span>
                 </div>
               </div>
-              
-              {/* Mobile search button */}
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="md:hidden" 
-                onClick={() => setIsSearchOpen(true)}
-              >
-                <Search className="h-5 w-5" />
-              </Button>
+
+              {/* Search bar - centered */}
+              <div className="w-full max-w-lg mx-4">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                  <Input
+                    type="search"
+                    placeholder="Search..."
+                    className={`w-full ${theme === 'light' ? 'bg-white/60 border-gray-200' : 'bg-background/60'} pl-9 focus-visible:ring-amber-300/30 rounded-xl`}
+                  />
+                </div>
+              </div>
             </>
           )}
           
           {/* Right Side Actions */}
-          <div className="flex items-center gap-2 sm:gap-3 ml-auto">
+          <div className="flex items-center gap-2 sm:gap-3">
             {/* Notifications */}
             <Button 
               variant="ghost" 
