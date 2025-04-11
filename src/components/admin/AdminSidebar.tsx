@@ -1,5 +1,4 @@
 
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   LayoutDashboard, 
@@ -16,9 +15,9 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { useTheme } from "@/contexts/ThemeContext";
 import ThemeToggle from "@/components/ThemeToggle";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface AdminSidebarProps {
   collapsed: boolean;
@@ -28,6 +27,7 @@ interface AdminSidebarProps {
 const AdminSidebar = ({ collapsed, toggleSidebar }: AdminSidebarProps) => {
   const navigate = useNavigate();
   const { theme } = useTheme();
+  const isMobile = useIsMobile();
 
   const adminNavItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/admin/dashboard" },
@@ -41,28 +41,31 @@ const AdminSidebar = ({ collapsed, toggleSidebar }: AdminSidebarProps) => {
   ];
 
   return (
-    <div 
+    <aside 
       className={`${
         collapsed ? "w-16" : "w-60"
-      } ${theme === 'light' ? 'bg-white shadow-md' : 'bg-card'} h-full ${theme === 'light' ? 'border-gray-200' : 'border-gold/10'} border-r transition-all duration-300 ease-in-out fixed left-0 top-16 z-40 rounded-r-2xl`}
+      } ${theme === 'light' ? 'bg-white shadow-md' : 'bg-card'} fixed left-0 top-16 z-40 h-full transition-all duration-300 ease-in-out border-r ${theme === 'light' ? 'border-gray-200' : 'border-gold/10'} rounded-r-2xl`}
     >
       <div className="flex flex-col h-full">
-        <div className={`p-4 ${theme === 'light' ? 'border-gray-200' : 'border-gold/10'} border-b flex items-center justify-between`}>
+        <div className={`p-4 flex items-center justify-between border-b ${theme === 'light' ? 'border-gray-200' : 'border-gold/10'}`}>
           <div className="flex items-center">
             <Shield className={`h-6 w-6 ${theme === 'light' ? 'text-amber-600' : 'text-gold'}`} />
+            {!collapsed && <span className="ml-2 font-semibold">Admin</span>}
           </div>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={toggleSidebar}
-            className={`flex-shrink-0 ${
-              theme === 'light' 
-                ? 'border-amber-200 text-amber-600 hover:bg-amber-50' 
-                : 'hover:bg-gold/10 text-gold border-gold/30'
-            }`}
-          >
-            {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
-          </Button>
+          {!isMobile && (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={toggleSidebar}
+              className={`flex-shrink-0 ${
+                theme === 'light' 
+                  ? 'border-amber-200 text-amber-600 hover:bg-amber-50' 
+                  : 'hover:bg-gold/10 text-gold border-gold/30'
+              }`}
+            >
+              {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+            </Button>
+          )}
         </div>
         
         <ScrollArea className="flex-1 py-4">
@@ -77,17 +80,17 @@ const AdminSidebar = ({ collapsed, toggleSidebar }: AdminSidebarProps) => {
                   theme === 'light' 
                     ? 'hover:bg-amber-50 hover:text-amber-600 text-gray-700' 
                     : 'hover:bg-gold/10 hover:text-gold'
-                } mb-1 rounded-xl`}
+                } mb-1 rounded-xl h-10`}
                 onClick={() => navigate(item.path)}
               >
                 <item.icon className={`h-5 w-5 ${!collapsed ? "mr-3" : ""}`} />
-                {!collapsed && <span>{item.label}</span>}
+                {!collapsed && <span className="truncate">{item.label}</span>}
               </Button>
             ))}
           </nav>
         </ScrollArea>
 
-        <div className={`p-4 ${theme === 'light' ? 'border-gray-200' : 'border-gold/10'} border-t`}>
+        <div className={`p-4 border-t ${theme === 'light' ? 'border-gray-200' : 'border-gold/10'}`}>
           <div className={`flex ${collapsed ? 'justify-center' : 'justify-between items-center'}`}>
             {!collapsed && (
               <span className={`text-xs ${theme === 'light' ? 'text-gray-500' : 'text-muted-foreground'}`}>Theme</span>
@@ -97,7 +100,7 @@ const AdminSidebar = ({ collapsed, toggleSidebar }: AdminSidebarProps) => {
           </div>
         </div>
       </div>
-    </div>
+    </aside>
   );
 };
 

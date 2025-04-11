@@ -1,7 +1,8 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 import AdminHeader from "./AdminHeader";
 import AdminSidebar from "./AdminSidebar";
 import AccessDenied from "./AccessDenied";
@@ -14,6 +15,14 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const [collapsed, setCollapsed] = useState(false);
   const { user } = useAuth();
   const { theme } = useTheme();
+  const isMobile = useIsMobile();
+
+  // Auto collapse sidebar on mobile
+  useEffect(() => {
+    if (isMobile) {
+      setCollapsed(true);
+    }
+  }, [isMobile]);
 
   const toggleSidebar = () => {
     setCollapsed(!collapsed);
