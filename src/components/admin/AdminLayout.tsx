@@ -137,23 +137,16 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                   <Menu className="h-5 w-5" />
                 </Button>
 
-                <div className="hidden md:flex items-center">
-                  <Shield className={`h-6 w-6 ${theme === 'light' ? 'text-amber-600' : 'text-gold'} mr-2`} />
-                  <span className={`text-xl font-bold ${theme === 'light' ? 'text-amber-600' : 'gold-gradient-text'}`}>
-                    CastLinker Admin
-                  </span>
-                </div>
-              </div>
-              
-              {/* Desktop Search */}
-              <div className="hidden md:block w-1/3 mx-8">
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                  <Input
-                    type="search"
-                    placeholder="Search..."
-                    className={`w-full ${theme === 'light' ? 'bg-white/60 border-gray-200' : 'bg-background/60'} pl-9 focus-visible:ring-amber-300/30 rounded-xl`}
-                  />
+                {/* Search section - moved from the right side */}
+                <div className="hidden md:block w-64 ml-2">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                    <Input
+                      type="search"
+                      placeholder="Search..."
+                      className={`w-full ${theme === 'light' ? 'bg-white/60 border-gray-200' : 'bg-background/60'} pl-9 focus-visible:ring-amber-300/30 rounded-xl`}
+                    />
+                  </div>
                 </div>
               </div>
               
@@ -170,7 +163,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           )}
           
           {/* Right Side Actions */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 ml-auto">
             {/* Notifications */}
             <Button 
               variant="ghost" 
@@ -244,6 +237,30 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           } ${theme === 'light' ? 'bg-white shadow-md' : 'bg-card'} h-full ${theme === 'light' ? 'border-gray-200' : 'border-gold/10'} border-r transition-all duration-300 ease-in-out fixed left-0 top-16 z-40 rounded-r-2xl`}
         >
           <div className="flex flex-col h-full">
+            {/* Sidebar Header with Company Name */}
+            <div className={`p-4 ${theme === 'light' ? 'border-gray-200' : 'border-gold/10'} border-b flex items-center justify-between`}>
+              <div className="flex items-center">
+                <Shield className={`h-6 w-6 ${theme === 'light' ? 'text-amber-600' : 'text-gold'} mr-2`} />
+                {!collapsed && (
+                  <span className={`text-xl font-bold ${theme === 'light' ? 'text-amber-600' : 'gold-gradient-text'}`}>
+                    CastLinker Admin
+                  </span>
+                )}
+              </div>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={toggleSidebar}
+                className={`flex-shrink-0 ${
+                  theme === 'light' 
+                    ? 'border-amber-200 text-amber-600 hover:bg-amber-50' 
+                    : 'hover:bg-gold/10 text-gold border-gold/30'
+                }`}
+              >
+                {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+              </Button>
+            </div>
+            
             {/* Navigation */}
             <ScrollArea className="flex-1 py-4">
               <nav className="px-2 space-y-1">
@@ -275,22 +292,6 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                 )}
                 
                 <ThemeToggle showTooltip={collapsed} />
-              </div>
-              
-              <div className="mt-3">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={toggleSidebar}
-                  className={`w-full flex items-center justify-center h-10 rounded-xl ${
-                    theme === 'light' 
-                      ? 'border-amber-200 text-amber-600 hover:bg-amber-50' 
-                      : 'hover:bg-gold/10 text-gold border-gold/30'
-                  }`}
-                >
-                  {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5 mr-1" />}
-                  {!collapsed && <span>Collapse</span>}
-                </Button>
               </div>
             </div>
           </div>

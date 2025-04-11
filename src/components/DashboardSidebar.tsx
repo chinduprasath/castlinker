@@ -7,14 +7,27 @@ import SidebarMenuItem from '@/components/sidebar/SidebarMenuItem';
 import SidebarMenuGroup from '@/components/sidebar/SidebarMenuGroup';
 import SidebarFooter from '@/components/sidebar/SidebarFooter';
 import { mainMenuItems, pageMenuItems } from '@/components/sidebar/menuItems';
+import { useState } from 'react';
 
 interface DashboardSidebarProps {
   onToggle?: () => void;
   isCollapsed?: boolean;
 }
 
-const DashboardSidebar = ({ onToggle, isCollapsed = false }: DashboardSidebarProps) => {
+const DashboardSidebar = ({ onToggle, isCollapsed: propIsCollapsed }: DashboardSidebarProps) => {
   const location = useLocation();
+  const [localIsCollapsed, setLocalIsCollapsed] = useState(false);
+  
+  // Use either the prop value (if controlled from parent) or local state
+  const isCollapsed = propIsCollapsed !== undefined ? propIsCollapsed : localIsCollapsed;
+  
+  const handleToggle = () => {
+    if (onToggle) {
+      onToggle();
+    } else {
+      setLocalIsCollapsed(!localIsCollapsed);
+    }
+  };
 
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -33,7 +46,7 @@ const DashboardSidebar = ({ onToggle, isCollapsed = false }: DashboardSidebarPro
       `}
     >
       <div className="flex flex-col h-full">
-        <SidebarHeader isCollapsed={isCollapsed} onToggle={onToggle || (() => {})} />
+        <SidebarHeader isCollapsed={isCollapsed} onToggle={handleToggle} />
 
         <SidebarProfile isCollapsed={isCollapsed} />
 
