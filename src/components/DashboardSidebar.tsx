@@ -46,17 +46,15 @@ const DashboardSidebar = ({
   };
 
   return (
-    <Sidebar 
-      className={`
-        fixed top-0 left-0 h-full z-30
-        border-r border-gold/15
-        transition-all duration-300 ease-in-out
-        bg-gradient-to-b from-background to-background/90
-        backdrop-blur-lg shadow-xl
-        rounded-r-2xl
-        ${isCollapsed ? 'w-[70px]' : 'w-[250px]'}
-      `}
-    >
+    <div className={`
+      fixed top-0 left-0 h-full z-30
+      border-r border-gold/15
+      transition-all duration-300 ease-in-out
+      bg-gradient-to-b from-background to-background/90
+      backdrop-blur-lg shadow-xl
+      rounded-r-2xl
+      ${isCollapsed ? 'w-[70px]' : 'w-[250px]'}
+    `}>
       <div className="flex flex-col h-full">
         <SidebarHeader isCollapsed={isCollapsed} onToggle={handleToggle} />
 
@@ -111,7 +109,7 @@ const DashboardSidebar = ({
 
         <SidebarFooter isCollapsed={isCollapsed} />
       </div>
-    </Sidebar>
+    </div>
   );
 };
 
