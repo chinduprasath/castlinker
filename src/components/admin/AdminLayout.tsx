@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -37,7 +36,6 @@ import ThemeToggle from "@/components/ThemeToggle";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { useTheme } from "@/contexts/ThemeContext";
 import { LucideIcon } from "lucide-react";
-import { SidebarProvider } from "@/components/ui/sidebar";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -211,14 +209,12 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       </div>
 
       <div className="flex h-screen overflow-hidden pt-16">
-        <SidebarProvider>
-          <DashboardSidebar 
-            isCollapsed={collapsed} 
-            onToggle={toggleSidebar} 
-            adminItems={adminNavItems}
-            showAdminItems={true}
-          />
-        </SidebarProvider>
+        <DashboardSidebar 
+          isCollapsed={collapsed} 
+          onToggle={toggleSidebar} 
+          adminItems={adminNavItems}
+          showAdminItems={true}
+        />
 
         <main
           className={`flex-1 overflow-auto transition-all duration-300 ease-in-out ${
