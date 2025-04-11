@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,7 +18,6 @@ import {
   Search,
   ChevronDown,
   User,
-  CreditCard,
   HelpCircle,
   ChevronLeft,
   ChevronRight
@@ -210,7 +210,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         </div>
       </div>
 
-      <div className="flex h-screen overflow-hidden pt-16">
+      <div className="flex h-screen pt-16">
         <div 
           className={`${
             collapsed ? "w-16" : "w-60"
@@ -270,9 +270,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         </div>
 
         <main
-          className={`flex-1 overflow-auto transition-all duration-300 ease-in-out ${
+          className={`flex-1 transition-all duration-300 ease-in-out ${
             collapsed ? "ml-16" : "ml-60"
-          } pt-4 px-4`}
+          } pt-4 px-4 w-full`}
         >
           {children}
         </main>
