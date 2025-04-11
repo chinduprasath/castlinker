@@ -7,10 +7,9 @@ import {
   MessageSquare,
   Bell
 } from 'lucide-react';
-import { LucideIcon } from 'lucide-react';
 
 export type MenuItem = {
-  icon: LucideIcon;
+  icon: any;
   text: string;
   path: string;
 };

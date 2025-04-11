@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,16 +12,23 @@ import {
   Settings, 
   Shield, 
   LogOut,
+  Menu,
+  X,
+  MessagesSquare,
   Search,
   ChevronDown,
   User,
+  CreditCard,
   HelpCircle,
-  X,
-  MessagesSquare
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/components/ui/use-toast";
+import { Separator } from "@/components/ui/separator";
+import { useTheme } from "@/contexts/ThemeContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,9 +41,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import ThemeToggle from "@/components/ThemeToggle";
-import DashboardSidebar from "@/components/DashboardSidebar";
-import { useTheme } from "@/contexts/ThemeContext";
-import { LucideIcon } from "lucide-react";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -74,6 +79,8 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     setCollapsed(!collapsed);
   };
 
+  // Verify if the user is an admin - in a real application, this would be a proper role check
+  // For this demo, we'll consider emails containing "admin" as admin accounts
   if (!user || !user.email.includes("admin")) {
     return (
       <div className={`min-h-screen flex flex-col items-center justify-center ${theme === 'light' ? 'bg-gray-50' : 'bg-background'}`}>
@@ -94,6 +101,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
 
   return (
     <div className={`min-h-screen ${theme === 'light' ? 'bg-amber-50/20' : 'bg-background'} text-foreground`}>
+      {/* Top Bar */}
       <div className={`w-full border-b ${theme === 'light' ? 'border-gray-200 bg-white' : 'border-gold/10 bg-background/90'} backdrop-blur-sm fixed top-0 z-50 shadow-sm`}>
         <div className="flex h-16 items-center justify-between px-4">
           {isSearchOpen ? (
@@ -118,21 +126,31 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             </div>
           ) : (
             <>
-              <div className="md:hidden">
-                {/* Mobile placeholder */}
-              </div>
-              
-              <div className="hidden md:block w-64">
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                  <Input
-                    type="search"
-                    placeholder="Search..."
-                    className={`w-full ${theme === 'light' ? 'bg-white/60 border-gray-200' : 'bg-background/60'} pl-9 focus-visible:ring-amber-300/30 rounded-xl`}
-                  />
+              {/* Mobile Menu Button */}
+              <div className="flex items-center">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="md:hidden mr-2"
+                  onClick={toggleSidebar}
+                >
+                  <Menu className="h-5 w-5" />
+                </Button>
+
+                {/* Search section - moved from the right side */}
+                <div className="hidden md:block w-64 ml-2">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                    <Input
+                      type="search"
+                      placeholder="Search..."
+                      className={`w-full ${theme === 'light' ? 'bg-white/60 border-gray-200' : 'bg-background/60'} pl-9 focus-visible:ring-amber-300/30 rounded-xl`}
+                    />
+                  </div>
                 </div>
               </div>
               
+              {/* Mobile search button */}
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -144,7 +162,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             </>
           )}
           
+          {/* Right Side Actions */}
           <div className="flex items-center gap-2 sm:gap-3 ml-auto">
+            {/* Notifications */}
             <Button 
               variant="ghost" 
               size="icon" 
@@ -162,6 +182,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
               )}
             </Button>
             
+            {/* User Profile Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className={`h-9 gap-1 sm:gap-2 px-1 sm:px-2 rounded-xl ${theme === 'light' ? 'hover:bg-gray-100' : 'hover:bg-gold/5'}`}>
@@ -209,16 +230,77 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       </div>
 
       <div className="flex h-screen overflow-hidden pt-16">
-        <DashboardSidebar 
-          isCollapsed={collapsed} 
-          onToggle={toggleSidebar} 
-          adminItems={adminNavItems}
-          showAdminItems={true}
-        />
+        {/* Admin Sidebar */}
+        <div 
+          className={`${
+            collapsed ? "w-16" : "w-60"
+          } ${theme === 'light' ? 'bg-white shadow-md' : 'bg-card'} h-full ${theme === 'light' ? 'border-gray-200' : 'border-gold/10'} border-r transition-all duration-300 ease-in-out fixed left-0 top-16 z-40 rounded-r-2xl`}
+        >
+          <div className="flex flex-col h-full">
+            {/* Sidebar Header with Company Name */}
+            <div className={`p-4 ${theme === 'light' ? 'border-gray-200' : 'border-gold/10'} border-b flex items-center justify-between`}>
+              <div className="flex items-center">
+                <Shield className={`h-6 w-6 ${theme === 'light' ? 'text-amber-600' : 'text-gold'} mr-2`} />
+                {!collapsed && (
+                  <span className={`text-xl font-bold ${theme === 'light' ? 'text-amber-600' : 'gold-gradient-text'}`}>
+                    CastLinker Admin
+                  </span>
+                )}
+              </div>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={toggleSidebar}
+                className={`flex-shrink-0 ${
+                  theme === 'light' 
+                    ? 'border-amber-200 text-amber-600 hover:bg-amber-50' 
+                    : 'hover:bg-gold/10 text-gold border-gold/30'
+                }`}
+              >
+                {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+              </Button>
+            </div>
+            
+            {/* Navigation */}
+            <ScrollArea className="flex-1 py-4">
+              <nav className="px-2 space-y-1">
+                {adminNavItems.map((item) => (
+                  <Button
+                    key={item.label}
+                    variant="ghost"
+                    className={`w-full justify-start ${
+                      collapsed ? "px-2" : "px-3"
+                    } ${
+                      theme === 'light' 
+                        ? 'hover:bg-amber-50 hover:text-amber-600 text-gray-700' 
+                        : 'hover:bg-gold/10 hover:text-gold'
+                    } mb-1 rounded-xl`}
+                    onClick={() => navigate(item.path)}
+                  >
+                    <item.icon className={`h-5 w-5 ${!collapsed ? "mr-3" : ""}`} />
+                    {!collapsed && <span>{item.label}</span>}
+                  </Button>
+                ))}
+              </nav>
+            </ScrollArea>
 
+            {/* Footer */}
+            <div className={`p-4 ${theme === 'light' ? 'border-gray-200' : 'border-gold/10'} border-t`}>
+              <div className={`flex ${collapsed ? 'justify-center' : 'justify-between items-center'}`}>
+                {!collapsed && (
+                  <span className={`text-xs ${theme === 'light' ? 'text-gray-500' : 'text-muted-foreground'}`}>Theme</span>
+                )}
+                
+                <ThemeToggle showTooltip={collapsed} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content */}
         <main
           className={`flex-1 overflow-auto transition-all duration-300 ease-in-out ${
-            collapsed ? "ml-[70px]" : "ml-[250px]"
+            collapsed ? "ml-16" : "ml-60"
           } pt-4 px-4`}
         >
           {children}
