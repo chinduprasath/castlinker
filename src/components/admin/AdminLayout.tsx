@@ -35,16 +35,17 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   return (
     <div className={`min-h-screen ${theme === 'light' ? 'bg-amber-50/20' : 'bg-background'} text-foreground`}>
       <AdminHeader toggleSidebar={toggleSidebar} />
-      <AdminSidebar collapsed={collapsed} toggleSidebar={toggleSidebar} />
-
-      <div className="flex h-screen pt-16">
-        <main
+      
+      <div className="flex h-screen">
+        <AdminSidebar collapsed={collapsed} toggleSidebar={toggleSidebar} />
+        
+        <div
           className={`flex-1 transition-all duration-300 ease-in-out ${
             collapsed ? "ml-16" : "ml-60"
-          } pt-4 px-4 w-full`}
+          } pt-16 px-4 w-full`}
         >
           {children}
-        </main>
+        </div>
       </div>
     </div>
   );
