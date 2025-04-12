@@ -1,13 +1,12 @@
-
 import { useNavigate } from "react-router-dom";
-import { 
-  LayoutDashboard, 
-  Users, 
-  FileText, 
-  Calendar, 
-  BarChart, 
-  Bell, 
-  Settings, 
+import {
+  LayoutDashboard,
+  Users,
+  FileText,
+  Calendar,
+  BarChart,
+  Bell,
+  Settings,
   Shield,
   MessagesSquare,
   ChevronLeft,
@@ -41,46 +40,59 @@ const AdminSidebar = ({ collapsed, toggleSidebar }: AdminSidebarProps) => {
   ];
 
   return (
-    <aside 
-      className={`${
-        collapsed ? "w-16" : "w-60"
-      } ${theme === 'light' ? 'bg-white shadow-md' : 'bg-card'} fixed left-0 top-16 z-40 h-full transition-all duration-300 ease-in-out border-r ${theme === 'light' ? 'border-gray-200' : 'border-gold/10'} rounded-r-2xl`}
+    <aside
+      className={`
+        ${collapsed ? "w-16" : "w-60"}
+        ${theme === "light" ? "bg-white shadow-md" : "bg-card"}
+        fixed top-0 left-0
+        h-screen
+        z-40
+        transition-all duration-300 ease-in-out
+        border-r
+        ${theme === "light" ? "border-gray-200" : "border-gold/10"}
+      `}
     >
-      <div className="flex flex-col h-full">
-        <div className={`p-4 flex items-center justify-between border-b ${theme === 'light' ? 'border-gray-200' : 'border-gold/10'}`}>
+      <div className="flex flex-col h-full pt-16"> {/* pt-16 to push content below navbar */}
+        
+        {/* Top section */}
+        <div className="px-4 flex items-center justify-between pb-4">
           <div className="flex items-center">
-            <Shield className={`h-6 w-6 ${theme === 'light' ? 'text-amber-600' : 'text-gold'}`} />
-            {!collapsed && <span className="ml-2 font-semibold">Admin</span>}
+            <Shield className={`h-6 w-6 ${theme === "light" ? "text-amber-600" : "text-gold"}`} />
+            {!collapsed && (
+              <span className="ml-2 font-semibold text-lg">Admin</span>
+            )}
           </div>
           {!isMobile && (
             <Button
               variant="outline"
               size="icon"
               onClick={toggleSidebar}
-              className={`flex-shrink-0 ${
-                theme === 'light' 
-                  ? 'border-amber-200 text-amber-600 hover:bg-amber-50' 
-                  : 'hover:bg-gold/10 text-gold border-gold/30'
+              className={`ml-2 ${
+                theme === "light"
+                  ? "border-amber-200 text-amber-600 hover:bg-amber-50"
+                  : "hover:bg-gold/10 text-gold border-gold/30"
               }`}
             >
               {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
             </Button>
           )}
         </div>
-        
-        <ScrollArea className="flex-1 py-4">
-          <nav className="px-2 space-y-1">
+
+        {/* Navigation */}
+        <ScrollArea className="flex-1 px-2">
+          <nav className="space-y-1">
             {adminNavItems.map((item) => (
               <Button
                 key={item.label}
                 variant="ghost"
-                className={`w-full justify-start ${
-                  collapsed ? "px-2" : "px-3"
-                } ${
-                  theme === 'light' 
-                    ? 'hover:bg-amber-50 hover:text-amber-600 text-gray-700' 
-                    : 'hover:bg-gold/10 hover:text-gold'
-                } mb-1 rounded-xl h-10`}
+                className={`
+                  w-full justify-start
+                  ${collapsed ? "px-2" : "px-4"}
+                  ${theme === "light"
+                    ? "hover:bg-amber-50 hover:text-amber-600 text-gray-700"
+                    : "hover:bg-gold/10 hover:text-gold text-muted-foreground"}
+                  rounded-lg h-10
+                `}
                 onClick={() => navigate(item.path)}
               >
                 <item.icon className={`h-5 w-5 ${!collapsed ? "mr-3" : ""}`} />
@@ -90,15 +102,18 @@ const AdminSidebar = ({ collapsed, toggleSidebar }: AdminSidebarProps) => {
           </nav>
         </ScrollArea>
 
-        <div className={`p-4 border-t ${theme === 'light' ? 'border-gray-200' : 'border-gold/10'}`}>
-          <div className={`flex ${collapsed ? 'justify-center' : 'justify-between items-center'}`}>
+        {/* Bottom section */}
+        <div className="p-4 border-t border-dashed">
+          <div className={`flex ${collapsed ? "justify-center" : "justify-between items-center"}`}>
             {!collapsed && (
-              <span className={`text-xs ${theme === 'light' ? 'text-gray-500' : 'text-muted-foreground'}`}>Theme</span>
+              <span className={`text-xs ${theme === "light" ? "text-gray-500" : "text-muted-foreground"}`}>
+                Theme
+              </span>
             )}
-            
             <ThemeToggle showTooltip={collapsed} />
           </div>
         </div>
+
       </div>
     </aside>
   );
