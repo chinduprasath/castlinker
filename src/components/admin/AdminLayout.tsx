@@ -1,4 +1,3 @@
-
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -33,19 +32,19 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   }
 
   return (
-    <div className={`min-h-screen ${theme === 'light' ? 'bg-amber-50/20' : 'bg-background'} text-foreground`}>
+    <div className={`min-h-screen flex flex-col ${theme === "light" ? "bg-amber-50/20" : "bg-background"} text-foreground`}>
       <AdminHeader toggleSidebar={toggleSidebar} />
       
-      <div className="flex h-screen">
+      <div className="flex flex-1 overflow-hidden">
         <AdminSidebar collapsed={collapsed} toggleSidebar={toggleSidebar} />
-        
-        <div
-          className={`flex-1 transition-all duration-300 ease-in-out ${
+
+        <main
+          className={`flex-1 overflow-y-auto transition-all duration-300 ease-in-out pt-16 px-4 ${
             collapsed ? "ml-16" : "ml-60"
-          } pt-16 px-4 w-full`}
+          }`}
         >
           {children}
-        </div>
+        </main>
       </div>
     </div>
   );
