@@ -23,10 +23,10 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   const publicPages = ['/', '/login', '/signup', '/about', '/features', '/pricing', '/contact', '/privacy', '/help'];
   
   // Check if current path is an admin path
-  const isAdminPage = location.pathname.startsWith('/admin');
+  const isAdminRoute = location.pathname.startsWith('/admin');
   
-  // If we're on an admin page, just return the children without any AppLayout wrapping
-  if (isAdminPage) {
+  // If we're on an admin route, just return the children without any AppLayout wrapping
+  if (isAdminRoute) {
     return <>{children}</>;
   }
   

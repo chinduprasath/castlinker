@@ -1,3 +1,4 @@
+
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -20,6 +21,8 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   useEffect(() => {
     if (isMobile) {
       setCollapsed(true);
+    } else {
+      setCollapsed(false);
     }
   }, [isMobile]);
 
