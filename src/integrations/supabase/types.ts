@@ -922,6 +922,7 @@ export type Database = {
           current_status: string | null
           description: string | null
           id: string
+          location: string | null
           name: string
           team_head_id: string
           updated_at: string
@@ -931,6 +932,7 @@ export type Database = {
           current_status?: string | null
           description?: string | null
           id?: string
+          location?: string | null
           name: string
           team_head_id: string
           updated_at?: string
@@ -940,6 +942,7 @@ export type Database = {
           current_status?: string | null
           description?: string | null
           id?: string
+          location?: string | null
           name?: string
           team_head_id?: string
           updated_at?: string
@@ -1191,6 +1194,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_user_is_team_head: {
+        Args: { project_id: string; user_uuid: string }
+        Returns: boolean
+      }
+      check_user_project_membership: {
+        Args: { project_id: string; user_uuid: string }
+        Returns: boolean
+      }
       search_film_jobs: {
         Args: { search_term: string }
         Returns: {

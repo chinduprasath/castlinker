@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Film, 
   ArrowLeft,
-  Loader2
+  Loader2,
+  MapPin
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,7 @@ const ProjectCreate = () => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState('Planning');
+  const [location, setLocation] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -54,6 +56,7 @@ const ProjectCreate = () => {
         .insert({
           name,
           description,
+          location,
           team_head_id: user.id,
           current_status: status
         })
@@ -133,6 +136,20 @@ const ProjectCreate = () => {
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Describe what this project is about"
                 className="min-h-[120px] focus-visible:ring-gold/30"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="location" className="flex items-center gap-1.5">
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+                Location
+              </Label>
+              <Input
+                id="location"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="e.g. Los Angeles, Remote, etc."
+                className="focus-visible:ring-gold/30"
               />
             </div>
             
