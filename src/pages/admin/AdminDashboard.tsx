@@ -2,14 +2,12 @@
 import { useState, useEffect } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Legend } from "recharts";
-import { AreaChart, Area } from "recharts";
 import { Button } from "@/components/ui/button";
-import { ArrowUpRight, Users, FilmIcon, Calendar, Activity, Clock, Download } from "lucide-react";
+import { ArrowUpRight, Users, FilmIcon, Calendar, Activity } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import UserGrowthChart from "@/components/admin/UserGrowthChart";
+import UserDataViz from "@/components/admin/UserDataViz";
 
 type UsersByRole = {
   role: string;
@@ -25,7 +23,6 @@ const AdminDashboard = () => {
   const [totalUsers, setTotalUsers] = useState<number>(0);
   const [usersByRole, setUsersByRole] = useState<UsersByRole[]>([]);
   const [usersByMonth, setUsersByMonth] = useState<UserCountByMonth[]>([]);
-  const [selectedProfession, setSelectedProfession] = useState<string>("all");
   const [loading, setLoading] = useState<boolean>(true);
   
   // Fetch users data
@@ -44,8 +41,7 @@ const AdminDashboard = () => {
         // Fetch users by role
         const { data: roleData, error: roleError } = await supabase
           .from('users_management')
-          .select('role, count')
-          .select();
+          .select('role');
         
         if (roleError) throw roleError;
         
@@ -91,11 +87,6 @@ const AdminDashboard = () => {
     
     fetchUsersData();
   }, []);
-  
-  // Filter users by profession
-  const filteredUsersByRole = selectedProfession === "all" 
-    ? usersByRole 
-    : usersByRole.filter(item => item.role === selectedProfession);
   
   return (
     <AdminLayout>
@@ -175,95 +166,10 @@ const AdminDashboard = () => {
         </div>
         
         {/* User growth chart */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>User Growth</CardTitle>
-                <CardDescription>Monthly user registrations</CardDescription>
-              </div>
-              <Button variant="outline" size="sm">
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={usersByMonth}>
-                  <defs>
-                    <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#8884d8" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Area type="monotone" dataKey="count" name="Users" stroke="#8884d8" fillOpacity={1} fill="url(#colorUsers)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+        <UserGrowthChart usersByMonth={usersByMonth} isLoading={loading} />
         
         {/* Users by profession chart with filter */}
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div>
-                <CardTitle>Users by Profession</CardTitle>
-                <CardDescription>Breakdown of user professional roles</CardDescription>
-              </div>
-              
-              {/* Profession filter */}
-              <Select
-                value={selectedProfession}
-                onValueChange={setSelectedProfession}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Filter by profession" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Professions</SelectItem>
-                  <SelectItem value="actor">Actors</SelectItem>
-                  <SelectItem value="director">Directors</SelectItem>
-                  <SelectItem value="producer">Producers</SelectItem>
-                  <SelectItem value="writer">Writers</SelectItem>
-                  <SelectItem value="cinematographer">Cinematographers</SelectItem>
-                  <SelectItem value="agency">Agencies</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px] w-full">
-              {loading ? (
-                <div className="flex items-center justify-center h-full">
-                  <p className="text-muted-foreground">Loading user data...</p>
-                </div>
-              ) : filteredUsersByRole.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={filteredUsersByRole}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="role" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="count" name="Number of Users" fill="#8884d8" />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <p className="text-muted-foreground">No user data available for the selected profession.</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <UserDataViz usersByRole={usersByRole} isLoading={loading} />
       </div>
     </AdminLayout>
   );
