@@ -1,6 +1,4 @@
-
 import { useState } from "react";
-import AdminLayout from "@/components/admin/AdminLayout";
 import { 
   Card, 
   CardContent, 
@@ -156,175 +154,171 @@ const ContentModeration = () => {
   };
 
   return (
-    <AdminLayout>
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold gold-gradient-text">Content Moderation</h1>
-            <p className="text-muted-foreground mt-1">Review, approve or reject user-generated content</p>
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold gold-gradient-text">Content Moderation</h1>
+      <p className="text-muted-foreground">Review and moderate user-generated content.</p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search content..."
+              className="w-64 pl-8"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search content..."
-                className="w-64 pl-8"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <Button variant="outline" className="gap-1">
-              <Check className="h-4 w-4" /> Approve All
-            </Button>
-          </div>
+          <Button variant="outline" className="gap-1">
+            <Check className="h-4 w-4" /> Approve All
+          </Button>
         </div>
-
-        <Tabs defaultValue="reported">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="reported" className="flex items-center gap-2">
-              <Flag className="h-4 w-4" /> Reported Content
-              <Badge variant="secondary" className="ml-1">{reportedContent.length}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="queue" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" /> Content Queue
-              <Badge variant="secondary" className="ml-1">{contentQueue.length}</Badge>
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="reported" className="mt-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle>Reported Content</CardTitle>
-                <CardDescription>Review content that has been flagged by users</CardDescription>
-              </CardHeader>
-              <CardContent className="p-0">
-                <ScrollArea className="h-[calc(100vh-300px)] w-full">
-                  <div className="divide-y divide-border">
-                    {filteredReportedContent.length > 0 ? (
-                      filteredReportedContent.map((item) => (
-                        <div key={item.id} className="p-4 hover:bg-muted/30">
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-start gap-2">
-                              <div className="mt-0.5">{getTypeIcon(item.type)}</div>
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <h3 className="font-medium">{item.title}</h3>
-                                  <Badge variant="outline" className="text-xs bg-red-500/10 text-red-500 border-red-500/20">
-                                    {item.reportCount} {item.reportCount === 1 ? 'report' : 'reports'}
-                                  </Badge>
-                                </div>
-                                <div className="flex items-center gap-3 mt-1">
-                                  <p className="text-xs text-muted-foreground">by {item.author}</p>
-                                  <p className="text-xs text-muted-foreground">posted {item.date}</p>
-                                  <p className="text-xs text-muted-foreground">reason: {item.reason}</p>
-                                </div>
-                                <p className="text-sm mt-2 text-muted-foreground">{item.excerpt}</p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                                onClick={() => handleReject(item.id, "reported")}
-                              >
-                                <Trash className="h-4 w-4 mr-1" /> Reject
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="text-green-500 hover:text-green-600 hover:bg-green-50"
-                                onClick={() => handleApprove(item.id, "reported")}
-                              >
-                                <Check className="h-4 w-4 mr-1" /> Approve
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="flex flex-col items-center justify-center p-8">
-                        <AlertTriangle className="h-12 w-12 text-muted-foreground mb-2" />
-                        <h3 className="font-medium text-lg">No Reported Content</h3>
-                        <p className="text-muted-foreground text-center mt-1">
-                          {searchTerm ? "No results match your search" : "There are no flagged items requiring review"}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="queue" className="mt-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle>Content Queue</CardTitle>
-                <CardDescription>Review new content waiting for approval</CardDescription>
-              </CardHeader>
-              <CardContent className="p-0">
-                <ScrollArea className="h-[calc(100vh-300px)] w-full">
-                  <div className="divide-y divide-border">
-                    {filteredContentQueue.length > 0 ? (
-                      filteredContentQueue.map((item) => (
-                        <div key={item.id} className="p-4 hover:bg-muted/30">
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-start gap-2">
-                              <div className="mt-0.5">{getTypeIcon(item.type)}</div>
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <h3 className="font-medium">{item.title}</h3>
-                                  <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-500 border-amber-500/20">
-                                    Awaiting Approval
-                                  </Badge>
-                                </div>
-                                <div className="flex items-center gap-3 mt-1">
-                                  <p className="text-xs text-muted-foreground">by {item.author}</p>
-                                  <p className="text-xs text-muted-foreground">submitted {item.date}</p>
-                                </div>
-                                <p className="text-sm mt-2 text-muted-foreground">{item.excerpt}</p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                                onClick={() => handleReject(item.id, "queue")}
-                              >
-                                <X className="h-4 w-4 mr-1" /> Reject
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="text-green-500 hover:text-green-600 hover:bg-green-50"
-                                onClick={() => handleApprove(item.id, "queue")}
-                              >
-                                <Check className="h-4 w-4 mr-1" /> Approve
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="flex flex-col items-center justify-center p-8">
-                        <Check className="h-12 w-12 text-muted-foreground mb-2" />
-                        <h3 className="font-medium text-lg">No Pending Content</h3>
-                        <p className="text-muted-foreground text-center mt-1">
-                          {searchTerm ? "No results match your search" : "All content has been reviewed"}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
       </div>
-    </AdminLayout>
+
+      <Tabs defaultValue="reported">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="reported" className="flex items-center gap-2">
+            <Flag className="h-4 w-4" /> Reported Content
+            <Badge variant="secondary" className="ml-1">{reportedContent.length}</Badge>
+          </TabsTrigger>
+          <TabsTrigger value="queue" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" /> Content Queue
+            <Badge variant="secondary" className="ml-1">{contentQueue.length}</Badge>
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="reported" className="mt-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle>Reported Content</CardTitle>
+              <CardDescription>Review content that has been flagged by users</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <ScrollArea className="h-[calc(100vh-300px)] w-full">
+                <div className="divide-y divide-border">
+                  {filteredReportedContent.length > 0 ? (
+                    filteredReportedContent.map((item) => (
+                      <div key={item.id} className="p-4 hover:bg-muted/30">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start gap-2">
+                            <div className="mt-0.5">{getTypeIcon(item.type)}</div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-medium">{item.title}</h3>
+                                <Badge variant="outline" className="text-xs bg-red-500/10 text-red-500 border-red-500/20">
+                                  {item.reportCount} {item.reportCount === 1 ? 'report' : 'reports'}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center gap-3 mt-1">
+                                <p className="text-xs text-muted-foreground">by {item.author}</p>
+                                <p className="text-xs text-muted-foreground">posted {item.date}</p>
+                                <p className="text-xs text-muted-foreground">reason: {item.reason}</p>
+                              </div>
+                              <p className="text-sm mt-2 text-muted-foreground">{item.excerpt}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                              onClick={() => handleReject(item.id, "reported")}
+                            >
+                              <Trash className="h-4 w-4 mr-1" /> Reject
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-green-500 hover:text-green-600 hover:bg-green-50"
+                              onClick={() => handleApprove(item.id, "reported")}
+                            >
+                              <Check className="h-4 w-4 mr-1" /> Approve
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="flex flex-col items-center justify-center p-8">
+                      <AlertTriangle className="h-12 w-12 text-muted-foreground mb-2" />
+                      <h3 className="font-medium text-lg">No Reported Content</h3>
+                      <p className="text-muted-foreground text-center mt-1">
+                        {searchTerm ? "No results match your search" : "There are no flagged items requiring review"}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="queue" className="mt-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle>Content Queue</CardTitle>
+              <CardDescription>Review new content waiting for approval</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <ScrollArea className="h-[calc(100vh-300px)] w-full">
+                <div className="divide-y divide-border">
+                  {filteredContentQueue.length > 0 ? (
+                    filteredContentQueue.map((item) => (
+                      <div key={item.id} className="p-4 hover:bg-muted/30">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start gap-2">
+                            <div className="mt-0.5">{getTypeIcon(item.type)}</div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-medium">{item.title}</h3>
+                                <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-500 border-amber-500/20">
+                                  Awaiting Approval
+                                </Badge>
+                              </div>
+                              <div className="flex items-center gap-3 mt-1">
+                                <p className="text-xs text-muted-foreground">by {item.author}</p>
+                                <p className="text-xs text-muted-foreground">submitted {item.date}</p>
+                              </div>
+                              <p className="text-sm mt-2 text-muted-foreground">{item.excerpt}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                              onClick={() => handleReject(item.id, "queue")}
+                            >
+                              <X className="h-4 w-4 mr-1" /> Reject
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-green-500 hover:text-green-600 hover:bg-green-50"
+                              onClick={() => handleApprove(item.id, "queue")}
+                            >
+                              <Check className="h-4 w-4 mr-1" /> Approve
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="flex flex-col items-center justify-center p-8">
+                      <Check className="h-12 w-12 text-muted-foreground mb-2" />
+                      <h3 className="font-medium text-lg">No Pending Content</h3>
+                      <p className="text-muted-foreground text-center mt-1">
+                        {searchTerm ? "No results match your search" : "All content has been reviewed"}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 

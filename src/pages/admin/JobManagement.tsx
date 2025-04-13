@@ -29,7 +29,6 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog } from "@/components/ui/dialog";
-import AdminLayout from "@/components/admin/AdminLayout";
 import JobForm from "@/components/admin/JobForm";
 import { supabase } from "@/integrations/supabase/client";
 import { Job } from "@/hooks/useJobsData";
@@ -254,7 +253,7 @@ const JobManagement = () => {
   };
   
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold gold-gradient-text">Job Management</h1>
@@ -457,7 +456,7 @@ const JobManagement = () => {
         title="Delete Job"
         description={`Are you sure you want to delete the job "${currentJob?.title}"? This action cannot be undone.`}
       />
-    </AdminLayout>
+    </>
   );
 };
 

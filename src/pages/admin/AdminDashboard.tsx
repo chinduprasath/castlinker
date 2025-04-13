@@ -94,86 +94,86 @@ const AdminDashboard = () => {
   const filteredUsersByRole = selectedProfession === "all" 
     ? usersByRole 
     : usersByRole.filter(item => item.role === selectedProfession);
-  
+
   return (
-    <div className="space-y-6">
+      <div className="space-y-6">
       <h1 className="text-3xl font-bold gold-gradient-text">Admin Dashboard</h1>
       <p className="text-muted-foreground">Overview of platform statistics and insights.</p>
       
       {/* User statistics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
             <div className="space-y-1">
               <CardTitle className="text-sm font-medium">Total Users</CardTitle>
               <CardDescription>Platform registrations</CardDescription>
             </div>
             <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
+            </CardHeader>
+            <CardContent>
             <div className="text-2xl font-bold">{loading ? "..." : totalUsers}</div>
             <div className="flex items-center pt-1 text-xs text-green-500">
               <ArrowUpRight className="h-3 w-3 mr-1" />
               <span>12% from last month</span>
             </div>
-          </CardContent>
-        </Card>
-        
+            </CardContent>
+          </Card>
+          
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
             <div className="space-y-1">
               <CardTitle className="text-sm font-medium">Active Jobs</CardTitle>
               <CardDescription>Open positions</CardDescription>
             </div>
             <FilmIcon className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
+            </CardHeader>
+            <CardContent>
             <div className="text-2xl font-bold">86</div>
             <div className="flex items-center pt-1 text-xs text-green-500">
               <ArrowUpRight className="h-3 w-3 mr-1" />
               <span>8% from last month</span>
             </div>
-          </CardContent>
-        </Card>
-        
+            </CardContent>
+          </Card>
+          
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
             <div className="space-y-1">
               <CardTitle className="text-sm font-medium">Events</CardTitle>
               <CardDescription>Scheduled this month</CardDescription>
             </div>
             <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
+            </CardHeader>
+            <CardContent>
             <div className="text-2xl font-bold">24</div>
             <div className="flex items-center pt-1 text-xs text-green-500">
               <ArrowUpRight className="h-3 w-3 mr-1" />
               <span>20% from last month</span>
             </div>
-          </CardContent>
-        </Card>
-        
+            </CardContent>
+          </Card>
+          
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
             <div className="space-y-1">
               <CardTitle className="text-sm font-medium">User Activity</CardTitle>
               <CardDescription>Daily active users</CardDescription>
             </div>
             <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
+            </CardHeader>
+            <CardContent>
             <div className="text-2xl font-bold">78</div>
             <div className="flex items-center pt-1 text-xs text-green-500">
               <ArrowUpRight className="h-3 w-3 mr-1" />
               <span>5% from last week</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-      
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
       {/* User growth chart */}
       <Card>
-        <CardHeader>
+            <CardHeader>
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>User Growth</CardTitle>
@@ -184,10 +184,10 @@ const AdminDashboard = () => {
               Export
             </Button>
           </div>
-        </CardHeader>
-        <CardContent>
+            </CardHeader>
+            <CardContent>
           <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={usersByMonth}>
                 <defs>
                   <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
@@ -199,23 +199,23 @@ const AdminDashboard = () => {
                 <XAxis dataKey="month" />
                 <YAxis />
                 <Tooltip />
-                <Legend />
+                    <Legend />
                 <Area type="monotone" dataKey="count" name="Users" stroke="#8884d8" fillOpacity={1} fill="url(#colorUsers)" />
               </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
-      
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
       {/* Users by profession chart with filter */}
       <Card>
-        <CardHeader>
+            <CardHeader>
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <CardTitle>Users by Profession</CardTitle>
               <CardDescription>Breakdown of user professional roles</CardDescription>
-            </div>
-            
+        </div>
+
             {/* Profession filter */}
             <Select
               value={selectedProfession}
@@ -235,33 +235,33 @@ const AdminDashboard = () => {
               </SelectContent>
             </Select>
           </div>
-        </CardHeader>
-        <CardContent>
+            </CardHeader>
+            <CardContent>
           <div className="h-[300px] w-full">
             {loading ? (
               <div className="flex items-center justify-center h-full">
                 <p className="text-muted-foreground">Loading user data...</p>
               </div>
             ) : filteredUsersByRole.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={filteredUsersByRole}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="role" />
                   <YAxis />
                   <Tooltip />
-                  <Legend />
+                    <Legend />
                   <Bar dataKey="count" name="Number of Users" fill="#8884d8" />
                 </BarChart>
-              </ResponsiveContainer>
+                </ResponsiveContainer>
             ) : (
               <div className="flex items-center justify-center h-full">
                 <p className="text-muted-foreground">No user data available for the selected profession.</p>
               </div>
             )}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+                      </div>
+          </CardContent>
+        </Card>
+      </div>
   );
 };
 
