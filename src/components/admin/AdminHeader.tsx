@@ -1,44 +1,31 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { 
-  Bell, 
-  Settings, 
-  Shield, 
-  LogOut,
-  Menu,
-  X,
-  Search,
-  ChevronDown,
-  User,
-  HelpCircle
-} from "lucide-react";
+import { Bell, Settings, Shield, LogOut, Menu, X, Search, ChevronDown, User, HelpCircle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { useTheme } from "@/contexts/ThemeContext";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-
 interface AdminHeaderProps {
   toggleSidebar: () => void;
 }
-
-const AdminHeader = ({ toggleSidebar }: AdminHeaderProps) => {
-  const { user, logout } = useAuth();
+const AdminHeader = ({
+  toggleSidebar
+}: AdminHeaderProps) => {
+  const {
+    user,
+    logout
+  } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const { theme } = useTheme();
+  const {
+    toast
+  } = useToast();
+  const {
+    theme
+  } = useTheme();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [notifications] = useState(3); // Mock notification count
 
@@ -46,88 +33,46 @@ const AdminHeader = ({ toggleSidebar }: AdminHeaderProps) => {
     await logout();
     toast({
       title: "Logged out",
-      description: "You have been logged out of the admin panel",
+      description: "You have been logged out of the admin panel"
     });
     navigate("/");
   };
-
   if (!user) return null;
-
-  const initials = user.name
-    ? user.name
-        .split(' ')
-        .map((n: string) => n[0])
-        .join('')
-    : '?';
-
-  return (
-    <div className="border-b border-gold/10 bg-background/90 backdrop-blur-sm h-16">
+  const initials = user.name ? user.name.split(' ').map((n: string) => n[0]).join('') : '?';
+  return <div className="border-b border-gold/10 bg-background/90 backdrop-blur-sm h-16">
       <div className="flex h-full items-center justify-between px-4">
-        {isSearchOpen ? (
-          <div className="absolute left-0 top-0 w-full z-20 p-3 bg-background border-b border-gold/10">
+        {isSearchOpen ? <div className="absolute left-0 top-0 w-full z-20 p-3 bg-background border-b border-gold/10">
             <div className="relative flex items-center">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search..."
-                className="w-full bg-background/60 pl-9 focus-visible:ring-gold/30 rounded-xl"
-                autoFocus
-              />
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="absolute right-1 top-1" 
-                onClick={() => setIsSearchOpen(false)}
-              >
+              <Input type="search" placeholder="Search..." className="w-full bg-background/60 pl-9 focus-visible:ring-gold/30 rounded-xl" autoFocus />
+              <Button variant="ghost" size="icon" className="absolute right-1 top-1" onClick={() => setIsSearchOpen(false)}>
                 <X className="h-5 w-5" />
               </Button>
             </div>
-          </div>
-        ) : (
-          <>
+          </div> : <>
             <div className="flex items-center">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="md:hidden"
-                onClick={toggleSidebar}
-              >
+              <Button variant="ghost" size="icon" className="md:hidden" onClick={toggleSidebar}>
                 <Menu className="h-5 w-5" />
               </Button>
               <div className="hidden md:flex items-center">
-                <span className="font-semibold text-lg">Admin Dashboard</span>
+                
               </div>
             </div>
 
             <div className="w-full max-w-lg mx-4">
               <div className="relative hidden md:block">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="Search..."
-                  className="w-full bg-background/60 pl-9 focus-visible:ring-gold/30 rounded-xl"
-                />
+                <Input type="search" placeholder="Search..." className="w-full bg-background/60 pl-9 focus-visible:ring-gold/30 rounded-xl" />
               </div>
             </div>
-          </>
-        )}
+          </>}
         
         <div className="flex items-center gap-2 sm:gap-3">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="relative text-muted-foreground hover:text-foreground hover:bg-gold/5 rounded-xl"
-            onClick={() => navigate('/admin/notifications')}
-          >
+          <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground hover:bg-gold/5 rounded-xl" onClick={() => navigate('/admin/notifications')}>
             <Bell className="h-5 w-5" />
-            {notifications > 0 && (
-              <Badge 
-                variant="destructive" 
-                className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 p-0 flex items-center justify-center text-[10px] rounded-full"
-              >
+            {notifications > 0 && <Badge variant="destructive" className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 p-0 flex items-center justify-center text-[10px] rounded-full">
                 {notifications}
-              </Badge>
-            )}
+              </Badge>}
           </Button>
           
           <DropdownMenu>
@@ -174,8 +119,6 @@ const AdminHeader = ({ toggleSidebar }: AdminHeaderProps) => {
           </DropdownMenu>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default AdminHeader;
