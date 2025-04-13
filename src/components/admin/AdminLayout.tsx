@@ -38,11 +38,11 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     <div className={`min-h-screen flex flex-col ${theme === "light" ? "bg-amber-50/20" : "bg-background"} text-foreground`}>
       <AdminHeader toggleSidebar={toggleSidebar} />
       
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden pt-16"> {/* Added pt-16 to account for fixed header height */}
         <AdminSidebar collapsed={collapsed} toggleSidebar={toggleSidebar} />
 
         <main
-          className={`flex-1 overflow-y-auto transition-all duration-300 ease-in-out pt-16 px-4 ${
+          className={`flex-1 overflow-y-auto transition-all duration-300 ease-in-out px-4 py-6 ${
             collapsed ? "ml-16" : "ml-60"
           }`}
         >
