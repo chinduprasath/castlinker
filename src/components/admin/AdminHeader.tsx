@@ -176,6 +176,3 @@ const AdminHeader = ({ toggleSidebar }: AdminHeaderProps) => {
       </div>
     </div>
   );
-};
-
-export default AdminHeader;

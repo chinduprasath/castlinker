@@ -38,12 +38,12 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     <div className="min-h-screen flex bg-background text-foreground">
       <AdminSidebar collapsed={collapsed} toggleSidebar={toggleSidebar} />
       
-      <div className={`flex-1 transition-all duration-300 ease-in-out ${
+      <div className={`flex-1 flex flex-col transition-all duration-300 ease-in-out ${
         collapsed ? "ml-[70px]" : "ml-[250px]"
       }`}>
         <AdminHeader toggleSidebar={toggleSidebar} />
         
-        <main className="p-4 md:p-6 overflow-y-auto">
+        <main className="p-4 md:p-6 overflow-y-auto flex-1">
           <div className="max-w-[2000px] mx-auto">
             {children}
           </div>
