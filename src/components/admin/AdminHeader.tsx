@@ -61,16 +61,16 @@ const AdminHeader = ({ toggleSidebar }: AdminHeaderProps) => {
     : '?';
 
   return (
-    <div className={`w-full border-b ${theme === 'light' ? 'border-gray-200 bg-white' : 'border-gold/10 bg-background/90'} backdrop-blur-sm fixed top-0 z-50 shadow-sm`}>
+    <div className="w-full border-b border-gold/10 bg-background/90 backdrop-blur-sm fixed top-0 z-50">
       <div className="flex h-16 items-center justify-between px-4">
         {isSearchOpen ? (
-          <div className={`absolute left-0 top-0 w-full z-20 p-3 ${theme === 'light' ? 'bg-white border-gray-200' : 'bg-background border-gold/10'} border-b`}>
+          <div className="absolute left-0 top-0 w-full z-20 p-3 bg-background border-b border-gold/10">
             <div className="relative flex items-center">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
                 placeholder="Search..."
-                className={`w-full ${theme === 'light' ? 'bg-white/60 border-gray-200' : 'bg-background/60'} pl-9 focus-visible:ring-amber-300/30 rounded-xl`}
+                className="w-full bg-background/60 pl-9 focus-visible:ring-gold/30 rounded-xl"
                 autoFocus
               />
               <Button 
@@ -94,15 +94,19 @@ const AdminHeader = ({ toggleSidebar }: AdminHeaderProps) => {
               >
                 <Menu className="h-5 w-5" />
               </Button>
+              <div className="hidden md:flex items-center">
+                <Shield className="h-6 w-6 text-gold mr-2" />
+                <span className="font-bold text-lg">Admin Panel</span>
+              </div>
             </div>
 
             <div className="w-full max-w-lg mx-4">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+              <div className="relative hidden md:block">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="search"
                   placeholder="Search..."
-                  className={`w-full ${theme === 'light' ? 'bg-white/60 border-gray-200' : 'bg-background/60'} pl-9 focus-visible:ring-amber-300/30 rounded-xl`}
+                  className="w-full bg-background/60 pl-9 focus-visible:ring-gold/30 rounded-xl"
                 />
               </div>
             </div>
@@ -113,7 +117,7 @@ const AdminHeader = ({ toggleSidebar }: AdminHeaderProps) => {
           <Button 
             variant="ghost" 
             size="icon" 
-            className={`relative ${theme === 'light' ? 'text-gray-500 hover:text-gray-900 hover:bg-gray-100' : 'text-muted-foreground hover:text-foreground hover:bg-gold/5'} rounded-xl`}
+            className="relative text-muted-foreground hover:text-foreground hover:bg-gold/5 rounded-xl"
             onClick={() => navigate('/admin/notifications')}
           >
             <Bell className="h-5 w-5" />
@@ -129,41 +133,41 @@ const AdminHeader = ({ toggleSidebar }: AdminHeaderProps) => {
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className={`h-9 gap-1 sm:gap-2 px-1 sm:px-2 rounded-xl ${theme === 'light' ? 'hover:bg-gray-100' : 'hover:bg-gold/5'}`}>
-                <Avatar className={`h-7 w-7 sm:h-8 sm:w-8 ${theme === 'light' ? 'border border-amber-200' : 'border border-gold/20'}`}>
+              <Button variant="ghost" className="h-9 gap-1 sm:gap-2 px-1 sm:px-2 rounded-xl hover:bg-gold/5">
+                <Avatar className="h-7 w-7 sm:h-8 sm:w-8 border border-gold/20">
                   <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className={`${theme === 'light' ? 'bg-amber-100 text-amber-600' : 'bg-gold/10 text-gold'} text-xs sm:text-sm`}>
+                  <AvatarFallback className="bg-gold/10 text-gold text-xs sm:text-sm">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
                 <div className="hidden sm:flex flex-col items-start text-left">
-                  <span className={`text-sm font-medium leading-none ${theme === 'light' ? 'text-gray-900' : 'text-foreground'}`}>{user.name}</span>
-                  <span className={`text-xs ${theme === 'light' ? 'text-gray-500' : 'text-muted-foreground'}`}>Admin</span>
+                  <span className="text-sm font-medium leading-none">{user.name}</span>
+                  <span className="text-xs text-muted-foreground">Admin</span>
                 </div>
-                <ChevronDown className={`h-4 w-4 ${theme === 'light' ? 'text-gray-500' : 'text-muted-foreground'} hidden sm:block`} />
+                <ChevronDown className="h-4 w-4 text-muted-foreground hidden sm:block" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className={`w-56 rounded-xl ${theme === 'light' ? 'border-gray-200 bg-white' : ''}`} align="end">
+            <DropdownMenuContent className="w-56 rounded-xl" align="end">
               <DropdownMenuLabel>Admin Account</DropdownMenuLabel>
-              <DropdownMenuSeparator className={theme === 'light' ? 'bg-gray-200' : ''} />
+              <DropdownMenuSeparator />
               <DropdownMenuGroup>
-                <DropdownMenuItem onClick={() => navigate('/admin/profile')} className={`rounded-lg ${theme === 'light' ? 'hover:bg-gray-100 text-gray-700' : 'hover:bg-gold/5'}`}>
+                <DropdownMenuItem onClick={() => navigate('/admin/profile')} className="rounded-lg hover:bg-gold/5">
                   <User className="mr-2 h-4 w-4" />
                   Profile
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/admin/settings')} className={`rounded-lg ${theme === 'light' ? 'hover:bg-gray-100 text-gray-700' : 'hover:bg-gold/5'}`}>
+                <DropdownMenuItem onClick={() => navigate('/admin/settings')} className="rounded-lg hover:bg-gold/5">
                   <Settings className="mr-2 h-4 w-4" />
                   Settings
                 </DropdownMenuItem>
               </DropdownMenuGroup>
               
-              <DropdownMenuSeparator className={theme === 'light' ? 'bg-gray-200' : ''} />
-              <DropdownMenuItem onClick={() => navigate('/help')} className={`rounded-lg ${theme === 'light' ? 'hover:bg-gray-100 text-gray-700' : 'hover:bg-gold/5'}`}>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate('/help')} className="rounded-lg hover:bg-gold/5">
                 <HelpCircle className="mr-2 h-4 w-4" />
                 Help & Support
               </DropdownMenuItem>
-              <DropdownMenuSeparator className={theme === 'light' ? 'bg-gray-200' : ''} />
-              <DropdownMenuItem onClick={handleLogout} className={`text-red-500 focus:text-red-500 rounded-lg ${theme === 'light' ? 'hover:bg-red-50' : 'hover:bg-red-900/10'}`}>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout} className="text-red-500 focus:text-red-500 rounded-lg hover:bg-red-900/10">
                 <LogOut className="mr-2 h-4 w-4" />
                 Logout
               </DropdownMenuItem>

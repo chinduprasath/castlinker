@@ -1,3 +1,4 @@
+
 import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -17,6 +18,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useTheme } from "@/contexts/ThemeContext";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface AdminSidebarProps {
   collapsed: boolean;
@@ -42,14 +44,15 @@ const AdminSidebar = ({ collapsed, toggleSidebar }: AdminSidebarProps) => {
   return (
     <aside
       className={`
-        ${collapsed ? "w-16" : "w-60"}
-        ${theme === "light" ? "bg-white shadow-md" : "bg-card"}
+        ${collapsed ? "w-[70px]" : "w-[250px]"}
         fixed top-0 left-0
         h-screen
         z-40
         transition-all duration-300 ease-in-out
-        border-r
-        ${theme === "light" ? "border-gray-200" : "border-gold/10"}
+        border-r border-gold/15
+        bg-gradient-to-b from-background to-background/90
+        backdrop-blur-lg shadow-xl
+        rounded-r-2xl
       `}
     >
       <div className="flex flex-col h-full pt-16"> {/* pt-16 to push content below navbar */}
@@ -57,7 +60,7 @@ const AdminSidebar = ({ collapsed, toggleSidebar }: AdminSidebarProps) => {
         {/* Top section */}
         <div className="px-4 flex items-center justify-between pb-4">
           <div className="flex items-center">
-            <Shield className={`h-6 w-6 ${theme === "light" ? "text-amber-600" : "text-gold"}`} />
+            <Shield className={`h-6 w-6 text-gold`} />
             {!collapsed && (
               <span className="ml-2 font-semibold text-lg">Admin</span>
             )}
@@ -67,11 +70,7 @@ const AdminSidebar = ({ collapsed, toggleSidebar }: AdminSidebarProps) => {
               variant="outline"
               size="icon"
               onClick={toggleSidebar}
-              className={`ml-2 ${
-                theme === "light"
-                  ? "border-amber-200 text-amber-600 hover:bg-amber-50"
-                  : "hover:bg-gold/10 text-gold border-gold/30"
-              }`}
+              className="text-gold hover:bg-gold/10 hover:text-white border-gold/30 rounded-xl shadow-sm"
             >
               {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
             </Button>
@@ -82,38 +81,49 @@ const AdminSidebar = ({ collapsed, toggleSidebar }: AdminSidebarProps) => {
         <ScrollArea className="flex-1 px-2">
           <nav className="space-y-1">
             {adminNavItems.map((item) => (
-              <Button
-                key={item.label}
-                variant="ghost"
-                className={`
-                  w-full justify-start
-                  ${collapsed ? "px-2" : "px-4"}
-                  ${theme === "light"
-                    ? "hover:bg-amber-50 hover:text-amber-600 text-gray-700"
-                    : "hover:bg-gold/10 hover:text-gold text-muted-foreground"}
-                  rounded-lg h-10
-                `}
-                onClick={() => navigate(item.path)}
-              >
-                <item.icon className={`h-5 w-5 ${!collapsed ? "mr-3" : ""}`} />
-                {!collapsed && <span className="truncate">{item.label}</span>}
-              </Button>
+              collapsed ? (
+                <TooltipProvider key={item.label} delayDuration={100}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className="w-full h-10 px-2 justify-center rounded-lg hover:bg-gold/10 hover:text-gold text-muted-foreground"
+                        onClick={() => navigate(item.path)}
+                      >
+                        <item.icon className="h-5 w-5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className={theme === 'light' ? 'bg-white border-gray-200 text-gray-800' : ''}>
+                      {item.label}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ) : (
+                <Button
+                  key={item.label}
+                  variant="ghost"
+                  className="w-full justify-start px-4 hover:bg-gold/10 hover:text-gold text-muted-foreground rounded-lg h-10"
+                  onClick={() => navigate(item.path)}
+                >
+                  <item.icon className="h-5 w-5 mr-3" />
+                  <span className="truncate">{item.label}</span>
+                </Button>
+              )
             ))}
           </nav>
         </ScrollArea>
 
         {/* Bottom section */}
-        <div className="p-4 border-t border-dashed">
+        <div className="p-4 border-t border-dashed border-gold/10">
           <div className={`flex ${collapsed ? "justify-center" : "justify-between items-center"}`}>
             {!collapsed && (
-              <span className={`text-xs ${theme === "light" ? "text-gray-500" : "text-muted-foreground"}`}>
+              <span className="text-xs text-muted-foreground">
                 Theme
               </span>
             )}
             <ThemeToggle showTooltip={collapsed} />
           </div>
         </div>
-
       </div>
     </aside>
   );
