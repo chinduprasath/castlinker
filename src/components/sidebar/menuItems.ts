@@ -5,7 +5,8 @@ import {
   Users, 
   Book, 
   MessageSquare,
-  Bell
+  Bell,
+  FolderKanban
 } from 'lucide-react';
 
 export type MenuItem = {
@@ -24,6 +25,11 @@ export const mainMenuItems: MenuItem[] = [
     icon: Film,
     text: "Jobs",
     path: "/jobs"
+  },
+  {
+    icon: FolderKanban,
+    text: "Projects",
+    path: "/projects"
   },
   {
     icon: Users,

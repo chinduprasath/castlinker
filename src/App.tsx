@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -29,6 +30,11 @@ import Privacy from '@/pages/Privacy';
 import NotFound from '@/pages/NotFound';
 import BlogPage from '@/pages/BlogPage';
 import Events from '@/pages/Events';
+
+// Project Pages
+import Projects from '@/pages/Projects';
+import ProjectCreate from '@/pages/ProjectCreate';
+import ProjectDetail from '@/pages/ProjectDetail';
 
 // Admin Pages
 import AdminLogin from '@/pages/AdminLogin';
@@ -201,6 +207,29 @@ const App = () => {
               <PrivateRoute>
                 <AppLayout>
                   <Help />
+                </AppLayout>
+              </PrivateRoute>
+            } />
+
+            {/* Project Routes */}
+            <Route path="/projects" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <Projects />
+                </AppLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/projects/create" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <ProjectCreate />
+                </AppLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/projects/:projectId" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <ProjectDetail />
                 </AppLayout>
               </PrivateRoute>
             } />

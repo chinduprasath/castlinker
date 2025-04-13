@@ -1,7 +1,8 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Bell, Settings, Shield, LogOut, Menu, X, Search, ChevronDown, User, HelpCircle } from "lucide-react";
+import { Bell, Settings, LogOut, Menu, X, Search, ChevronDown, User, HelpCircle, FolderKanban } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
@@ -9,9 +10,11 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+
 interface AdminHeaderProps {
   toggleSidebar: () => void;
 }
+
 const AdminHeader = ({
   toggleSidebar
 }: AdminHeaderProps) => {
@@ -37,8 +40,10 @@ const AdminHeader = ({
     });
     navigate("/");
   };
+
   if (!user) return null;
   const initials = user.name ? user.name.split(' ').map((n: string) => n[0]).join('') : '?';
+
   return <div className="border-b border-gold/10 bg-background/90 backdrop-blur-sm h-16">
       <div className="flex h-full items-center justify-between px-4">
         {isSearchOpen ? <div className="absolute left-0 top-0 w-full z-20 p-3 bg-background border-b border-gold/10">
@@ -99,6 +104,10 @@ const AdminHeader = ({
                   <User className="mr-2 h-4 w-4" />
                   Profile
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/projects')} className="rounded-lg hover:bg-gold/5">
+                  <FolderKanban className="mr-2 h-4 w-4" />
+                  Projects
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate('/admin/settings')} className="rounded-lg hover:bg-gold/5">
                   <Settings className="mr-2 h-4 w-4" />
                   Settings
@@ -121,4 +130,5 @@ const AdminHeader = ({
       </div>
     </div>;
 };
+
 export default AdminHeader;
