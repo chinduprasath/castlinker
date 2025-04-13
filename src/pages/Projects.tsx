@@ -45,11 +45,11 @@ const Projects = () => {
       setLoading(true);
       if (!user) return;
 
-      // Fetch projects where user is either team head or accepted member
+      // Fixed query to properly fetch projects where user is team head or member
       const { data: projectData, error: projectError } = await supabase
         .from('projects')
         .select('id, name, description, current_status, created_at')
-        .or(`team_head_id.eq.${user.id},id.in.(select project_id from project_members where user_id = '${user.id}' and status = 'accepted')`);
+        .or(`team_head_id.eq.${user.id},id.in.(select project_id from project_members where user_id = ${user.id} and status = 'accepted')`.replace(/'/g, "''"));
 
       if (projectError) throw projectError;
 
