@@ -1,4 +1,3 @@
-
 import { createContext, useState, useContext, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User as SupabaseUser } from '@supabase/supabase-js';
@@ -144,6 +143,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsLoading(true);
       setError(null);
       
+      // First, create the auth account
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -159,10 +159,54 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (error) throw error;
       
       if (data.user) {
-        toast({
-          title: "Account created successfully!",
-          description: "Welcome to CastLinker!",
-        });
+        // Create the user profile
+        const { error: profileError } = await supabase
+          .from('castlinker_escyvd_user_profiles')
+          .insert({
+            user_email: email,
+            display_name: name,
+            role: role || "Actor",
+            avatar_url: "/images/avatar.png",
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            verified: false,
+            bio: `Hi, I'm ${name}! I'm a ${role || "Actor"} looking to connect with other film industry professionals.`,
+            headline: `${role || "Actor"} | Available for Projects`,
+            location: "Remote"
+          });
+
+        if (profileError) {
+          console.error('Error creating user profile:', profileError);
+          // Don't throw here as the auth account is already created
+          toast({
+            title: "Profile Creation Warning",
+            description: "Account created but profile setup incomplete. Please contact support.",
+            variant: "destructive",
+          });
+        } else {
+          // Create initial skills based on role
+          const defaultSkills = getDefaultSkillsForRole(role);
+          if (defaultSkills.length > 0) {
+            const skillsToInsert = defaultSkills.map(skill => ({
+              user_email: email,
+              skill,
+              created_at: new Date().toISOString()
+            }));
+            
+            const { error: skillsError } = await supabase
+              .from('castlinker_escyvd_user_skills')
+              .insert(skillsToInsert);
+
+            if (skillsError) {
+              console.error('Error creating initial skills:', skillsError);
+            }
+          }
+
+          toast({
+            title: "Account created successfully!",
+            description: "Welcome to CastLinker!",
+          });
+        }
       }
     } catch (error: any) {
       setError(error.message || 'Failed to create account');
@@ -174,6 +218,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       throw error;
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Helper function to get default skills based on role
+  const getDefaultSkillsForRole = (role: string): string[] => {
+    switch (role) {
+      case "Actor":
+        return ["Method Acting", "Improvisation", "Voice Acting"];
+      case "Director":
+        return ["Shot Composition", "Script Analysis", "Team Leadership"];
+      case "Producer":
+        return ["Project Management", "Budgeting", "Team Coordination"];
+      case "Screenwriter":
+        return ["Story Development", "Character Creation", "Dialogue Writing"];
+      case "Cinematographer":
+        return ["Camera Operation", "Lighting", "Shot Composition"];
+      case "Editor":
+        return ["Video Editing", "Sound Editing", "Color Correction"];
+      case "Sound Designer":
+        return ["Sound Mixing", "Foley Art", "Audio Post-production"];
+      case "Production Designer":
+        return ["Set Design", "Art Direction", "Visual Storytelling"];
+      default:
+        return [];
     }
   };
 

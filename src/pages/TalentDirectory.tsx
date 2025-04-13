@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,19 +41,10 @@ import { MessageDialog } from "@/components/talent/MessageDialog";
 import { ProfileDialog } from "@/components/talent/ProfileDialog";
 import { ConnectDialog } from "@/components/talent/ConnectDialog";
 import { Skeleton } from "@/components/ui/skeleton";
-
-// Roles available in the film industry
-const roles = [
-  "Actor", "Director", "Producer", "Cinematographer", "Screenwriter", "Editor", 
-  "Production Designer", "Costume Designer", "Sound Designer", "Makeup Artist", 
-  "VFX Artist", "Composer", "Stunt Performer", "Casting Director"
-];
-
-// Locations for filtering
-const locations = [
-  "Los Angeles, CA", "New York, NY", "Atlanta, GA", "Chicago, IL", "Miami, FL",
-  "Austin, TX", "Vancouver, BC", "Toronto, ON", "London, UK", "Paris, France"
-];
+import { supabase } from "@/integrations/supabase/client";
+import { ProfessionFilter } from "@/components/filters/ProfessionFilter";
+import { PROFESSION_OPTIONS, Profession } from "@/hooks/useTalentDirectory";
+import { LocationFilter, INDIA_LOCATIONS } from "@/components/filters/LocationFilter";
 
 const TalentDirectory = () => {
   const { user } = useAuth();
@@ -101,7 +91,7 @@ const TalentDirectory = () => {
     setConnectDialogOpen(true);
   };
   
-  const toggleRole = (role: string) => {
+  const toggleRole = (role: Profession) => {
     updateFilters({
       selectedRoles: filters.selectedRoles.includes(role)
         ? filters.selectedRoles.filter(r => r !== role)
@@ -182,7 +172,7 @@ const TalentDirectory = () => {
       </div>
       
       {/* Search and Filter Bar */}
-      <Card className="border-gold/10 shadow-lg bg-card/60 backdrop-blur-sm">
+      <Card className="bg-card/50 backdrop-blur border-gold/10">
         <CardHeader className="px-4 py-4">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
@@ -198,7 +188,7 @@ const TalentDirectory = () => {
             <div className="flex gap-2">
               <Select 
                 value={filters.sortBy} 
-                onValueChange={(value) => updateFilters({ sortBy: value as 'rating' | 'experience' | 'reviews' | 'likes' })}
+                onValueChange={(value) => updateFilters({ sortBy: value as 'rating' | 'experience' | 'reviews' | 'likes' | 'nameAsc' | 'nameDesc' })}
               >
                 <SelectTrigger className="w-[180px] border-gold/10 focus:ring-gold/30 bg-background/50">
                   <div className="flex items-center gap-2">
@@ -207,6 +197,8 @@ const TalentDirectory = () => {
                   </div>
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="nameAsc">A to Z</SelectItem>
+                  <SelectItem value="nameDesc">Z to A</SelectItem>
                   <SelectItem value="rating">Highest Rated</SelectItem>
                   <SelectItem value="experience">Most Experienced</SelectItem>
                   <SelectItem value="reviews">Most Reviewed</SelectItem>
@@ -214,7 +206,7 @@ const TalentDirectory = () => {
                 </SelectContent>
               </Select>
               
-              <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+              <Sheet>
                 <SheetTrigger asChild>
                   <Button variant="outline" className="border-gold/10 focus:ring-gold/30">
                     <Filter className="h-4 w-4 mr-2" />
@@ -229,39 +221,21 @@ const TalentDirectory = () => {
                   
                   <div className="mt-6 space-y-6">
                     <div className="space-y-3">
-                      <h3 className="font-medium text-sm text-foreground/80">Role</h3>
-                      <div className="grid grid-cols-2 gap-2">
-                        {roles.slice(0, 8).map(role => (
-                          <div key={role} className="flex items-center space-x-2">
-                            <Checkbox 
-                              id={`role-${role}`} 
-                              checked={filters.selectedRoles.includes(role)} 
-                              onCheckedChange={() => toggleRole(role)}
-                              className="border-gold/30 data-[state=checked]:bg-gold data-[state=checked]:border-gold"
-                            />
-                            <Label htmlFor={`role-${role}`} className="text-sm">{role}</Label>
-                          </div>
-                        ))}
-                      </div>
+                      <h3 className="font-medium text-sm text-foreground/80">Profession</h3>
+                      <ProfessionFilter
+                        selectedProfessions={filters.selectedRoles}
+                        onProfessionChange={(professions) => updateFilters({ selectedRoles: professions })}
+                      />
                     </div>
                     
                     <Separator className="bg-gold/10" />
                     
                     <div className="space-y-3">
                       <h3 className="font-medium text-sm text-foreground/80">Location</h3>
-                      <div className="grid grid-cols-1 gap-2">
-                        {locations.slice(0, 5).map(location => (
-                          <div key={location} className="flex items-center space-x-2">
-                            <Checkbox 
-                              id={`location-${location}`} 
-                              checked={filters.selectedLocations.includes(location)} 
-                              onCheckedChange={() => toggleLocation(location)}
-                              className="border-gold/30 data-[state=checked]:bg-gold data-[state=checked]:border-gold"
-                            />
-                            <Label htmlFor={`location-${location}`} className="text-sm">{location}</Label>
-                          </div>
-                        ))}
-                      </div>
+                      <LocationFilter
+                        selectedLocations={filters.selectedLocations}
+                        onLocationChange={(locations) => updateFilters({ selectedLocations: locations })}
+                      />
                     </div>
                     
                     <Separator className="bg-gold/10" />
@@ -287,6 +261,32 @@ const TalentDirectory = () => {
                     <Separator className="bg-gold/10" />
                     
                     <div className="space-y-3">
+                      <h3 className="font-medium text-sm text-foreground/80">Additional Filters</h3>
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox 
+                            id="verifiedOnly"
+                            checked={filters.verifiedOnly}
+                            onCheckedChange={(checked) => updateFilters({ verifiedOnly: !!checked })}
+                            className="border-gold/30 data-[state=checked]:bg-gold data-[state=checked]:border-gold"
+                          />
+                          <Label htmlFor="verifiedOnly" className="text-sm">Verified Talents Only</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox 
+                            id="availableOnly"
+                            checked={filters.availableOnly}
+                            onCheckedChange={(checked) => updateFilters({ availableOnly: !!checked })}
+                            className="border-gold/30 data-[state=checked]:bg-gold data-[state=checked]:border-gold"
+                          />
+                          <Label htmlFor="availableOnly" className="text-sm">Currently Available Only</Label>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <Separator className="bg-gold/10" />
+                    
+                    <div className="space-y-3">
                       <h3 className="font-medium text-sm text-foreground/80">Likes Filter</h3>
                       <div className="space-y-4">
                         <div className="flex items-center space-x-2">
@@ -301,41 +301,6 @@ const TalentDirectory = () => {
                           />
                         </div>
                       </div>
-                    </div>
-                    
-                    <Separator className="bg-gold/10" />
-                    
-                    <div className="space-y-3">
-                      <h3 className="font-medium text-sm text-foreground/80">Additional Filters</h3>
-                      <div className="space-y-2">
-                        <div className="flex items-center space-x-2">
-                          <Checkbox 
-                            id="verified" 
-                            checked={filters.verifiedOnly} 
-                            onCheckedChange={() => updateFilters({ verifiedOnly: !filters.verifiedOnly })}
-                            className="border-gold/30 data-[state=checked]:bg-gold data-[state=checked]:border-gold"
-                          />
-                          <Label htmlFor="verified" className="text-sm">Verified Talents Only</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox 
-                            id="available" 
-                            checked={filters.availableOnly} 
-                            onCheckedChange={() => updateFilters({ availableOnly: !filters.availableOnly })}
-                            className="border-gold/30 data-[state=checked]:bg-gold data-[state=checked]:border-gold"
-                          />
-                          <Label htmlFor="available" className="text-sm">Currently Available Only</Label>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex justify-between pt-4">
-                      <Button variant="outline" onClick={resetFilters} className="border-gold/10">
-                        Clear All
-                      </Button>
-                      <Button onClick={() => setFiltersOpen(false)} className="bg-gold text-black hover:bg-gold/90">
-                        Apply Filters
-                      </Button>
                     </div>
                   </div>
                 </SheetContent>

@@ -1189,6 +1189,53 @@ export type Database = {
         }
         Relationships: []
       }
+      profession_content: {
+        Row: {
+          id: string
+          user_id: string
+          content_type: 'script' | 'audio'
+          title: string
+          content: string | null
+          file_url: string | null
+          created_at: string
+          updated_at: string
+          description: string | null
+          metadata: Json | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          content_type: 'script' | 'audio'
+          title: string
+          content?: string | null
+          file_url?: string | null
+          created_at?: string
+          updated_at?: string
+          description?: string | null
+          metadata?: Json | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          content_type?: 'script' | 'audio'
+          title?: string
+          content?: string | null
+          file_url?: string | null
+          created_at?: string
+          updated_at?: string
+          description?: string | null
+          metadata?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profession_content_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never

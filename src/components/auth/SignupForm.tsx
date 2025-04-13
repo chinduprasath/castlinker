@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -174,6 +173,16 @@ const SignupForm = () => {
                     <SelectItem value="Casting Director">Casting Director</SelectItem>
                     <SelectItem value="Agent">Agent</SelectItem>
                     <SelectItem value="Production Company">Production Company</SelectItem>
+                    <SelectItem value="Editor">Editor</SelectItem>
+                    <SelectItem value="Sound Designer">Sound Designer</SelectItem>
+                    <SelectItem value="Production Designer">Production Designer</SelectItem>
+                    <SelectItem value="Costume Designer">Costume Designer</SelectItem>
+                    <SelectItem value="Makeup Artist">Makeup Artist</SelectItem>
+                    <SelectItem value="Stunt Coordinator">Stunt Coordinator</SelectItem>
+                    <SelectItem value="Visual Effects Artist">Visual Effects Artist</SelectItem>
+                    <SelectItem value="Music Composer">Music Composer</SelectItem>
+                    <SelectItem value="Art Director">Art Director</SelectItem>
+                    <SelectItem value="Location Manager">Location Manager</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />

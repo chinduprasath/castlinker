@@ -1,9 +1,174 @@
-
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Play, Eye } from "lucide-react";
+import { Play, Eye, FileText, Music, Plus, Upload, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+
+interface ProfessionContent {
+  id: string;
+  title: string;
+  content?: string;
+  file_url?: string;
+  description?: string;
+  content_type: 'script' | 'audio';
+  created_at: string;
+}
 
 const PortfolioSection = () => {
+  const { user, profile } = useAuth();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [professionContent, setProfessionContent] = useState<ProfessionContent[]>([]);
+  const [newScript, setNewScript] = useState({ title: '', content: '', description: '' });
+  const [newAudio, setNewAudio] = useState({ title: '', file: null as File | null, description: '' });
+
+  // Fetch profession-specific content
+  const fetchProfessionContent = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profession_content')
+        .select('*')
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setProfessionContent(data || []);
+    } catch (error) {
+      console.error('Error fetching profession content:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load content. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Handle script submission
+  const handleScriptSubmit = async () => {
+    if (!newScript.title || !newScript.content) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please fill in all required fields.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('profession_content')
+        .insert({
+          user_id: user?.id,
+          content_type: 'script',
+          title: newScript.title,
+          content: newScript.content,
+          description: newScript.description,
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Script uploaded successfully.',
+      });
+      setNewScript({ title: '', content: '', description: '' });
+      fetchProfessionContent();
+    } catch (error) {
+      console.error('Error uploading script:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to upload script. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle audio file upload
+  const handleAudioUpload = async () => {
+    if (!newAudio.title || !newAudio.file) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please fill in all required fields and select an audio file.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (newAudio.file.size > 10 * 1024 * 1024) {
+      toast({
+        title: 'File Too Large',
+        description: 'Audio file must be less than 10MB.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate file duration (client-side check)
+    const audio = new Audio(URL.createObjectURL(newAudio.file));
+    audio.addEventListener('loadedmetadata', async () => {
+      if (audio.duration > 60) {
+        toast({
+          title: 'Duration Too Long',
+          description: 'Audio file must be 1 minute or less.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      setLoading(true);
+      try {
+        // Upload file to Supabase Storage
+        const fileExt = newAudio.file.name.split('.').pop();
+        const fileName = `${user?.id}/${Date.now()}.${fileExt}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('audio-uploads')
+          .upload(fileName, newAudio.file);
+
+        if (uploadError) throw uploadError;
+
+        // Create database entry
+        const { error: dbError } = await supabase
+          .from('profession_content')
+          .insert({
+            user_id: user?.id,
+            content_type: 'audio',
+            title: newAudio.title,
+            file_url: uploadData.path,
+            description: newAudio.description,
+            metadata: { duration: audio.duration, size: newAudio.file.size }
+          });
+
+        if (dbError) throw dbError;
+
+        toast({
+          title: 'Success',
+          description: 'Audio file uploaded successfully.',
+        });
+        setNewAudio({ title: '', file: null, description: '' });
+        fetchProfessionContent();
+      } catch (error) {
+        console.error('Error uploading audio:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to upload audio file. Please try again.',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
+    });
+  };
+
   // In a real app, this data would come from API/context
   const portfolio = {
     showreels: [
@@ -62,6 +227,12 @@ const PortfolioSection = () => {
         <TabsTrigger value="showreels">Showreels</TabsTrigger>
         <TabsTrigger value="photos">Photos</TabsTrigger>
         <TabsTrigger value="projects">Projects</TabsTrigger>
+        {profile?.role === 'writer' && (
+          <TabsTrigger value="scripts">Scripts</TabsTrigger>
+        )}
+        {profile?.role === 'musician' && (
+          <TabsTrigger value="audio">Audio</TabsTrigger>
+        )}
       </TabsList>
       
       {/* Showreels Tab */}
@@ -138,6 +309,183 @@ const PortfolioSection = () => {
           ))}
         </div>
       </TabsContent>
+
+      {/* Scripts Tab */}
+      {profile?.role === 'writer' && (
+        <TabsContent value="scripts" className="pt-6">
+          <Card className="bg-card-gradient border-gold/10 mb-6">
+            <CardContent className="p-6">
+              <h3 className="text-lg font-semibold mb-4">Add New Script</h3>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="script-title">Title</Label>
+                  <Input
+                    id="script-title"
+                    value={newScript.title}
+                    onChange={(e) => setNewScript(prev => ({ ...prev, title: e.target.value }))}
+                    placeholder="Enter script title"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="script-content">Content</Label>
+                  <Textarea
+                    id="script-content"
+                    value={newScript.content}
+                    onChange={(e) => setNewScript(prev => ({ ...prev, content: e.target.value }))}
+                    placeholder="Paste your script here"
+                    className="min-h-[200px]"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="script-description">Description (Optional)</Label>
+                  <Input
+                    id="script-description"
+                    value={newScript.description}
+                    onChange={(e) => setNewScript(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Add a brief description"
+                  />
+                </div>
+                <Button 
+                  onClick={handleScriptSubmit} 
+                  disabled={loading}
+                  className="w-full"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Script
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {professionContent
+              .filter(content => content.content_type === 'script')
+              .map((script) => (
+                <Card key={script.id} className="bg-card-gradient border-gold/10">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3 className="font-semibold">{script.title}</h3>
+                        {script.description && (
+                          <p className="text-sm text-muted-foreground mt-1">{script.description}</p>
+                        )}
+                      </div>
+                      <FileText className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <div className="mt-4">
+                      <p className="text-sm text-muted-foreground">
+                        Added {new Date(script.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+          </div>
+        </TabsContent>
+      )}
+
+      {/* Audio Tab */}
+      {profile?.role === 'musician' && (
+        <TabsContent value="audio" className="pt-6">
+          <Card className="bg-card-gradient border-gold/10 mb-6">
+            <CardContent className="p-6">
+              <h3 className="text-lg font-semibold mb-4">Upload New Audio</h3>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="audio-title">Title</Label>
+                  <Input
+                    id="audio-title"
+                    value={newAudio.title}
+                    onChange={(e) => setNewAudio(prev => ({ ...prev, title: e.target.value }))}
+                    placeholder="Enter audio title"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="audio-file">Audio File (Max 1 minute, MP3 or WAV)</Label>
+                  <Input
+                    id="audio-file"
+                    type="file"
+                    accept=".mp3,.wav"
+                    onChange={(e) => setNewAudio(prev => ({ 
+                      ...prev, 
+                      file: e.target.files?.[0] || null 
+                    }))}
+                    className="cursor-pointer"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="audio-description">Description (Optional)</Label>
+                  <Input
+                    id="audio-description"
+                    value={newAudio.description}
+                    onChange={(e) => setNewAudio(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Add a brief description"
+                  />
+                </div>
+                <Button 
+                  onClick={handleAudioUpload} 
+                  disabled={loading}
+                  className="w-full"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Upload Audio
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {professionContent
+              .filter(content => content.content_type === 'audio')
+              .map((audio) => (
+                <Card key={audio.id} className="bg-card-gradient border-gold/10">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3 className="font-semibold">{audio.title}</h3>
+                        {audio.description && (
+                          <p className="text-sm text-muted-foreground mt-1">{audio.description}</p>
+                        )}
+                      </div>
+                      <Music className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    {audio.file_url && (
+                      <div className="mt-4">
+                        <audio controls className="w-full">
+                          <source src={`${supabase.storage.from('audio-uploads').getPublicUrl(audio.file_url).data.publicUrl}`} />
+                          Your browser does not support the audio element.
+                        </audio>
+                      </div>
+                    )}
+                    <div className="mt-4">
+                      <p className="text-sm text-muted-foreground">
+                        Added {new Date(audio.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+          </div>
+        </TabsContent>
+      )}
     </Tabs>
   );
 };
