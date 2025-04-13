@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -43,48 +42,86 @@ const Projects = () => {
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      if (!user) return;
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
 
-      // Fixed query to properly fetch projects where user is team head or member
-      const { data: projectData, error: projectError } = await supabase
+      // First query to get projects where user is team head
+      const { data: teamHeadProjects, error: headError } = await supabase
         .from('projects')
         .select('id, name, description, current_status, created_at')
-        .or(`team_head_id.eq.${user.id},id.in.(select project_id from project_members where user_id = ${user.id} and status = 'accepted')`.replace(/'/g, "''"));
+        .eq('team_head_id', user.id);
 
-      if (projectError) throw projectError;
+      if (headError) throw headError;
 
-      if (projectData) {
-        // Enhance projects with additional data (member count and milestone count)
-        const enhancedProjects = await Promise.all(projectData.map(async (project) => {
+      // Second query to get projects where user is a member
+      const { data: memberProjects, error: memberError } = await supabase
+        .from('project_members')
+        .select('project_id')
+        .eq('user_id', user.id)
+        .eq('status', 'accepted');
+
+      if (memberError) throw memberError;
+
+      // Get full project details for member projects
+      const memberProjectIds = memberProjects.map(mp => mp.project_id);
+      const { data: memberProjectDetails, error: detailsError } = await supabase
+        .from('projects')
+        .select('id, name, description, current_status, created_at')
+        .in('id', memberProjectIds);
+
+      if (detailsError) throw detailsError;
+
+      // Combine and deduplicate projects
+      const allProjects = [...(teamHeadProjects || []), ...(memberProjectDetails || [])];
+      const uniqueProjects = Array.from(new Map(allProjects.map(item => [item.id, item])).values());
+
+      // Enhance projects with additional data
+      const enhancedProjects = await Promise.all(uniqueProjects.map(async (project) => {
+        try {
           // Get member count
-          const { count: memberCount } = await supabase
+          const { count: memberCount, error: memberCountError } = await supabase
             .from('project_members')
             .select('*', { count: 'exact', head: true })
             .eq('project_id', project.id)
             .eq('status', 'accepted');
 
+          if (memberCountError) throw memberCountError;
+
           // Get milestone count
-          const { count: milestoneCount } = await supabase
+          const { count: milestoneCount, error: milestoneCountError } = await supabase
             .from('project_milestones')
             .select('*', { count: 'exact', head: true })
             .eq('project_id', project.id);
 
+          if (milestoneCountError) throw milestoneCountError;
+
           return {
             ...project,
-            member_count: memberCount,
-            milestone_count: milestoneCount
+            member_count: memberCount || 1,
+            milestone_count: milestoneCount || 0
           };
-        }));
+        } catch (error) {
+          console.error(`Error fetching details for project ${project.id}:`, error);
+          // Return project with default counts if detail fetch fails
+          return {
+            ...project,
+            member_count: 1,
+            milestone_count: 0
+          };
+        }
+      }));
 
-        setProjects(enhancedProjects);
-      }
-    } catch (error) {
+      setProjects(enhancedProjects);
+    } catch (error: any) {
       console.error('Error fetching projects:', error);
       toast({
         title: 'Failed to load projects',
-        description: 'Please try again later',
-        variant: 'destructive'
+        description: error.message || 'Please try again later',
+        variant: 'destructive',
       });
+      // Set empty projects array to show the "No projects found" state
+      setProjects([]);
     } finally {
       setLoading(false);
     }
