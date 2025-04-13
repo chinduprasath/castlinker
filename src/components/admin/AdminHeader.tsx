@@ -61,8 +61,8 @@ const AdminHeader = ({ toggleSidebar }: AdminHeaderProps) => {
     : '?';
 
   return (
-    <div className="w-full border-b border-gold/10 bg-background/90 backdrop-blur-sm fixed top-0 z-50">
-      <div className="flex h-16 items-center justify-between px-4">
+    <div className="border-b border-gold/10 bg-background/90 backdrop-blur-sm h-16">
+      <div className="flex h-full items-center justify-between px-4">
         {isSearchOpen ? (
           <div className="absolute left-0 top-0 w-full z-20 p-3 bg-background border-b border-gold/10">
             <div className="relative flex items-center">
@@ -95,8 +95,7 @@ const AdminHeader = ({ toggleSidebar }: AdminHeaderProps) => {
                 <Menu className="h-5 w-5" />
               </Button>
               <div className="hidden md:flex items-center">
-                <Shield className="h-6 w-6 text-gold mr-2" />
-                <span className="font-bold text-lg">Admin Panel</span>
+                <span className="font-semibold text-lg">Admin Dashboard</span>
               </div>
             </div>
 

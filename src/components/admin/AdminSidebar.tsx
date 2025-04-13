@@ -55,10 +55,9 @@ const AdminSidebar = ({ collapsed, toggleSidebar }: AdminSidebarProps) => {
         rounded-r-2xl
       `}
     >
-      <div className="flex flex-col h-full pt-16"> {/* pt-16 to push content below navbar */}
-        
+      <div className="flex flex-col h-full">
         {/* Top section */}
-        <div className="px-4 flex items-center justify-between pb-4">
+        <div className="px-4 pt-4 flex items-center justify-between h-16">
           <div className="flex items-center">
             <Shield className={`h-6 w-6 text-gold`} />
             {!collapsed && (
@@ -78,7 +77,7 @@ const AdminSidebar = ({ collapsed, toggleSidebar }: AdminSidebarProps) => {
         </div>
 
         {/* Navigation */}
-        <ScrollArea className="flex-1 px-2">
+        <ScrollArea className="flex-1 px-2 py-4">
           <nav className="space-y-1">
             {adminNavItems.map((item) => (
               collapsed ? (
