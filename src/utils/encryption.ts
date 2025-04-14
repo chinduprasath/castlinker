@@ -1,16 +1,18 @@
 
-import { generateKeyPair, box, randomBytes, secretbox } from 'tweetnacl';
-import {
-    encodeBase64,
-    decodeBase64,
-    encodeUTF8,
-    decodeUTF8,
+import { box, randomBytes, secretbox } from 'tweetnacl';
+import { 
+    encode as encodeBase64, 
+    decode as decodeBase64 
 } from '@stablelib/base64';
+import { 
+    encode as encodeUTF8,
+    decode as decodeUTF8
+} from '@stablelib/utf8';
 
 export class E2EEncryption {
     // Generate a new key pair for a user
     generateUserKeys(): { publicKey: string; privateKey: string } {
-        const keyPair = generateKeyPair();
+        const keyPair = box.keyPair();
         return {
             publicKey: encodeBase64(keyPair.publicKey),
             privateKey: encodeBase64(keyPair.secretKey),
