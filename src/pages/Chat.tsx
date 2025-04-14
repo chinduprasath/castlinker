@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,18 +9,19 @@ import { ChatMessage } from "@/components/chat/ChatMessage";
 import { useChat } from "@/hooks/useChat";
 import { useDebounce } from "@/hooks/useDebounce";
 import { EmojiPicker } from "@/components/chat/EmojiPicker";
+import { Message } from "@/types/chat";
 
 const Chat = () => {
   const { user } = useAuth();
   const [inputMessage, setInputMessage] = useState("");
   const messageEndRef = useRef<HTMLDivElement>(null);
   
-  // Use the hook without an argument
+  // Use the hook with an empty string as roomId
   const { 
     messages,
     sendMessage,
     isLoading
-  } = useChat(); 
+  } = useChat(''); 
   
   // Use mock data from the useChat.tsx file for the sidebar
   const [mockChats, setMockChats] = useState([
@@ -255,14 +255,14 @@ const Chat = () => {
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {messages.map((message) => {
+                  {messages.map((message: Message) => {
                     // Convert the message to the expected ChatMessage format
                     const chatMessage = {
                       ...message,
-                      senderName: message.isMe ? user?.email?.split('@')[0] : activeChat.name,
-                      senderRole: message.isMe ? '' : activeChat.role,
-                      is_edited: message.is_edited || message.isEdited || false,
-                      created_at: message.created_at || message.timestamp || new Date().toISOString()
+                      senderName: message.isMe ? user?.email?.split('@')[0] : 'User',
+                      senderRole: message.isMe ? '' : 'Role',
+                      is_edited: message.is_edited || false,
+                      created_at: message.created_at || new Date().toISOString()
                     };
                     
                     return (
