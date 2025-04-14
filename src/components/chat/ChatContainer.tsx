@@ -8,28 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Send } from 'lucide-react';
 import { format } from 'date-fns';
-
-interface Message {
-  id: string;
-  content: string;
-  sender_id: string;
-  created_at: string;
-  type: string;
-  is_deleted: boolean;
-  is_edited: boolean;
-  metadata: any;
-  sender?: {
-    full_name: string;
-    avatar_url: string;
-  };
-}
-
-interface ChatRoom {
-  id: string;
-  name: string;
-  type: string;
-  users?: any[];
-}
+import { ChatRoom, Message, UserProfile } from '@/types/supabase';
 
 interface ChatContainerProps {
   roomId: string;
@@ -50,48 +29,25 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ roomId }) => {
     
     const fetchRoomInfo = async () => {
       try {
-        // Get room details
+        // Get room details using the function for now
         const { data: roomData, error: roomError } = await supabase
-          .from('chat_rooms')
-          .select('*')
-          .eq('id', roomId)
-          .single();
+          .rpc('get_chat_room', { room_id: roomId });
         
         if (roomError) throw roomError;
         
-        // Get other room members
-        const { data: membersData, error: membersError } = await supabase
-          .from('chat_room_members')
-          .select('user_id')
-          .eq('room_id', roomId)
-          .neq('user_id', user.id);
-        
-        if (membersError) throw membersError;
-        
-        const userIds = membersData?.map(m => m.user_id) || [];
-        let users = [];
-        
-        if (userIds.length > 0) {
-          const { data: profiles } = await supabase
-            .from('user_profiles')
-            .select('*')
-            .in('id', userIds);
-            
-          users = profiles || [];
+        // For now, set basic room info
+        if (roomData) {
+          setRoomInfo({
+            id: roomId,
+            name: roomData.name || 'Chat',
+            type: roomData.type || 'one_to_one',
+            created_at: roomData.created_at,
+            updated_at: roomData.updated_at,
+            last_message_at: roomData.last_message_at,
+            metadata: roomData.metadata || {},
+            users: roomData.users || []
+          });
         }
-        
-        // For one-to-one chats, set the name to the other user's name
-        let roomName = roomData.name;
-        if (roomData.type === 'one_to_one' && users.length > 0) {
-          roomName = users[0].full_name || "Chat";
-        }
-        
-        setRoomInfo({
-          ...roomData,
-          name: roomName,
-          users
-        });
-        
       } catch (error) {
         console.error('Error fetching room info:', error);
         toast({
@@ -105,35 +61,14 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ roomId }) => {
     const fetchMessages = async () => {
       setLoading(true);
       try {
-        // Get messages for this room
+        // Get messages for this room using function
         const { data: messagesData, error: messagesError } = await supabase
-          .from('messages')
-          .select('*')
-          .eq('room_id', roomId)
-          .order('created_at', { ascending: true });
+          .rpc('get_room_messages', { room_id: roomId });
         
         if (messagesError) throw messagesError;
         
-        // Get sender information for each message
         if (messagesData && messagesData.length > 0) {
-          const senderIds = [...new Set(messagesData.map(m => m.sender_id))];
-          
-          const { data: profiles } = await supabase
-            .from('user_profiles')
-            .select('id, full_name, avatar_url')
-            .in('id', senderIds);
-          
-          const profileMap = (profiles || []).reduce((map, profile) => {
-            map[profile.id] = profile;
-            return map;
-          }, {} as Record<string, any>);
-          
-          const messagesWithSenders = messagesData.map(message => ({
-            ...message,
-            sender: profileMap[message.sender_id]
-          }));
-          
-          setMessages(messagesWithSenders);
+          setMessages(messagesData);
         } else {
           setMessages([]);
         }
@@ -153,23 +88,22 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ roomId }) => {
     fetchMessages();
     
     // Subscribe to new messages
-    const messageSubscription = supabase
-      .channel('messages_for_room')
+    const channel = supabase
+      .channel(`room-${roomId}`)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
         table: 'messages',
         filter: `room_id=eq.${roomId}`
-      }, payload => {
-        // Refetch all messages to ensure we have sender information
+      }, () => {
         fetchMessages();
       })
       .subscribe();
     
     return () => {
-      supabase.removeChannel(messageSubscription);
+      supabase.removeChannel(channel);
     };
-  }, [roomId, user]);
+  }, [roomId, user, toast]);
   
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -184,14 +118,11 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ roomId }) => {
     if (!user || !newMessage.trim() || !roomId) return;
     
     try {
-      const { data, error } = await supabase
-        .from('messages')
-        .insert({
-          room_id: roomId,
-          sender_id: user.id,
-          content: newMessage.trim(),
-          type: 'text'
-        });
+      const { data, error } = await supabase.rpc('send_message', {
+        room_id: roomId,
+        content: newMessage.trim(),
+        message_type: 'text'
+      });
       
       if (error) throw error;
       
@@ -291,3 +222,5 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ roomId }) => {
     </div>
   );
 };
+
+export default ChatContainer;

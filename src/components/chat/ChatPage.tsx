@@ -5,15 +5,7 @@ import { ChatContainer } from './ChatContainer';
 import { ChatSidebar } from './ChatSidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-
-interface ChatRoom {
-  id: string;
-  name: string;
-  type: 'one_to_one' | 'group';
-  last_message_at: string;
-  metadata: any;
-  users?: any[];
-}
+import { ChatRoom } from '@/types/supabase';
 
 export const ChatPage: React.FC = () => {
   const { user } = useAuth();
@@ -28,72 +20,20 @@ export const ChatPage: React.FC = () => {
     const loadChatRooms = async () => {
       setLoading(true);
       try {
-        // Get all rooms where the current user is a member
-        const { data: memberData, error: memberError } = await supabase
-          .from('chat_room_members')
-          .select('room_id')
-          .eq('user_id', user.id);
-
-        if (memberError) throw memberError;
-        
-        if (!memberData || memberData.length === 0) {
-          setRooms([]);
-          setLoading(false);
-          return;
-        }
-
-        const roomIds = memberData.map(item => item.room_id);
-
-        // Get details of those rooms
+        // Get chat rooms through RPC function
         const { data: roomsData, error: roomsError } = await supabase
-          .from('chat_rooms')
-          .select('*')
-          .in('id', roomIds)
-          .order('last_message_at', { ascending: false });
-
-        if (roomsError) throw roomsError;
-
-        // For each room, get the other members
-        const roomsWithUsers = await Promise.all(
-          (roomsData || []).map(async (room) => {
-            const { data: membersData } = await supabase
-              .from('chat_room_members')
-              .select('user_id')
-              .eq('room_id', room.id)
-              .neq('user_id', user.id);
-
-            const userIds = membersData?.map(m => m.user_id) || [];
-            
-            // Get profile data for these users
-            let users = [];
-            if (userIds.length > 0) {
-              const { data: profiles } = await supabase
-                .from('user_profiles')
-                .select('*')
-                .in('id', userIds);
-                
-              users = profiles || [];
-            }
-            
-            // For one-to-one chats, set the name to the other user's name
-            let roomName = room.name;
-            if (room.type === 'one_to_one' && users.length > 0) {
-              roomName = users[0].full_name || "Chat";
-            }
-            
-            return {
-              ...room,
-              name: roomName,
-              users: users
-            };
-          })
-        );
-
-        setRooms(roomsWithUsers);
+          .rpc('get_user_chat_rooms');
         
-        // If we have rooms and no selected room, select the first one
-        if (roomsWithUsers.length > 0 && !selectedRoom) {
-          setSelectedRoom(roomsWithUsers[0].id);
+        if (roomsError) throw roomsError;
+        
+        if (roomsData && roomsData.length > 0) {
+          setRooms(roomsData);
+          // If we have rooms and no selected room, select the first one
+          if (!selectedRoom) {
+            setSelectedRoom(roomsData[0].id);
+          }
+        } else {
+          setRooms([]);
         }
       } catch (error) {
         console.error('Error loading chat rooms:', error);
@@ -110,8 +50,8 @@ export const ChatPage: React.FC = () => {
     loadChatRooms();
 
     // Subscribe to changes in chat rooms and messages
-    const roomSubscription = supabase
-      .channel('chat_room_changes')
+    const channel = supabase
+      .channel('chat_updates')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
@@ -137,9 +77,9 @@ export const ChatPage: React.FC = () => {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(roomSubscription);
+      supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, toast, selectedRoom]);
 
   return (
     <div className="flex h-screen bg-background">

@@ -4,15 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-
-interface ChatRoom {
-  id: string;
-  name: string;
-  type: 'one_to_one' | 'group';
-  last_message_at: string;
-  metadata: any;
-  users?: any[];
-}
+import { ChatRoom } from '@/types/supabase';
 
 interface ChatSidebarProps {
   rooms: ChatRoom[];
@@ -53,7 +45,9 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
             >
               <Avatar className="h-10 w-10">
                 {room.users && room.users[0] ? (
-                  <AvatarImage src={room.users[0].avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${room.users[0].id}`} />
+                  <AvatarImage 
+                    src={room.users[0].avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${room.users[0].id}`} 
+                  />
                 ) : null}
                 <AvatarFallback>
                   {room.name ? room.name.charAt(0).toUpperCase() : 'C'}
@@ -77,3 +71,5 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
     </div>
   );
 };
+
+export default ChatSidebar;
