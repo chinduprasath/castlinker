@@ -48,7 +48,7 @@ const AdminLoginForm = () => {
       await login(data.email, data.password, data.rememberMe);
       
       // Mock admin verification - in a real app, this would be server-validated
-      // For this demo, we'll consider emails containing "admin" as admin accounts
+      // For this demo, we're considering emails containing "admin" as admin accounts
       if (data.email.includes("admin")) {
         toast({
           title: "Welcome back, Admin",
