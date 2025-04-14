@@ -27,6 +27,7 @@ export interface UserFilters {
   statusFilter: string;
 }
 
-// This helps TypeScript understand the Supabase database schema
+// Define admin team roles separately from user roles
 export type AdminUserRole = 'actor' | 'director' | 'producer' | 'writer' | 'cinematographer' | 'agency';
+export type AdminTeamRole = 'super_admin' | 'moderator' | 'content_manager' | 'recruiter';
 

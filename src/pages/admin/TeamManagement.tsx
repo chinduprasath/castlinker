@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -74,15 +73,13 @@ const TeamManagement = () => {
     try {
       const { data, error } = await supabase
         .from('users_management')
-        .insert([
-          {
-            name: newMemberData.name,
-            email: newMemberData.email,
-            role: newMemberData.role,
-            verified: true,
-            status: 'active'
-          }
-        ])
+        .insert({
+          name: newMemberData.name,
+          email: newMemberData.email,
+          role: newMemberData.role,
+          verified: true,
+          status: 'active'
+        })
         .select();
       
       if (error) throw error;

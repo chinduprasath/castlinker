@@ -2,11 +2,10 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { hasPermission } from '@/lib/adminPermissions';
 import { useEffect, useState } from "react";
-
-type Role = 'super_admin' | 'moderator' | 'content_manager' | 'recruiter';
+import { AdminTeamRole } from '@/types/adminTypes';
 
 interface AdminUser {
-  role: Role;
+  role: AdminTeamRole;
 }
 
 export const useAdminAuth = () => {
@@ -19,7 +18,7 @@ export const useAdminAuth = () => {
     // For this demo, we're considering emails containing "admin" as admin accounts
     // and assigning a role based on the email
     if (user && user.email.includes("admin")) {
-      let role: Role = 'moderator'; // default role
+      let role: AdminTeamRole = 'moderator'; // default role
       
       if (user.email.includes("super")) {
         role = 'super_admin';
