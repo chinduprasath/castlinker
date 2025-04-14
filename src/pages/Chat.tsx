@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +10,7 @@ import { ChatMessage as ChatMessageComponent, ChatMessage } from "@/components/c
 import { useChat } from "@/hooks/useChat";
 import { useDebounce } from "@/hooks/useDebounce";
 import { EmojiPicker } from "@/components/chat/EmojiPicker";
-import { Message } from "@/types/chat";
+import { Message, MessageReaction as TypedMessageReaction } from "@/types/chat";
 
 const Chat = () => {
   const { user } = useAuth();
@@ -246,17 +247,20 @@ const Chat = () => {
               ) : (
                 <div className="space-y-6">
                   {messages.map((message) => {
+                    // Create properly typed reactions
+                    const typedReactions = message.reactions?.map(reaction => ({
+                      emoji: reaction.emoji,
+                      user_id: reaction.userId || '', // Make sure user_id is always defined
+                      count: reaction.count || 1      // Make sure count is always defined
+                    }));
+                    
                     const chatMessage: ChatMessage = {
                       ...message,
                       senderName: message.sender_id === user?.id ? user?.email?.split('@')[0] : 'User',
                       senderRole: message.sender_id === user?.id ? '' : 'Role',
                       isMe: message.sender_id === user?.id,
                       status: 'seen' as const,
-                      reactions: message.reactions?.map(reaction => ({
-                        emoji: reaction.emoji,
-                        user_id: reaction.userId || reaction.user_id || '',
-                        count: reaction.count || 1
-                      }))
+                      reactions: typedReactions
                     };
                     
                     return (

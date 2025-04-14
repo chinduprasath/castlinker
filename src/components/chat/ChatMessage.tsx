@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Check } from 'lucide-react';
-import { Message, MessageReaction as TypedMessageReaction } from '@/types/chat';
+import { Message } from '@/types/chat';
 import { format } from 'date-fns';
 
 // Define MediaAttachment from types
