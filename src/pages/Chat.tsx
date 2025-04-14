@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -5,11 +6,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Send, Phone, Video, Info, Plus, Search, Filter } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/hooks/useAuth";
-import { ChatMessage } from "@/components/chat/ChatMessage";
+import { ChatMessage as ChatMessageComponent } from "@/components/chat/ChatMessage";
 import { useChat } from "@/hooks/useChat";
 import { useDebounce } from "@/hooks/useDebounce";
 import { EmojiPicker } from "@/components/chat/EmojiPicker";
-import { Message } from "@/types/chat";
+import { Message as ChatMessage } from "@/types/chat";
 
 const Chat = () => {
   const { user } = useAuth();
@@ -255,18 +256,18 @@ const Chat = () => {
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {messages.map((message: Message) => {
-                    // Convert the message to the expected ChatMessage format
+                  {messages.map((message) => {
+                    // Convert the message from useChat.Message to ChatMessage type with the required fields
                     const chatMessage = {
                       ...message,
-                      senderName: message.isMe ? user?.email?.split('@')[0] : 'User',
-                      senderRole: message.isMe ? '' : 'Role',
-                      is_edited: message.is_edited || false,
-                      created_at: message.created_at || new Date().toISOString()
+                      senderName: message.sender_id === user?.id ? user?.email?.split('@')[0] : 'User',
+                      senderRole: message.sender_id === user?.id ? '' : 'Role',
+                      isMe: message.sender_id === user?.id,
+                      status: 'seen' as const
                     };
                     
                     return (
-                      <ChatMessage
+                      <ChatMessageComponent
                         key={message.id}
                         message={chatMessage}
                         showAvatar={true}

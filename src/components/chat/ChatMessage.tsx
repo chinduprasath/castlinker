@@ -1,18 +1,27 @@
+
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Check } from 'lucide-react';
-import { Message, Attachment as MessageAttachment } from '@/types/chat';
+import { Message } from '@/types/chat';
 import { format } from 'date-fns';
 
-// Define Attachment type for ChatMessage component that is compatible with useChat's Attachment
-export interface Attachment extends MessageAttachment {
-  // Already contains all needed fields from useChat.Attachment
+// Define MediaAttachment from types
+export interface Attachment {
+  id: string;
+  messageId: string;
+  fileUrl: string;
+  fileName: string;
+  fileType: string;
+  fileSize: number;
+  thumbnailUrl?: string;
 }
 
-// Define ChatMessage type that extends Message
+// Define ChatMessage type that extends Message and adds the properties we need
 export interface ChatMessage extends Message {
   senderName?: string;
   senderRole?: string;
+  isMe?: boolean;
+  status?: 'sent' | 'delivered' | 'seen';
 }
 
 type MessageProps = {
