@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -247,11 +246,10 @@ const Chat = () => {
               ) : (
                 <div className="space-y-6">
                   {messages.map((message) => {
-                    // Create properly typed reactions
                     const typedReactions = message.reactions?.map(reaction => ({
                       emoji: reaction.emoji,
-                      user_id: reaction.userId || '', // Make sure user_id is always defined
-                      count: reaction.count || 1      // Make sure count is always defined
+                      user_id: reaction.userId || '',
+                      count: 1
                     }));
                     
                     const chatMessage: ChatMessage = {
