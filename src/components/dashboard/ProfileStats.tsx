@@ -1,29 +1,29 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Eye, Star, ThumbsUp, UserPlus } from "lucide-react";
+import { Eye, Star, ThumbsUp, UserPlus, Heart, Users } from "lucide-react";
 
 const ProfileStats = () => {
   const stats = [
     { 
-      label: "Profile Views", 
-      value: 2845, 
-      change: "+12%", 
+      label: "Connections", 
+      value: 48, 
+      change: "+5", 
       positive: true,
-      icon: Eye 
+      icon: Users 
     },
     { 
       label: "Connection Requests", 
-      value: 28, 
-      change: "+5", 
+      value: 12, 
+      change: "+2", 
       positive: true,
       icon: UserPlus 
     },
     { 
-      label: "Endorsements", 
-      value: 142, 
-      change: "+3", 
+      label: "Total Likes", 
+      value: 126, 
+      change: "+12", 
       positive: true,
-      icon: ThumbsUp 
+      icon: Heart 
     },
     { 
       label: "Rating", 

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,9 @@ import {
   CheckCircle2,
   Bell,
   Eye,
-  Zap
+  Zap,
+  Heart,
+  ThumbsUp
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -34,7 +37,12 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const firstName = user?.name?.split(' ')[0] || 'Actor';
-  const [stats, setStats] = useState(dashboardData.stats);
+  const [stats, setStats] = useState({
+    ...dashboardData.stats,
+    connections: 48,
+    likes: 126,
+    ratings: 4.8
+  });
   const [recentOpportunities, setRecentOpportunities] = useState(() => {
     return dashboardData.recentOpportunities.map(job => ({
       ...job,
@@ -58,7 +66,7 @@ const Dashboard = () => {
       if (Math.random() > 0.7) {
         setStats(prev => ({
           ...prev,
-          profileViews: prev.profileViews + 1
+          connections: prev.connections + 1
         }));
       }
     }, 30000);
@@ -155,7 +163,7 @@ const Dashboard = () => {
         )}
         
         {loading ? (
-          <Card className="border-green-500/10 shadow-lg bg-card/60 backdrop-blur-sm">
+          <Card className="border-indigo-500/10 shadow-lg bg-card/60 backdrop-blur-sm">
             <CardHeader className="pb-2 pt-4 px-4">
               <div className="flex items-center justify-between">
                 <Skeleton className="h-5 w-32" />
@@ -168,23 +176,23 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         ) : (
-          <Card className="border-green-500/10 hover:border-green-500/30 transition-colors duration-300 shadow-lg bg-card/60 backdrop-blur-sm">
+          <Card className="border-indigo-500/10 hover:border-indigo-500/30 transition-colors duration-300 shadow-lg bg-card/60 backdrop-blur-sm">
             <CardHeader className="pb-2 pt-4 px-4">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <span className="text-base font-semibold text-foreground/80">Profile Views</span>
+                  <span className="text-base font-semibold text-foreground/80">Connections</span>
                 </CardTitle>
-                <div className="rounded-full bg-green-500/10 p-2">
-                  <Eye className="h-4 w-4 text-green-500" />
+                <div className="rounded-full bg-indigo-500/10 p-2">
+                  <Users className="h-4 w-4 text-indigo-500" />
                 </div>
               </div>
             </CardHeader>
             <CardContent className="px-4 pb-4">
               <div className="flex flex-col">
-                <div className="text-3xl font-bold">{stats.profileViews}</div>
+                <div className="text-3xl font-bold">{stats.connections}</div>
                 <div className="flex items-center mt-1.5">
                   <span className="text-xs text-green-500 font-medium flex items-center">
-                    <TrendingUp className="h-3 w-3 mr-1" /> +18%
+                    <TrendingUp className="h-3 w-3 mr-1" /> +5
                   </span>
                   <span className="text-xs text-muted-foreground ml-1.5">
                     from last month
@@ -196,7 +204,7 @@ const Dashboard = () => {
         )}
         
         {loading ? (
-          <Card className="border-blue-500/10 shadow-lg bg-card/60 backdrop-blur-sm">
+          <Card className="border-pink-500/10 shadow-lg bg-card/60 backdrop-blur-sm">
             <CardHeader className="pb-2 pt-4 px-4">
               <div className="flex items-center justify-between">
                 <Skeleton className="h-5 w-32" />
@@ -209,26 +217,26 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         ) : (
-          <Card className="border-blue-500/10 hover:border-blue-500/30 transition-colors duration-300 shadow-lg bg-card/60 backdrop-blur-sm">
+          <Card className="border-pink-500/10 hover:border-pink-500/30 transition-colors duration-300 shadow-lg bg-card/60 backdrop-blur-sm">
             <CardHeader className="pb-2 pt-4 px-4">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <span className="text-base font-semibold text-foreground/80">Callbacks</span>
+                  <span className="text-base font-semibold text-foreground/80">Likes</span>
                 </CardTitle>
-                <div className="rounded-full bg-blue-500/10 p-2">
-                  <Star className="h-4 w-4 text-blue-500" />
+                <div className="rounded-full bg-pink-500/10 p-2">
+                  <Heart className="h-4 w-4 text-pink-500" />
                 </div>
               </div>
             </CardHeader>
             <CardContent className="px-4 pb-4">
               <div className="flex flex-col">
-                <div className="text-3xl font-bold">{stats.callbacks}</div>
+                <div className="text-3xl font-bold">{stats.likes}</div>
                 <div className="flex items-center mt-1.5">
                   <span className="text-xs text-green-500 font-medium flex items-center">
-                    <CheckCircle2 className="h-3 w-3 mr-1" /> +1
+                    <TrendingUp className="h-3 w-3 mr-1" /> +12
                   </span>
                   <span className="text-xs text-muted-foreground ml-1.5">
-                    new callback this week
+                    new likes this week
                   </span>
                 </div>
               </div>
@@ -237,7 +245,7 @@ const Dashboard = () => {
         )}
         
         {loading ? (
-          <Card className="border-purple-500/10 shadow-lg bg-card/60 backdrop-blur-sm">
+          <Card className="border-amber-500/10 shadow-lg bg-card/60 backdrop-blur-sm">
             <CardHeader className="pb-2 pt-4 px-4">
               <div className="flex items-center justify-between">
                 <Skeleton className="h-5 w-32" />
@@ -251,25 +259,32 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         ) : (
-          <Card className="border-purple-500/10 hover:border-purple-500/30 transition-colors duration-300 shadow-lg bg-card/60 backdrop-blur-sm">
+          <Card className="border-amber-500/10 hover:border-amber-500/30 transition-colors duration-300 shadow-lg bg-card/60 backdrop-blur-sm">
             <CardHeader className="pb-2 pt-4 px-4">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <span className="text-base font-semibold text-foreground/80">Activity Score</span>
+                  <span className="text-base font-semibold text-foreground/80">Rating</span>
                 </CardTitle>
-                <div className="rounded-full bg-purple-500/10 p-2">
-                  <Zap className="h-4 w-4 text-purple-500" />
+                <div className="rounded-full bg-amber-500/10 p-2">
+                  <Star className="h-4 w-4 text-amber-500" />
                 </div>
               </div>
             </CardHeader>
             <CardContent className="px-4 pb-4">
               <div className="flex flex-col">
-                <div className="text-3xl font-bold">{stats.activityScore}%</div>
+                <div className="text-3xl font-bold">{stats.ratings}</div>
                 <div className="mt-2">
-                  <Progress value={stats.activityScore} className="h-1.5 bg-purple-500/20" indicatorClassName="bg-purple-500" />
-                  <p className="text-xs text-muted-foreground mt-1.5">
-                    You're in the top <span className="text-purple-500 font-medium">15%</span> of users
-                  </p>
+                  <div className="flex items-center">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star 
+                        key={star} 
+                        className={`h-3 w-3 ${star <= Math.floor(stats.ratings) ? 'text-amber-500 fill-amber-500' : 'text-gray-300'}`} 
+                      />
+                    ))}
+                    <span className="text-xs text-muted-foreground ml-2">
+                      from 24 reviews
+                    </span>
+                  </div>
                 </div>
               </div>
             </CardContent>
