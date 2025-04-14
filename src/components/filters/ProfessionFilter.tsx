@@ -23,17 +23,24 @@ interface ProfessionFilterProps {
 }
 
 export function ProfessionFilter({
-  selectedProfessions,
+  selectedProfessions = [],
   onProfessionChange,
 }: ProfessionFilterProps) {
   const [open, setOpen] = useState(false);
+  // Ensure we have a valid array of professions
+  const validSelectedProfessions = Array.isArray(selectedProfessions) ? selectedProfessions : [];
 
   const toggleProfession = (profession: Profession) => {
-    const isSelected = selectedProfessions.includes(profession);
+    if (!Array.isArray(validSelectedProfessions)) {
+      onProfessionChange([profession]);
+      return;
+    }
+    
+    const isSelected = validSelectedProfessions.includes(profession);
     if (isSelected) {
-      onProfessionChange(selectedProfessions.filter(p => p !== profession));
+      onProfessionChange(validSelectedProfessions.filter(p => p !== profession));
     } else {
-      onProfessionChange([...selectedProfessions, profession]);
+      onProfessionChange([...validSelectedProfessions, profession]);
     }
   };
 
@@ -46,9 +53,9 @@ export function ProfessionFilter({
           aria-expanded={open}
           className="w-full justify-between"
         >
-          {selectedProfessions.length === 0
+          {validSelectedProfessions.length === 0
             ? "Select professions..."
-            : `${selectedProfessions.length} selected`}
+            : `${validSelectedProfessions.length} selected`}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -66,12 +73,12 @@ export function ProfessionFilter({
                 <div
                   className={cn(
                     "h-4 w-4 border rounded flex items-center justify-center",
-                    selectedProfessions.includes(profession)
+                    validSelectedProfessions.includes(profession)
                       ? "bg-primary border-primary"
                       : "border-input"
                   )}
                 >
-                  {selectedProfessions.includes(profession) && (
+                  {validSelectedProfessions.includes(profession) && (
                     <Check className="h-3 w-3 text-primary-foreground" />
                   )}
                 </div>

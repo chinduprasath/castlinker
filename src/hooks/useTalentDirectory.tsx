@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useDebounce } from './useDebounce';
@@ -20,7 +19,7 @@ export const useTalentDirectory = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [talents, setTalents] = useState<TalentProfile[]>([]);
   const [filteredTalents, setFilteredTalents] = useState<TalentProfile[]>([]);
-  const [filters, setFilters] = useState<TalentFilters>(DEFAULT_FILTERS);
+  const [filters, setFilters] = useState<TalentFilters>({...DEFAULT_FILTERS});
   const [locations, setLocations] = useState<string[]>([]);
   const [likedProfiles, setLikedProfiles] = useState<string[]>([]);
   const [wishlistedProfiles, setWishlistedProfiles] = useState<string[]>([]);
@@ -232,15 +231,15 @@ export const useTalentDirectory = () => {
       );
     }
     
-    // Apply role filter
-    if (filters.selectedRoles.length > 0) {
+    // Apply role filter - ensure we have a valid array
+    if (Array.isArray(filters.selectedRoles) && filters.selectedRoles.length > 0) {
       results = results.filter(talent => 
         filters.selectedRoles.includes(talent.role as Profession)
       );
     }
     
-    // Apply location filter
-    if (filters.selectedLocations.length > 0) {
+    // Apply location filter - ensure we have a valid array
+    if (Array.isArray(filters.selectedLocations) && filters.selectedLocations.length > 0) {
       results = results.filter(talent => 
         filters.selectedLocations.includes(talent.location)
       );
@@ -349,8 +348,26 @@ export const useTalentDirectory = () => {
     setCurrentPage(page);
   };
   
+  // Make sure updateFilters properly handles arrays
   const updateFilters = (newFilters: Partial<TalentFilters>) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
+    setFilters(prev => {
+      const updated = { ...prev, ...newFilters };
+      
+      // Ensure arrays are properly initialized
+      if (newFilters.selectedRoles !== undefined) {
+        updated.selectedRoles = Array.isArray(newFilters.selectedRoles) 
+          ? newFilters.selectedRoles 
+          : [];
+      }
+      
+      if (newFilters.selectedLocations !== undefined) {
+        updated.selectedLocations = Array.isArray(newFilters.selectedLocations) 
+          ? newFilters.selectedLocations 
+          : [];
+      }
+      
+      return updated;
+    });
   };
   
   return {
@@ -361,7 +378,7 @@ export const useTalentDirectory = () => {
     setFilters,
     updateFilters,
     locations,
-    resetFilters: () => setFilters(DEFAULT_FILTERS),
+    resetFilters: () => setFilters({...DEFAULT_FILTERS}),
     PROFESSION_OPTIONS,
     likedProfiles,
     wishlistedProfiles,
@@ -382,4 +399,3 @@ export const useTalentDirectory = () => {
 export default useTalentDirectory;
 export { PROFESSION_OPTIONS, type Profession };
 export type { TalentProfile };
-

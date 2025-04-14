@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -15,50 +16,47 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 
+// Default India locations for the filter
 export const INDIA_LOCATIONS = [
-  // Major Cities
-  "Mumbai, Maharashtra",
-  "Delhi, NCR",
-  "Bangalore, Karnataka",
-  "Hyderabad, Telangana",
-  "Chennai, Tamil Nadu",
-  "Kolkata, West Bengal",
-  "Pune, Maharashtra",
-  "Ahmedabad, Gujarat",
-  // Film Industry Hubs
-  "Film City, Mumbai",
-  "Ramoji Film City, Hyderabad",
-  "AVM Studios, Chennai",
-  "Tollywood, Hyderabad",
-  "Kollywood, Chennai",
-  // States with Active Film Industries
-  "Maharashtra",
-  "Tamil Nadu",
-  "Telangana",
-  "Karnataka",
-  "Kerala",
-  "West Bengal",
-  "Gujarat",
-  "Uttar Pradesh"
-] as const;
+  'Mumbai, India',
+  'Delhi, India',
+  'Bangalore, India',
+  'Hyderabad, India',
+  'Chennai, India',
+  'Kolkata, India',
+  'Pune, India',
+  'Ahmedabad, India'
+];
 
 interface LocationFilterProps {
   selectedLocations: string[];
   onLocationChange: (locations: string[]) => void;
+  availableLocations?: string[];
 }
 
 export function LocationFilter({
-  selectedLocations,
+  selectedLocations = [],
   onLocationChange,
+  availableLocations = INDIA_LOCATIONS
 }: LocationFilterProps) {
   const [open, setOpen] = useState(false);
+  // Ensure we always have valid arrays
+  const validSelectedLocations = Array.isArray(selectedLocations) ? selectedLocations : [];
+  const validAvailableLocations = Array.isArray(availableLocations) && availableLocations.length > 0 
+    ? availableLocations 
+    : INDIA_LOCATIONS;
 
   const toggleLocation = (location: string) => {
-    const isSelected = selectedLocations.includes(location);
+    if (!Array.isArray(validSelectedLocations)) {
+      onLocationChange([location]);
+      return;
+    }
+    
+    const isSelected = validSelectedLocations.includes(location);
     if (isSelected) {
-      onLocationChange(selectedLocations.filter(l => l !== location));
+      onLocationChange(validSelectedLocations.filter(l => l !== location));
     } else {
-      onLocationChange([...selectedLocations, location]);
+      onLocationChange([...validSelectedLocations, location]);
     }
   };
 
@@ -71,9 +69,9 @@ export function LocationFilter({
           aria-expanded={open}
           className="w-full justify-between"
         >
-          {selectedLocations.length === 0
+          {validSelectedLocations.length === 0
             ? "Select locations..."
-            : `${selectedLocations.length} selected`}
+            : `${validSelectedLocations.length} selected`}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -82,7 +80,7 @@ export function LocationFilter({
           <CommandInput placeholder="Search locations..." />
           <CommandEmpty>No location found.</CommandEmpty>
           <CommandGroup className="max-h-64 overflow-auto">
-            {INDIA_LOCATIONS.map((location) => (
+            {validAvailableLocations.map((location) => (
               <CommandItem
                 key={location}
                 onSelect={() => toggleLocation(location)}
@@ -91,12 +89,12 @@ export function LocationFilter({
                 <div
                   className={cn(
                     "h-4 w-4 border rounded flex items-center justify-center",
-                    selectedLocations.includes(location)
+                    validSelectedLocations.includes(location)
                       ? "bg-primary border-primary"
                       : "border-input"
                   )}
                 >
-                  {selectedLocations.includes(location) && (
+                  {validSelectedLocations.includes(location) && (
                     <Check className="h-3 w-3 text-primary-foreground" />
                   )}
                 </div>
@@ -108,4 +106,4 @@ export function LocationFilter({
       </PopoverContent>
     </Popover>
   );
-} 
+}
