@@ -12,7 +12,7 @@ const Chat = () => {
   const { user } = useAuth();
   const [messages, setMessages] = useState([
     { id: "1", sender: "Sarah", content: "Hi there! How's your project coming along?", isMe: false },
-    { id: "2", sender: user?.displayName || "You", content: "It's going well, thanks for asking!", isMe: true },
+    { id: "2", sender: user?.email || "You", content: "It's going well, thanks for asking!", isMe: true },
     { id: "3", sender: "Sarah", content: "That's great to hear! Let me know if you need any help with casting.", isMe: false },
   ]);
   const [newMessage, setNewMessage] = useState("");
@@ -24,7 +24,7 @@ const Chat = () => {
         ...messages,
         { 
           id: Date.now().toString(), 
-          sender: user?.displayName || "You", 
+          sender: user?.email || "You", 
           content: newMessage, 
           isMe: true 
         },

@@ -6,23 +6,23 @@ import { Textarea } from '@/components/ui/textarea';
 import { TalentProfile } from '@/types/talent';
 
 interface ConnectDialogProps {
-  talent: TalentProfile | null;
+  talent?: TalentProfile | null;
   isOpen: boolean;
   onClose: () => void;
+  onConnect?: (talent: TalentProfile) => boolean | Promise<boolean>;
 }
 
-export function ConnectDialog({ talent, isOpen, onClose }: ConnectDialogProps) {
+export function ConnectDialog({ talent, isOpen, onClose, onConnect }: ConnectDialogProps) {
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
   const handleConnect = async () => {
-    if (!talent) return;
+    if (!talent || !onConnect) return;
     
     setIsLoading(true);
     
     try {
-      // In a real app, this would send the connection request to the API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await onConnect(talent);
       
       // Success
       setMessage('');
@@ -40,7 +40,7 @@ export function ConnectDialog({ talent, isOpen, onClose }: ConnectDialogProps) {
         <DialogHeader>
           <DialogTitle>Connect with {talent?.name}</DialogTitle>
           <DialogDescription>
-            Send a connection request to collaborate with this {talent?.role.toLowerCase()}
+            Send a connection request to collaborate with this {talent?.role?.toLowerCase()}
           </DialogDescription>
         </DialogHeader>
         

@@ -9,24 +9,24 @@ import { Send } from 'lucide-react';
 import { TalentProfile } from '@/types/talent';
 
 interface MessageDialogProps {
-  talent: TalentProfile | null;
+  talent?: TalentProfile | null;
   isOpen: boolean;
   onClose: () => void;
+  onSendMessage?: (talent: TalentProfile, message: string) => boolean | Promise<boolean>;
 }
 
-export function MessageDialog({ talent, isOpen, onClose }: MessageDialogProps) {
+export function MessageDialog({ talent, isOpen, onClose, onSendMessage }: MessageDialogProps) {
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
   const handleSend = async () => {
-    if (!talent || !subject.trim() || !message.trim()) return;
+    if (!talent || !subject.trim() || !message.trim() || !onSendMessage) return;
     
     setIsLoading(true);
     
     try {
-      // In a real app, this would send the message to the API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await onSendMessage(talent, message);
       
       // Success
       setSubject('');
@@ -45,7 +45,7 @@ export function MessageDialog({ talent, isOpen, onClose }: MessageDialogProps) {
         <DialogHeader>
           <DialogTitle>Message {talent?.name}</DialogTitle>
           <DialogDescription>
-            Send a direct message to this {talent?.role.toLowerCase()}
+            Send a direct message to this {talent?.role?.toLowerCase()}
           </DialogDescription>
         </DialogHeader>
         

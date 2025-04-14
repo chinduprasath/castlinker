@@ -68,6 +68,12 @@ const MOCK_TALENT_DATA: TalentProfile[] = [
   }
 ];
 
+// Mock connection requests
+const MOCK_CONNECTION_REQUESTS = [
+  { id: 'conn-1', requesterId: 'user-1', recipientId: 'user-2', status: 'accepted' },
+  { id: 'conn-2', requesterId: 'user-3', recipientId: 'user-1', status: 'pending' }
+];
+
 const DEFAULT_FILTERS: TalentFilters = {
   searchTerm: '',
   selectedRoles: [],
@@ -85,6 +91,11 @@ export const useTalentDirectory = () => {
   const [filteredTalents, setFilteredTalents] = useState<TalentProfile[]>([]);
   const [filters, setFilters] = useState<TalentFilters>(DEFAULT_FILTERS);
   const [locations, setLocations] = useState<string[]>([]);
+  const [likedProfiles, setLikedProfiles] = useState<string[]>([]);
+  const [wishlistedProfiles, setWishlistedProfiles] = useState<string[]>([]);
+  const [connectionRequests, setConnectionRequests] = useState(MOCK_CONNECTION_REQUESTS);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 6;
   
   const debouncedSearchTerm = useDebounce(filters.searchTerm, 300);
   
@@ -100,6 +111,10 @@ export const useTalentDirectory = () => {
         // Extract unique locations
         const uniqueLocations = Array.from(new Set(MOCK_TALENT_DATA.map(talent => talent.location)));
         setLocations(uniqueLocations);
+        
+        // Mock some liked and wishlisted profiles
+        setLikedProfiles(['1', '3']);
+        setWishlistedProfiles(['2']);
       } catch (error) {
         console.error('Error fetching talents:', error);
       } finally {
@@ -184,18 +199,99 @@ export const useTalentDirectory = () => {
     }
     
     setFilteredTalents(results);
+    // Reset to first page when filters change
+    setCurrentPage(1);
   }, [talents, filters, debouncedSearchTerm]);
+
+  // Calculate pagination values
+  const totalCount = filteredTalents.length;
+  const totalPages = Math.ceil(totalCount / pageSize);
+  const paginatedTalents = filteredTalents.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+  
+  // Handle toggle likes
+  const toggleLike = (profileId: string) => {
+    setLikedProfiles(prev => 
+      prev.includes(profileId) 
+        ? prev.filter(id => id !== profileId) 
+        : [...prev, profileId]
+    );
+  };
+
+  // Handle toggle wishlist
+  const toggleWishlist = (profileId: string) => {
+    setWishlistedProfiles(prev => 
+      prev.includes(profileId) 
+        ? prev.filter(id => id !== profileId) 
+        : [...prev, profileId]
+    );
+  };
+  
+  // Handle send connection request
+  const sendConnectionRequest = (profile: TalentProfile) => {
+    const newRequest = {
+      id: `conn-${Date.now()}`,
+      requesterId: 'current-user', // In a real app this would be the current user's ID
+      recipientId: profile.userId,
+      status: 'pending'
+    };
+    
+    setConnectionRequests(prev => [...prev, newRequest]);
+    return true;
+  };
+  
+  // Handle share profile
+  const shareProfile = (profile: TalentProfile) => {
+    // Mock implementation
+    console.log(`Sharing profile: ${profile.name}`);
+    alert(`Profile of ${profile.name} would be shared in a real app.`);
+  };
+  
+  // Handle send message
+  const sendMessage = (profile: TalentProfile, message: string) => {
+    // Mock implementation
+    console.log(`Message to ${profile.name}: ${message}`);
+    return true;
+  };
+  
+  // Change page
+  const changePage = (page: number) => {
+    setCurrentPage(page);
+  };
+  
+  // Update filters
+  const updateFilters = (newFilters: Partial<TalentFilters>) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+  };
   
   return {
-    talents: filteredTalents,
+    talents: paginatedTalents,
+    profiles: paginatedTalents, // Alias for backward compatibility
     isLoading,
     filters,
     setFilters,
+    updateFilters,
     locations,
     resetFilters: () => setFilters(DEFAULT_FILTERS),
-    PROFESSION_OPTIONS
+    PROFESSION_OPTIONS,
+    likedProfiles,
+    wishlistedProfiles,
+    connectionRequests,
+    totalCount,
+    pageSize,
+    currentPage,
+    totalPages,
+    toggleLike,
+    toggleWishlist,
+    sendConnectionRequest,
+    shareProfile,
+    sendMessage,
+    changePage
   };
 };
 
 export default useTalentDirectory;
 export { PROFESSION_OPTIONS, type Profession };
+export type { TalentProfile };

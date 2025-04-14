@@ -3,21 +3,16 @@ import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal, ThumbsUp } from 'lucide-react';
-import { Message } from '@/hooks/useChat';
+import { Message, Attachment as MessageAttachment } from '@/hooks/useChat';
 
-// Define needed types
-export interface Attachment {
-  id: string;
-  fileUrl: string;
-  fileName: string;
-  fileType: string;
-  fileSize: number;
-  thumbnailUrl?: string;
+// Define Attachment type for ChatMessage component that is compatible with useChat's Attachment
+export interface Attachment extends MessageAttachment {
+  // Already contains all needed fields from useChat.Attachment
 }
 
-export interface ChatMessage extends Message {
-  // Additional properties specific to ChatMessage
-  reactions?: { userId: string; emoji: string }[];
+// Define ChatMessage type that extends Message from useChat
+export interface ChatMessage extends Omit<Message, 'attachments'> {
+  // Override attachments with our local type
   attachments?: Attachment[];
   isMe?: boolean;
 }

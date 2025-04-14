@@ -7,15 +7,27 @@ import { Star, MessageCircle, UserPlus, MapPin, ArrowRight, Calendar, Check, Lan
 import { TalentProfile } from '@/types/talent';
 
 interface ProfileDialogProps {
-  talent: TalentProfile | null;
+  talent?: TalentProfile | null;
   isOpen: boolean;
   onClose: () => void;
-  onMessage: () => void;
-  onConnect: () => void;
+  onMessage?: (talent: TalentProfile) => void;
+  onConnect?: (talent: TalentProfile) => void;
 }
 
 export function ProfileDialog({ talent, isOpen, onClose, onMessage, onConnect }: ProfileDialogProps) {
   if (!talent) return null;
+
+  const handleMessageClick = () => {
+    if (talent && onMessage) {
+      onMessage(talent);
+    }
+  };
+
+  const handleConnectClick = () => {
+    if (talent && onConnect) {
+      onConnect(talent);
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -120,7 +132,7 @@ export function ProfileDialog({ talent, isOpen, onClose, onMessage, onConnect }:
           <Button
             variant="outline"
             className="flex-1"
-            onClick={onMessage}
+            onClick={handleMessageClick}
           >
             <MessageCircle className="h-4 w-4 mr-2" />
             Send Message
@@ -128,7 +140,7 @@ export function ProfileDialog({ talent, isOpen, onClose, onMessage, onConnect }:
           
           <Button 
             className="flex-1"
-            onClick={onConnect}
+            onClick={handleConnectClick}
           >
             <UserPlus className="h-4 w-4 mr-2" />
             Connect

@@ -27,7 +27,7 @@ export class E2EEncryption {
     ): Promise<{ encrypted: string; iv: string }> {
         const iv = randomBytes(24);
         const encrypted = box(
-            decodeUTF8(message),
+            encodeUTF8(message),
             iv,
             decodeBase64(recipientPublicKey),
             decodeBase64(senderPrivateKey)
