@@ -1,128 +1,176 @@
 
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import {
   LayoutDashboard,
   Users,
-  FileText,
+  Briefcase,
   Calendar,
-  BarChart,
-  Bell,
   Settings,
-  Shield,
-  MessagesSquare,
-  ChevronLeft,
-  ChevronRight
+  Menu,
+  ChevronRight,
+  Bell,
+  BarChart2,
+  FileText,
+  Shield
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { useTheme } from "@/contexts/ThemeContext";
-import ThemeToggle from "@/components/ThemeToggle";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from "@/lib/utils";
 
 interface AdminSidebarProps {
   collapsed: boolean;
   toggleSidebar: () => void;
 }
 
-const AdminSidebar = ({ collapsed, toggleSidebar }: AdminSidebarProps) => {
-  const navigate = useNavigate();
-  const { theme } = useTheme();
-  const isMobile = useIsMobile();
+interface NavItem {
+  title: string;
+  icon: React.ElementType;
+  href: string;
+  permission?: string;
+}
 
-  const adminNavItems = [
-    { icon: LayoutDashboard, label: "Dashboard", path: "/admin/dashboard" },
-    { icon: Users, label: "User Management", path: "/admin/users" },
-    { icon: FileText, label: "Content Moderation", path: "/admin/content" },
-    { icon: MessagesSquare, label: "Job Management", path: "/admin/jobs" },
-    { icon: Calendar, label: "Event Management", path: "/admin/events" },
-    { icon: BarChart, label: "Analytics", path: "/admin/analytics" },
-    { icon: Bell, label: "Notifications", path: "/admin/notifications" },
-    { icon: Settings, label: "Settings", path: "/admin/settings" },
+const AdminSidebar = ({ collapsed, toggleSidebar }: AdminSidebarProps) => {
+  const { user } = useAuth();
+  const { can } = useAdminAuth();
+  const location = useLocation();
+  const [mounted, setMounted] = useState(false);
+  
+  // Ensure component is mounted before rendering to avoid hydration issues
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
+  const navItems: NavItem[] = [
+    {
+      title: "Dashboard",
+      icon: LayoutDashboard,
+      href: "/admin/dashboard",
+    },
+    {
+      title: "User Management",
+      icon: Users,
+      href: "/admin/users",
+      permission: "user_view",
+    },
+    {
+      title: "Team Management",
+      icon: Shield,
+      href: "/admin/team",
+      permission: "user_view",
+    },
+    {
+      title: "Job Management",
+      icon: Briefcase,
+      href: "/admin/jobs",
+      permission: "job_view",
+    },
+    {
+      title: "Event Management",
+      icon: Calendar,
+      href: "/admin/events",
+      permission: "event_view",
+    },
+    {
+      title: "Content Moderation",
+      icon: FileText,
+      href: "/admin/content",
+      permission: "content_view",
+    },
+    {
+      title: "Analytics",
+      icon: BarChart2,
+      href: "/admin/analytics",
+      permission: "setting_view",
+    },
+    {
+      title: "Notifications",
+      icon: Bell,
+      href: "/admin/notifications",
+    },
+    {
+      title: "Settings",
+      icon: Settings,
+      href: "/admin/settings",
+      permission: "setting_view",
+    },
   ];
+
+  const isActive = (href: string) => {
+    return location.pathname === href;
+  };
+
+  // Filter items based on permissions
+  const filteredNavItems = navItems.filter(
+    (item) => !item.permission || can(item.permission)
+  );
+
+  if (!mounted) return null;
 
   return (
     <aside
-      className={`
-        ${collapsed ? "w-[70px]" : "w-[250px]"}
-        fixed top-0 left-0
-        h-screen
-        z-40
-        transition-all duration-300 ease-in-out
-        border-r border-gold/15
-        bg-gradient-to-b from-background to-background/90
-        backdrop-blur-lg shadow-xl
-        rounded-r-2xl
-      `}
+      className={cn(
+        "fixed left-0 top-0 z-30 flex h-screen flex-col border-r border-border bg-background/80 backdrop-blur-sm transition-all duration-300 ease-in-out",
+        collapsed ? "w-[70px]" : "w-[250px]"
+      )}
     >
-      <div className="flex flex-col h-full">
-        {/* Top section */}
-        <div className="px-4 pt-4 flex items-center justify-between h-16">
-          <div className="flex items-center">
-            <Shield className={`h-6 w-6 text-gold`} />
-            {!collapsed && (
-              <span className="ml-2 font-semibold text-lg">Admin</span>
-            )}
-          </div>
-          {!isMobile && (
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={toggleSidebar}
-              className="text-gold hover:bg-gold/10 hover:text-white border-gold/30 rounded-xl shadow-sm"
-            >
-              {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
-            </Button>
+      <div className="flex h-16 items-center justify-between px-4">
+        <div className={cn("flex items-center", collapsed && "justify-center w-full")}>
+          {!collapsed && (
+            <Link to="/admin/dashboard">
+              <h1 className="text-xl font-bold gold-gradient-text">Admin Panel</h1>
+            </Link>
+          )}
+          {collapsed && (
+            <Link to="/admin/dashboard">
+              <Shield className="h-6 w-6 text-gold" />
+            </Link>
           )}
         </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleSidebar}
+          className={collapsed ? "hidden" : ""}
+        >
+          <ChevronRight className="h-5 w-5" />
+        </Button>
+      </div>
 
-        {/* Navigation */}
-        <ScrollArea className="flex-1 px-2 py-4">
-          <nav className="space-y-1">
-            {adminNavItems.map((item) => (
-              collapsed ? (
-                <TooltipProvider key={item.label} delayDuration={100}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        className="w-full h-10 px-2 justify-center rounded-lg hover:bg-gold/10 hover:text-gold text-muted-foreground"
-                        onClick={() => navigate(item.path)}
-                      >
-                        <item.icon className="h-5 w-5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="right" className={theme === 'light' ? 'bg-white border-gray-200 text-gray-800' : ''}>
-                      {item.label}
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              ) : (
-                <Button
-                  key={item.label}
-                  variant="ghost"
-                  className="w-full justify-start px-4 hover:bg-gold/10 hover:text-gold text-muted-foreground rounded-lg h-10"
-                  onClick={() => navigate(item.path)}
-                >
-                  <item.icon className="h-5 w-5 mr-3" />
-                  <span className="truncate">{item.label}</span>
-                </Button>
-              )
-            ))}
-          </nav>
-        </ScrollArea>
+      <Separator />
 
-        {/* Bottom section */}
-        <div className="p-4 border-t border-dashed border-gold/10">
-          <div className={`flex ${collapsed ? "justify-center" : "justify-between items-center"}`}>
-            {!collapsed && (
-              <span className="text-xs text-muted-foreground">
-                Theme
-              </span>
-            )}
-            <ThemeToggle showTooltip={collapsed} />
-          </div>
-        </div>
+      <div className="flex-1 overflow-y-auto pt-4">
+        <nav className="grid gap-1 px-2">
+          {filteredNavItems.map((item, index) => (
+            <Link
+              key={index}
+              to={item.href}
+              className={cn(
+                "flex h-10 items-center rounded-md text-muted-foreground hover:bg-muted",
+                isActive(item.href) && "bg-gold/10 text-gold hover:bg-gold/20",
+                collapsed ? "justify-center" : "px-4"
+              )}
+            >
+              <item.icon className={cn("h-5 w-5", isActive(item.href) && "text-gold")} />
+              {!collapsed && <span className="ml-2">{item.title}</span>}
+            </Link>
+          ))}
+        </nav>
+      </div>
+
+      {/* Mobile toggle button (bottom) */}
+      <div className="border-t p-2 md:hidden">
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full"
+          onClick={toggleSidebar}
+        >
+          <Menu className="h-4 w-4 mr-2" />
+          {!collapsed && <span>Collapse</span>}
+        </Button>
       </div>
     </aside>
   );

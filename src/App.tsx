@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -46,6 +45,7 @@ import ContentModeration from '@/pages/admin/ContentModeration';
 import Analytics from '@/pages/admin/Analytics';
 import AdminNotifications from '@/pages/admin/AdminNotifications';
 import AdminSettings from '@/pages/admin/AdminSettings';
+import TeamManagement from "./pages/admin/TeamManagement";
 
 // Guards
 import PrivateRoute from '@/components/auth/PrivateRoute';
@@ -235,69 +235,93 @@ const App = () => {
             } />
 
             {/* Admin Routes */}
-            <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin" element={
-              <AdminRouteGuard>
-                <AdminLayout>
-                  <AdminDashboard />
-                </AdminLayout>
-              </AdminRouteGuard>
-            } />
-            <Route path="/admin/dashboard" element={
-              <AdminRouteGuard>
-                <AdminLayout>
-                  <AdminDashboard />
-                </AdminLayout>
-              </AdminRouteGuard>
-            } />
+            <Route path="/admin" element={<AdminLogin />} />
+            <Route 
+              path="/admin/dashboard" 
+              element={
+                <PrivateRoute>
+                  <AdminRouteGuard>
+                    <AdminLayout>
+                      <AdminDashboard />
+                    </AdminLayout>
+                  </AdminRouteGuard>
+                </PrivateRoute>
+              } 
+            />
+            <Route 
+              path="/admin/team" 
+              element={
+                <PrivateRoute>
+                  <AdminRouteGuard requiredPermission="user_view">
+                    <AdminLayout>
+                      <TeamManagement />
+                    </AdminLayout>
+                  </AdminRouteGuard>
+                </PrivateRoute>
+              } 
+            />
             <Route path="/admin/users" element={
-              <AdminRouteGuard>
-                <AdminLayout>
-                  <UserManagement />
-                </AdminLayout>
-              </AdminRouteGuard>
+              <PrivateRoute>
+                <AdminRouteGuard requiredPermission="user_view">
+                  <AdminLayout>
+                    <UserManagement />
+                  </AdminLayout>
+                </AdminRouteGuard>
+              </PrivateRoute>
             } />
             <Route path="/admin/jobs" element={
-              <AdminRouteGuard>
-                <AdminLayout>
-                  <JobManagement />
-                </AdminLayout>
-              </AdminRouteGuard>
+              <PrivateRoute>
+                <AdminRouteGuard>
+                  <AdminLayout>
+                    <JobManagement />
+                  </AdminLayout>
+                </AdminRouteGuard>
+              </PrivateRoute>
             } />
             <Route path="/admin/events" element={
-              <AdminRouteGuard>
-                <AdminLayout>
-                  <EventManagement />
-                </AdminLayout>
-              </AdminRouteGuard>
+              <PrivateRoute>
+                <AdminRouteGuard>
+                  <AdminLayout>
+                    <EventManagement />
+                  </AdminLayout>
+                </AdminRouteGuard>
+              </PrivateRoute>
             } />
             <Route path="/admin/content" element={
-              <AdminRouteGuard>
-                <AdminLayout>
-                  <ContentModeration />
-                </AdminLayout>
-              </AdminRouteGuard>
+              <PrivateRoute>
+                <AdminRouteGuard>
+                  <AdminLayout>
+                    <ContentModeration />
+                  </AdminLayout>
+                </AdminRouteGuard>
+              </PrivateRoute>
             } />
             <Route path="/admin/analytics" element={
-              <AdminRouteGuard>
-                <AdminLayout>
-                  <Analytics />
-                </AdminLayout>
-              </AdminRouteGuard>
+              <PrivateRoute>
+                <AdminRouteGuard>
+                  <AdminLayout>
+                    <Analytics />
+                  </AdminLayout>
+                </AdminRouteGuard>
+              </PrivateRoute>
             } />
             <Route path="/admin/notifications" element={
-              <AdminRouteGuard>
-                <AdminLayout>
-                  <AdminNotifications />
-                </AdminLayout>
-              </AdminRouteGuard>
+              <PrivateRoute>
+                <AdminRouteGuard>
+                  <AdminLayout>
+                    <AdminNotifications />
+                  </AdminLayout>
+                </AdminRouteGuard>
+              </PrivateRoute>
             } />
             <Route path="/admin/settings" element={
-              <AdminRouteGuard>
-                <AdminLayout>
-                  <AdminSettings />
-                </AdminLayout>
-              </AdminRouteGuard>
+              <PrivateRoute>
+                <AdminRouteGuard>
+                  <AdminLayout>
+                    <AdminSettings />
+                  </AdminLayout>
+                </AdminRouteGuard>
+              </PrivateRoute>
             } />
 
             {/* 404 Route */}
