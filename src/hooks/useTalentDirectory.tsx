@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useDebounce } from './useDebounce';
@@ -29,40 +30,98 @@ export const useTalentDirectory = () => {
   
   const debouncedSearchTerm = useDebounce(filters.searchTerm, 300);
   
-  // Load talents
+  // Load talents from profiles table
   useEffect(() => {
     const fetchTalents = async () => {
       setIsLoading(true);
       try {
-        // Fetch profiles from Supabase
-        const { data: profiles, error } = await supabase
+        // First check if we have profiles table data
+        const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
           .select('*');
           
-        if (error) {
-          console.error('Error fetching profiles:', error);
+        if (profilesError) {
+          console.error('Error fetching profiles:', profilesError);
+          // If we can't access profiles, try to get users directly (this may not work due to RLS)
+          await fetchUsers();
           return;
         }
         
-        // Map profiles to talent format
-        const talentData: TalentProfile[] = profiles.map(profile => ({
+        if (profilesData && profilesData.length > 0) {
+          console.log('Found profiles in the database:', profilesData.length);
+          // Map profiles to talent format
+          const talentData: TalentProfile[] = profilesData.map(profile => ({
+            id: profile.id,
+            userId: profile.id,
+            name: profile.full_name || 'Anonymous User',
+            role: profile.profession_type || 'Actor',
+            location: profile.location || 'Los Angeles, CA',
+            avatar: profile.avatar_url || `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`,
+            rating: profile.rating || (3.5 + Math.random() * 1.5), // Random rating between 3.5 and 5
+            reviews: Math.floor(Math.random() * 30) + 1, // Random number of reviews
+            isVerified: profile.is_verified || false,
+            isPremium: Math.random() > 0.7, // 30% chance of being premium
+            isAvailable: profile.availability_status === 'Available',
+            skills: profile.skills || ['Acting', 'Dancing', 'Singing'],
+            experience: profile.experience_years || Math.floor(Math.random() * 15) + 1,
+            languages: profile.languages || ['English'],
+            bio: profile.description || 'Film industry professional with diverse skills and experience.',
+            featuredIn: profile.achievements || ['Independent Film', 'Commercial', 'Theater Production'],
+            likesCount: profile.likes || Math.floor(Math.random() * 200),
+            joinedDate: profile.created_at
+          }));
+          
+          setTalents(talentData);
+          
+          // Extract unique locations
+          const uniqueLocations = Array.from(new Set(talentData.map(talent => talent.location)));
+          setLocations(uniqueLocations);
+          setupDummyInteractions(talentData);
+        } else {
+          console.log('No profiles found, fetching users or using fallback data');
+          await fetchUsers();
+        }
+      } catch (error) {
+        console.error('Error in talent directory:', error);
+        // Use fallback data
+        generateFallbackData();
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchTalents();
+  }, []);
+  
+  // Fetch users from auth or talent_profiles if available
+  const fetchUsers = async () => {
+    try {
+      // Try fetching from talent_profiles which might have more user-friendly RLS
+      const { data: talentProfilesData, error: talentProfilesError } = await supabase
+        .from('talent_profiles')
+        .select('*');
+      
+      if (!talentProfilesError && talentProfilesData && talentProfilesData.length > 0) {
+        console.log('Found talent profiles:', talentProfilesData.length);
+        // Map talent_profiles to talent format
+        const talentData: TalentProfile[] = talentProfilesData.map(profile => ({
           id: profile.id,
-          userId: profile.id,
-          name: profile.full_name || 'Anonymous User',
-          role: profile.profession_type || 'Actor',
-          location: profile.location || 'Los Angeles, CA',
-          avatar: profile.avatar_url || `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`,
-          rating: profile.rating || (3.5 + Math.random() * 1.5), // Random rating between 3.5 and 5
-          reviews: Math.floor(Math.random() * 30) + 1, // Random number of reviews
-          isVerified: profile.is_verified || false,
-          isPremium: Math.random() > 0.7, // 30% chance of being premium
-          isAvailable: profile.availability_status === 'Available',
-          skills: profile.skills || ['Acting', 'Dancing', 'Singing'],
-          experience: profile.experience_years || Math.floor(Math.random() * 15) + 1,
-          languages: profile.languages || ['English'],
-          bio: profile.description || 'Film industry professional with diverse skills and experience.',
-          featuredIn: profile.achievements || ['Independent Film', 'Commercial', 'Theater Production'],
-          likesCount: profile.likes || Math.floor(Math.random() * 200),
+          userId: profile.user_id,
+          name: profile.name,
+          role: profile.role,
+          location: profile.location,
+          avatar: profile.avatar || `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`,
+          rating: profile.rating || 4.5,
+          reviews: profile.reviews || Math.floor(Math.random() * 30) + 1,
+          isVerified: profile.is_verified,
+          isPremium: profile.is_premium,
+          isAvailable: profile.is_available,
+          skills: profile.skills,
+          experience: profile.experience || 0,
+          languages: profile.languages,
+          bio: profile.bio || 'Film industry professional',
+          featuredIn: profile.featured_in,
+          likesCount: Math.floor(Math.random() * 200),
           joinedDate: profile.created_at
         }));
         
@@ -71,29 +130,93 @@ export const useTalentDirectory = () => {
         // Extract unique locations
         const uniqueLocations = Array.from(new Set(talentData.map(talent => talent.location)));
         setLocations(uniqueLocations);
-        
-        // Mock some liked and wishlisted profiles
-        if (talentData.length > 0) {
-          setLikedProfiles([talentData[0].id]);
-          if (talentData.length > 1) {
-            setWishlistedProfiles([talentData[1].id]);
-          }
-        }
-        
-        // Mock connection requests
-        setConnectionRequests([
-          { id: 'conn-1', requesterId: 'current-user', recipientId: talentData.length > 0 ? talentData[0].userId : '', status: 'accepted' },
-          { id: 'conn-2', requesterId: talentData.length > 1 ? talentData[1].userId : '', recipientId: 'current-user', status: 'pending' }
-        ]);
-      } catch (error) {
-        console.error('Error fetching talents:', error);
-      } finally {
-        setIsLoading(false);
+        setupDummyInteractions(talentData);
+        return;
       }
+      
+      // If we reach here, we need fallback data
+      console.log('No talent profiles found, using fallback data');
+      generateFallbackData();
+      
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      generateFallbackData();
+    }
+  };
+  
+  // Generate some fallback data if no real data is available
+  const generateFallbackData = () => {
+    console.log('Generating fallback talent data');
+    const defaultLocations = [
+      'Los Angeles, CA', 
+      'New York, NY', 
+      'Atlanta, GA', 
+      'Vancouver, BC',
+      'London, UK',
+      'Mumbai, India'
+    ];
+    
+    const defaultRoles: Profession[] = [
+      'Actor',
+      'Director',
+      'Producer',
+      'Screenwriter',
+      'Cinematographer'
+    ];
+    
+    const defaultSkills = {
+      'Actor': ['Method Acting', 'Improvisation', 'Voice Acting'],
+      'Director': ['Shot Composition', 'Script Analysis', 'Team Leadership'],
+      'Producer': ['Project Management', 'Budgeting', 'Team Coordination'],
+      'Screenwriter': ['Story Development', 'Character Creation', 'Dialogue Writing'],
+      'Cinematographer': ['Camera Operation', 'Lighting', 'Shot Composition']
     };
     
-    fetchTalents();
-  }, []);
+    const fallbackProfiles: TalentProfile[] = Array.from({ length: 10 }).map((_, index) => {
+      const role = defaultRoles[Math.floor(Math.random() * defaultRoles.length)];
+      return {
+        id: `fallback-${index}`,
+        userId: `fallback-user-${index}`,
+        name: `Talent ${index + 1}`,
+        role,
+        location: defaultLocations[Math.floor(Math.random() * defaultLocations.length)],
+        avatar: `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70) + 1}`,
+        rating: 3.5 + Math.random() * 1.5,
+        reviews: Math.floor(Math.random() * 30) + 1,
+        isVerified: Math.random() > 0.7,
+        isPremium: Math.random() > 0.7,
+        isAvailable: Math.random() > 0.3,
+        skills: defaultSkills[role as keyof typeof defaultSkills] || ['Acting', 'Dancing', 'Singing'],
+        experience: Math.floor(Math.random() * 15) + 1,
+        languages: ['English'],
+        bio: `Film industry professional with ${Math.floor(Math.random() * 15) + 1} years of experience in various productions.`,
+        featuredIn: ['Independent Film', 'Commercial', 'Theater Production'],
+        likesCount: Math.floor(Math.random() * 200),
+        joinedDate: new Date().toISOString()
+      };
+    });
+    
+    setTalents(fallbackProfiles);
+    setLocations(defaultLocations);
+    setupDummyInteractions(fallbackProfiles);
+  };
+  
+  // Setup some dummy interactions for the profiles
+  const setupDummyInteractions = (talentData: TalentProfile[]) => {
+    // Mock some liked and wishlisted profiles
+    if (talentData.length > 0) {
+      setLikedProfiles([talentData[0].id]);
+      if (talentData.length > 1) {
+        setWishlistedProfiles([talentData[1].id]);
+      }
+    }
+    
+    // Mock connection requests
+    setConnectionRequests([
+      { id: 'conn-1', requesterId: 'current-user', recipientId: talentData.length > 0 ? talentData[0].userId : '', status: 'accepted' },
+      { id: 'conn-2', requesterId: talentData.length > 1 ? talentData[1].userId : '', recipientId: 'current-user', status: 'pending' }
+    ]);
+  };
   
   // Apply filters
   useEffect(() => {
@@ -259,3 +382,4 @@ export const useTalentDirectory = () => {
 export default useTalentDirectory;
 export { PROFESSION_OPTIONS, type Profession };
 export type { TalentProfile };
+
