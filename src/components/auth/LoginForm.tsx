@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -49,7 +50,7 @@ const LoginForm = () => {
     setError(null);
     
     try {
-      await login(data.email, data.password);
+      await login(data.email, data.password, data.rememberMe);
       navigate("/dashboard");
     } catch (error) {
       if (error instanceof Error) {

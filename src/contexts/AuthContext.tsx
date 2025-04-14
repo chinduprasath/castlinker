@@ -1,179 +1,281 @@
-
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Session, User as SupabaseUser } from '@supabase/supabase-js';
+import { createContext, useState, useContext, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { UserProfile } from '@/types/supabase';
+import { User as SupabaseUser } from '@supabase/supabase-js';
+import { useToast } from '@/hooks/use-toast';
 
-export interface ExtendedUser extends SupabaseUser {
-  id: string;  // Explicitly add id for type safety
-  email: string; // Add email property
-  name?: string;
-  avatar?: string; 
-  role?: string;
-  private_key?: string; // For encryption
+// Define User interface
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  avatar: string;
+  isLoggedIn: boolean;
 }
 
-export interface AuthContextProps {
-  user: ExtendedUser | null;
-  session: Session | null;
-  profile: UserProfile | null;
-  isAuthenticated: boolean;
+// Define AuthContext interface
+interface AuthContextType {
+  user: User | null;
+  login: (email: string, password: string, rememberMe: boolean) => Promise<void>;
+  logout: () => void;
+  signup: (email: string, password: string, name: string, role: string) => Promise<void>;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, userData?: object) => Promise<void>;
-  logout: () => Promise<void>;
+  error: string | null;
 }
 
-const AuthContext = createContext<AuthContextProps | undefined>(undefined);
+// Create context with default values
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  login: async () => {},
+  logout: () => {},
+  signup: async () => {},
+  isLoading: false,
+  error: null,
+});
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<ExtendedUser | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+// Create custom hook to use auth context
+export const useAuth = () => {
+  return useContext(AuthContext);
+};
 
+// Convert Supabase user to our User format
+const formatUser = (supabaseUser: SupabaseUser | null): User | null => {
+  if (!supabaseUser) return null;
+  
+  return {
+    id: supabaseUser.id,
+    name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || '',
+    email: supabaseUser.email || '',
+    role: supabaseUser.user_metadata?.role || 'Actor',
+    avatar: supabaseUser.user_metadata?.avatar_url || '/images/avatar.png',
+    isLoggedIn: true
+  };
+};
+
+// Auth Provider component
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  // Check for existing session on mount
   useEffect(() => {
-    // Set up auth state listener FIRST
+    // First set up the auth state listener to prevent missing auth events
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, newSession) => {
-        setSession(newSession);
-        if (newSession?.user) {
-          // Convert to ExtendedUser with required properties
-          setUser({
-            ...newSession.user,
-            id: newSession.user.id,
-            email: newSession.user.email || ''
-          } as ExtendedUser);
-          
-          // If there's a user, fetch their profile
-          setTimeout(() => {
-            fetchUserProfile(newSession.user.id);
-          }, 0);
-        } else {
-          setUser(null);
-          setProfile(null);
+      (event, session) => {
+        const formattedUser = formatUser(session?.user || null);
+        setUser(formattedUser);
+        setIsLoading(false);
+        
+        if (event === 'SIGNED_IN' && formattedUser) {
+          toast({
+            title: "Welcome back!",
+            description: `You are logged in as ${formattedUser.name}`,
+          });
+        }
+        
+        if (event === 'SIGNED_OUT') {
+          toast({
+            title: "Signed out",
+            description: "You have been logged out successfully",
+          });
         }
       }
     );
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      setSession(currentSession);
-      if (currentSession?.user) {
-        // Convert to ExtendedUser with required properties
-        setUser({
-          ...currentSession.user,
-          id: currentSession.user.id,
-          email: currentSession.user.email || ''
-        } as ExtendedUser);
+    // Then check for existing session
+    const checkSession = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) throw error;
         
-        // If there's a user, fetch their profile
-        fetchUserProfile(currentSession.user.id);
+        if (data.session) {
+          const formattedUser = formatUser(data.session.user);
+          setUser(formattedUser);
+        }
+      } catch (err) {
+        console.error('Error checking auth session:', err);
+      } finally {
+        setIsLoading(false);
       }
+    };
+
+    checkSession();
+
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, [toast]);
+
+  const login = async (email: string, password: string, rememberMe: boolean): Promise<void> => {
+    try {
+      setIsLoading(true);
+      setError(null);
       
-      setIsLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const fetchUserProfile = async (userId: string) => {
-    try {
-      // For now, just fetch from profiles table
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
       if (error) throw error;
-
-      if (data) {
-        setProfile(data as UserProfile);
-        setUser(prev => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            name: data.full_name || '',
-            avatar: data.avatar_url || '',
-            role: data.role || 'user',
-          };
-        });
+      
+      if (rememberMe) {
+        localStorage.setItem('rememberLogin', 'true');
+      } else {
+        localStorage.removeItem('rememberLogin');
       }
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
-    }
-  };
-
-  const login = async (email: string, password: string) => {
-    setIsLoading(true);
-    
-    try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-    } catch (error) {
+    } catch (error: any) {
+      setError(error.message || 'Failed to login');
+      toast({
+        title: "Login failed",
+        description: error.message || "Check your credentials and try again",
+        variant: "destructive",
+      });
       throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const signup = async (email: string, password: string, userData = {}) => {
-    setIsLoading(true);
-    
+  const signup = async (email: string, password: string, name: string, role: string): Promise<void> => {
     try {
-      const { error } = await supabase.auth.signUp({ 
-        email, 
-        password, 
-        options: { 
-          data: userData
+      setIsLoading(true);
+      setError(null);
+      
+      // First, create the auth account
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+            role: role || "Actor",
+            avatar_url: "/images/avatar.png"
+          }
         }
       });
+      
       if (error) throw error;
-    } catch (error) {
+      
+      if (data.user) {
+        // Create the user profile
+        const { error: profileError } = await supabase
+          .from('castlinker_escyvd_user_profiles')
+          .insert({
+            user_email: email,
+            display_name: name,
+            role: role || "Actor",
+            avatar_url: "/images/avatar.png",
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            verified: false,
+            bio: `Hi, I'm ${name}! I'm a ${role || "Actor"} looking to connect with other film industry professionals.`,
+            headline: `${role || "Actor"} | Available for Projects`,
+            location: "Remote"
+          });
+
+        if (profileError) {
+          console.error('Error creating user profile:', profileError);
+          // Don't throw here as the auth account is already created
+          toast({
+            title: "Profile Creation Warning",
+            description: "Account created but profile setup incomplete. Please contact support.",
+            variant: "destructive",
+          });
+        } else {
+          // Create initial skills based on role
+          const defaultSkills = getDefaultSkillsForRole(role);
+          if (defaultSkills.length > 0) {
+            const skillsToInsert = defaultSkills.map(skill => ({
+              user_email: email,
+              skill,
+              created_at: new Date().toISOString()
+            }));
+            
+            const { error: skillsError } = await supabase
+              .from('castlinker_escyvd_user_skills')
+              .insert(skillsToInsert);
+
+            if (skillsError) {
+              console.error('Error creating initial skills:', skillsError);
+            }
+          }
+
+          toast({
+            title: "Account created successfully!",
+            description: "Welcome to CastLinker!",
+          });
+        }
+      }
+    } catch (error: any) {
+      setError(error.message || 'Failed to create account');
+      toast({
+        title: "Signup failed",
+        description: error.message || "Please try again with different credentials",
+        variant: "destructive",
+      });
       throw error;
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Helper function to get default skills based on role
+  const getDefaultSkillsForRole = (role: string): string[] => {
+    switch (role) {
+      case "Actor":
+        return ["Method Acting", "Improvisation", "Voice Acting"];
+      case "Director":
+        return ["Shot Composition", "Script Analysis", "Team Leadership"];
+      case "Producer":
+        return ["Project Management", "Budgeting", "Team Coordination"];
+      case "Screenwriter":
+        return ["Story Development", "Character Creation", "Dialogue Writing"];
+      case "Cinematographer":
+        return ["Camera Operation", "Lighting", "Shot Composition"];
+      case "Editor":
+        return ["Video Editing", "Sound Editing", "Color Correction"];
+      case "Sound Designer":
+        return ["Sound Mixing", "Foley Art", "Audio Post-production"];
+      case "Production Designer":
+        return ["Set Design", "Art Direction", "Visual Storytelling"];
+      default:
+        return [];
     }
   };
 
   const logout = async () => {
     setIsLoading(true);
-    
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-    } catch (error) {
-      throw error;
+      await supabase.auth.signOut();
+      localStorage.removeItem('rememberLogin');
+    } catch (error: any) {
+      console.error('Error signing out:', error);
+      toast({
+        title: "Error signing out",
+        description: error.message || "An error occurred while logging out",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
+  const value = {
+    user,
+    login,
+    logout,
+    signup,
+    isLoading,
+    error
+  };
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        session,
-        profile,
-        isAuthenticated: !!user,
-        isLoading,
-        login,
-        signup,
-        logout,
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
-export default useAuth;
+export default AuthContext;

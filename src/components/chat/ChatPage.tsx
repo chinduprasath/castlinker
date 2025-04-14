@@ -1,123 +1,79 @@
-
 import React, { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { ChatContainer } from './ChatContainer';
 import { ChatSidebar } from './ChatSidebar';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
-import { ChatRoom } from '@/types/supabase';
+import { useAuth } from '../../hooks/useAuth';
+import { E2EEncryption } from '../../utils/encryption';
 
 export const ChatPage: React.FC = () => {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
-  const [rooms, setRooms] = useState<ChatRoom[]>([]);
-  const [loading, setLoading] = useState(true);
+    const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
+    const [rooms, setRooms] = useState<any[]>([]);
+    const { user } = useAuth();
+    const supabase = useSupabaseClient();
 
-  useEffect(() => {
-    if (!user) return;
+    useEffect(() => {
+        if (!user) return;
 
-    const loadChatRooms = async () => {
-      setLoading(true);
-      try {
-        // Get chat rooms through RPC function
-        const { data: roomsData, error: roomsError } = await supabase
-          .rpc('get_user_chat_rooms');
-        
-        if (roomsError) throw roomsError;
-        
-        if (Array.isArray(roomsData) && roomsData.length > 0) {
-          // Format the data to match ChatRoom type
-          const formattedRooms = roomsData.map((room: any) => ({
-            id: room.id,
-            name: room.name || '',
-            type: room.type || 'one_to_one',
-            created_at: room.created_at || '',
-            updated_at: room.updated_at || '',
-            last_message_at: room.last_message_at || room.created_at || '',
-            metadata: room.metadata || {},
-            users: Array.isArray(room.users) ? room.users : []
-          }));
-          
-          setRooms(formattedRooms);
-          
-          // If we have rooms and no selected room, select the first one
-          if (!selectedRoom && formattedRooms.length > 0) {
-            setSelectedRoom(formattedRooms[0].id);
-          }
-        } else {
-          setRooms([]);
-        }
-      } catch (error) {
-        console.error('Error loading chat rooms:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load chat rooms",
-          variant: "destructive"
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
+        // Load user's chat rooms
+        const loadRooms = async () => {
+            const { data, error } = await supabase
+                .from('chat_room_members')
+                .select(`
+                    room_id,
+                    chat_rooms (
+                        id,
+                        type,
+                        name,
+                        last_message_at,
+                        metadata
+                    )
+                `)
+                .eq('user_id', user.id)
+                .order('last_message_at', { ascending: false });
 
-    loadChatRooms();
+            if (data) {
+                setRooms(data.map(room => room.chat_rooms));
+            }
+        };
 
-    // Subscribe to changes in chat rooms and messages
-    const channel = supabase
-      .channel('chat_updates')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'chat_rooms',
-      }, () => {
-        loadChatRooms();
-      })
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'chat_room_members',
-        filter: user ? `user_id=eq.${user.id}` : undefined
-      }, () => {
-        loadChatRooms();
-      })
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'messages'
-      }, () => {
-        loadChatRooms();
-      })
-      .subscribe();
+        loadRooms();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user, toast, selectedRoom]);
+        // Subscribe to new rooms
+        const roomSubscription = supabase
+            .channel('chat_rooms')
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: 'chat_room_members',
+                filter: `user_id=eq.${user.id}`
+            }, payload => {
+                loadRooms();
+            })
+            .subscribe();
 
-  return (
-    <div className="flex h-screen bg-background">
-      <ChatSidebar
-        rooms={rooms}
-        selectedRoom={selectedRoom}
-        loading={loading}
-        onSelectRoom={setSelectedRoom}
-      />
-      <div className="flex-1">
-        {selectedRoom ? (
-          <ChatContainer roomId={selectedRoom} />
-        ) : (
-          <div className="flex items-center justify-center h-full">
-            <p className="text-muted-foreground">
-              {loading ? "Loading chats..." : rooms.length === 0 
-                ? "No chats found. Connect with users to start messaging."
-                : "Select a chat to start messaging"
-              }
-            </p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
+        return () => {
+            roomSubscription.unsubscribe();
+        };
+    }, [user]);
 
-export default ChatPage;
+    return (
+        <div className="flex h-screen bg-gray-100">
+            <ChatSidebar
+                rooms={rooms}
+                selectedRoom={selectedRoom}
+                onRoomSelect={setSelectedRoom}
+            />
+            <div className="flex-1">
+                {selectedRoom ? (
+                    <ChatContainer roomId={selectedRoom} />
+                ) : (
+                    <div className="flex items-center justify-center h-full">
+                        <p className="text-gray-500">
+                            Select a chat to start messaging
+                        </p>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}; 

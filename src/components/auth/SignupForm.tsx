@@ -1,227 +1,258 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
+import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { z } from "zod";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
-import { Loader2, ShieldCheck } from "lucide-react";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Shield, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
-// Form schema
-const signupSchema = z.object({
-  fullName: z.string().min(2, "Full name is required"),
-  email: z.string().email("Please enter a valid email"),
+const formSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string(),
   role: z.string().min(1, "Please select a role"),
-  termsAccepted: z.literal(true, {
-    errorMap: () => ({ message: "You must accept the terms and conditions" }),
-  }),
-}).refine(data => data.password === data.confirmPassword, {
-  message: "Passwords do not match",
-  path: ["confirmPassword"],
+  agreeToTerms: z.boolean().refine(value => value === true, {
+    message: "You must agree to the terms and conditions"
+  })
 });
 
-type SignupFormValues = z.infer<typeof signupSchema>;
+type FormValues = z.infer<typeof formSchema>;
 
 const SignupForm = () => {
+  const { signup, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  const { signup, isLoading } = useAuth();
-  const [showPassword, setShowPassword] = useState(false);
-  const shouldNavigate = true; 
-  
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<SignupFormValues>({
-    resolver: zodResolver(signupSchema),
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
-      fullName: "",
+      name: "",
       email: "",
       password: "",
-      confirmPassword: "",
       role: "",
-      termsAccepted: false,
+      agreeToTerms: false,
     },
   });
-  
-  const onSubmit = async (data: SignupFormValues) => {
+
+  const onSubmit = async (data: FormValues) => {
+    setIsLoading(true);
+    setError(null);
+    
     try {
-      // Prepare user data
-      const userData = {
-        full_name: data.fullName,
-        role: data.role,
-      };
-      
-      // Call signup from auth context
-      await signup(data.email, data.password, userData);
-      
+      await signup(data.email, data.password, data.name, data.role);
       toast({
-        title: "Account created",
-        description: "Please check your email to confirm your account",
+        title: "Account created!",
+        description: "You can now login with your credentials",
       });
-      
-      // Navigate to login
-      navigate("/login");
-      
-    } catch (error: any) {
-      console.error("Signup error:", error);
-      toast({
-        title: "Signup failed",
-        description: error.message || "Failed to create account",
-        variant: "destructive",
-      });
+      navigate("/dashboard");
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("Failed to create account. Please try again.");
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
-  
+
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
-          <CardDescription>
-            Enter your details below to create your account
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
-              <Input
-                id="fullName"
-                placeholder="John Doe"
-                {...register("fullName")}
-              />
-              {errors.fullName && (
-                <p className="text-sm text-red-500">{errors.fullName.message}</p>
-              )}
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="john@example.com"
-                {...register("email")}
-              />
-              {errors.email && (
-                <p className="text-sm text-red-500">{errors.email.message}</p>
-              )}
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                {...register("password")}
-              />
-              {errors.password && (
-                <p className="text-sm text-red-500">{errors.password.message}</p>
-              )}
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input
-                id="confirmPassword"
-                type={showPassword ? "text" : "password"}
-                {...register("confirmPassword")}
-              />
-              {errors.confirmPassword && (
-                <p className="text-sm text-red-500">
-                  {errors.confirmPassword.message}
-                </p>
-              )}
-              <div className="flex items-center space-x-2 pt-2">
-                <Checkbox
-                  id="showPassword"
-                  checked={showPassword}
-                  onCheckedChange={() => setShowPassword(!showPassword)}
-                />
-                <label
-                  htmlFor="showPassword"
-                  className="text-sm text-muted-foreground cursor-pointer"
-                >
-                  Show password
-                </label>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="role">I am a</Label>
-              <select
-                id="role"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                {...register("role")}
-              >
-                <option value="">Select a role</option>
-                <option value="actor">Actor</option>
-                <option value="director">Director</option>
-                <option value="producer">Producer</option>
-                <option value="cinematographer">Cinematographer</option>
-                <option value="editor">Editor</option>
-                <option value="writer">Screenwriter</option>
-                <option value="sound_designer">Sound Designer</option>
-                <option value="production_designer">Production Designer</option>
-                <option value="casting_director">Casting Director</option>
-                <option value="other">Other Film Professional</option>
-              </select>
-              {errors.role && (
-                <p className="text-sm text-red-500">{errors.role.message}</p>
-              )}
-            </div>
-            
-            <Separator className="my-4" />
-            
-            <div className="flex items-center space-x-2">
-              <Checkbox id="terms" {...register("termsAccepted")} />
-              <label
-                htmlFor="terms"
-                className="text-sm text-muted-foreground cursor-pointer"
-              >
-                I agree to the <a href="/terms" className="text-primary underline">terms and conditions</a>
-              </label>
-            </div>
-            {errors.termsAccepted && (
-              <p className="text-sm text-red-500">{errors.termsAccepted.message}</p>
+    <div className="space-y-6 w-full max-w-md">
+      <div className="text-center">
+        <h1 className="text-3xl font-bold gold-gradient-text mb-2">Create an Account</h1>
+        <p className="text-muted-foreground">Join the CastLinker community</p>
+      </div>
+      
+      {error && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+      
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Full Name</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="John Doe" 
+                    {...field} 
+                    className="bg-background/70"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
             )}
-            
-            <div className="!mt-6">
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating Account...
-                  </>
-                ) : (
-                  <>
-                    <ShieldCheck className="mr-2 h-4 w-4" />
-                    Create Account
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-        <CardFooter className="flex justify-center">
-          <p className="text-sm text-muted-foreground">
-            Already have an account?{" "}
-            <a href="/login" className="text-primary underline">
-              Sign in
-            </a>
-          </p>
-        </CardFooter>
-      </Card>
+          />
+          
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="your@email.com" 
+                    {...field}
+                    className="bg-background/70" 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Password</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="password" 
+                    placeholder="••••••••" 
+                    {...field}
+                    className="bg-background/70" 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="role"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>I am a</FormLabel>
+                <Select 
+                  onValueChange={field.onChange} 
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger className="bg-background/70">
+                      <SelectValue placeholder="Select your role" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="Actor">Actor</SelectItem>
+                    <SelectItem value="Director">Director</SelectItem>
+                    <SelectItem value="Producer">Producer</SelectItem>
+                    <SelectItem value="Screenwriter">Screenwriter</SelectItem>
+                    <SelectItem value="Cinematographer">Cinematographer</SelectItem>
+                    <SelectItem value="Casting Director">Casting Director</SelectItem>
+                    <SelectItem value="Agent">Agent</SelectItem>
+                    <SelectItem value="Production Company">Production Company</SelectItem>
+                    <SelectItem value="Editor">Editor</SelectItem>
+                    <SelectItem value="Sound Designer">Sound Designer</SelectItem>
+                    <SelectItem value="Production Designer">Production Designer</SelectItem>
+                    <SelectItem value="Costume Designer">Costume Designer</SelectItem>
+                    <SelectItem value="Makeup Artist">Makeup Artist</SelectItem>
+                    <SelectItem value="Stunt Coordinator">Stunt Coordinator</SelectItem>
+                    <SelectItem value="Visual Effects Artist">Visual Effects Artist</SelectItem>
+                    <SelectItem value="Music Composer">Music Composer</SelectItem>
+                    <SelectItem value="Art Director">Art Director</SelectItem>
+                    <SelectItem value="Location Manager">Location Manager</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="agreeToTerms"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md p-4 bg-gold/5">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel className="text-sm font-normal cursor-pointer">
+                    I agree to the <Link to="/terms" className="text-gold hover:text-gold/80">Terms of Service</Link> and <Link to="/privacy" className="text-gold hover:text-gold/80">Privacy Policy</Link>
+                  </FormLabel>
+                  <FormMessage />
+                </div>
+              </FormItem>
+            )}
+          />
+          
+          <Button 
+            type="submit" 
+            className="w-full bg-gold hover:bg-gold/90 text-black font-medium"
+            disabled={isLoading || authLoading}
+          >
+            {isLoading || authLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating account...
+              </>
+            ) : (
+              "Create Account"
+            )}
+          </Button>
+        </form>
+      </Form>
+      
+      <div className="text-center">
+        <p className="text-sm text-muted-foreground">
+          Already have an account? <Link to="/login" className="text-gold hover:text-gold/80 font-medium">Sign in</Link>
+        </p>
+      </div>
+
+      <div className="relative mt-6">
+        <div className="absolute inset-0 flex items-center">
+          <Separator className="w-full" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-background px-2 text-muted-foreground">
+            Admin Access
+          </span>
+        </div>
+      </div>
+
+      <div className="flex justify-center">
+        <Link to="/admin/login">
+          <Button variant="outline" className="border-gold/30 text-gold hover:bg-gold/10">
+            <Shield className="h-4 w-4 mr-2" />
+            Sign in as Administrator
+          </Button>
+        </Link>
+      </div>
     </div>
   );
 };

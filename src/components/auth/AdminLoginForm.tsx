@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -44,7 +45,7 @@ const AdminLoginForm = () => {
     try {
       // For demonstration, we're adapting the existing login but verifying admin role
       // In a real app, this would use a separate admin auth endpoint
-      await login(data.email, data.password);
+      await login(data.email, data.password, data.rememberMe);
       
       // Mock admin verification - in a real app, this would be server-validated
       // For this demo, we'll consider emails containing "admin" as admin accounts

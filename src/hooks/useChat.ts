@@ -1,287 +1,332 @@
-import { useState, useEffect, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
-import { E2EEncryption } from '@/utils/encryption';
-import { v4 as uuidv4 } from 'uuid';
+import { useState, useEffect, useCallback } from 'react';
+import { useSupabaseClient } from '@supabase/auth-helpers-react';
+import { useAuth } from './useAuth';
+import { E2EEncryption } from '../utils/encryption';
+import {
+    Message,
+    ChatRoom,
+    UserPresence,
+    MediaAttachment,
+} from '../types/chat';
 
-interface Message {
-  id: string;
-  room_id: string;
-  sender_id: string;
-  content: string;
-  content_encrypted: string;
-  iv: string;
-  sender_public_key: string;
-  created_at: string;
-  message_type: string;
-  file_url?: string;
-}
+export const useChat = (roomId: string) => {
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [roomInfo, setRoomInfo] = useState<ChatRoom | null>(null);
+    const [onlineUsers, setOnlineUsers] = useState<UserPresence[]>([]);
+    const [isTyping, setIsTyping] = useState(false);
+    const [hasMoreMessages, setHasMoreMessages] = useState(true);
+    const [isLoading, setIsLoading] = useState(true);
 
-interface UseChatProps {
-  roomId: string;
-}
+    const supabase = useSupabaseClient();
+    const { user } = useAuth();
+    const encryption = new E2EEncryption();
 
-export const useChat = ({ roomId }: UseChatProps) => {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [uploading, setUploading] = useState(false);
-  const [fileUrl, setFileUrl] = useState<string | null>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
+    // Load room information
+    useEffect(() => {
+        const loadRoomInfo = async () => {
+            const { data, error } = await supabase
+                .from('chat_rooms')
+                .select('*, chat_room_members(*)')
+                .eq('id', roomId)
+                .single();
 
-  useEffect(() => {
-    const fetchMessages = async () => {
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('messages')
-          .select('*')
-          .eq('room_id', roomId)
-          .order('created_at', { ascending: true });
-
-        if (error) {
-          throw error;
-        }
-
-        if (data) {
-          // Decrypt messages
-          const decryptedMessages = data.map(message => {
-            if (message.message_type === 'text' && message.content_encrypted && message.iv && message.sender_public_key) {
-              const decryptedMessage = E2EEncryption.decryptMessage(
-                {
-                  content_encrypted: message.content_encrypted,
-                  iv: message.iv,
-                  sender_public_key: message.sender_public_key
-                },
-                user?.private_key || ''
-              );
-
-              return {
-                ...message,
-                content: decryptedMessage || 'Failed to decrypt message'
-              };
+            if (data) {
+                setRoomInfo(data);
             }
-            return message;
-          });
+        };
 
-          setMessages(decryptedMessages as Message[]);
+        loadRoomInfo();
+    }, [roomId]);
+
+    // Load initial messages
+    useEffect(() => {
+        const loadMessages = async () => {
+            setIsLoading(true);
+            const { data, error } = await supabase
+                .from('messages')
+                .select(`
+                    *,
+                    media_attachments(*),
+                    message_reactions(*)
+                `)
+                .eq('room_id', roomId)
+                .order('created_at', { ascending: false })
+                .limit(50);
+
+            if (data) {
+                // Decrypt messages
+                const decryptedMessages = await Promise.all(
+                    data.map(async (message) => {
+                        const decrypted = await encryption.decryptMessage(
+                            message.content_encrypted,
+                            message.iv,
+                            message.sender_public_key,
+                            user!.private_key
+                        );
+                        return { ...message, content: decrypted };
+                    })
+                );
+                setMessages(decryptedMessages.reverse());
+            }
+            setIsLoading(false);
+        };
+
+        if (roomId && user) {
+            loadMessages();
         }
-      } catch (error) {
-        console.error('Error fetching messages:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load messages",
-          variant: "destructive"
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchMessages();
+    }, [roomId, user]);
 
     // Subscribe to new messages
-    const channel = supabase
-      .channel('public:messages')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'messages',
-        filter: `room_id=eq.${roomId}`
-      }, async (payload) => {
-        if (payload.new) {
-          const newMessage = payload.new as Message;
+    useEffect(() => {
+        const subscription = supabase
+            .channel(`room:${roomId}`)
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: 'messages',
+                filter: `room_id=eq.${roomId}`
+            }, async (payload) => {
+                if (payload.eventType === 'INSERT') {
+                    const newMessage = payload.new as Message;
+                    const decrypted = await encryption.decryptMessage(
+                        newMessage.content_encrypted,
+                        newMessage.iv,
+                        newMessage.sender_public_key,
+                        user!.private_key
+                    );
+                    setMessages((prev) => [...prev, { ...newMessage, content: decrypted }]);
+                }
+            })
+            .subscribe();
 
-          // Decrypt the new message
-          if (newMessage.message_type === 'text' && newMessage.content_encrypted && newMessage.iv && newMessage.sender_public_key) {
-            const decryptedContent = E2EEncryption.decryptMessage(
-              {
-                content_encrypted: newMessage.content_encrypted,
-                iv: newMessage.iv,
-                sender_public_key: newMessage.sender_public_key
-              },
-              user?.private_key || ''
-            );
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, [roomId, user]);
 
-            newMessage.content = decryptedContent || 'Failed to decrypt message';
-          }
+    // Handle presence and typing indicators
+    useEffect(() => {
+        const channel = supabase.channel(`presence:${roomId}`);
 
-          setMessages(prevMessages => [...prevMessages, newMessage]);
+        channel
+            .on('presence', { event: 'sync' }, () => {
+                const state = channel.presenceState();
+                const online = Object.values(state).flat() as UserPresence[];
+                setOnlineUsers(online);
+            })
+            .on('presence', { event: 'join' }, ({ key, newPresence }) => {
+                setOnlineUsers((prev) => [...prev, ...newPresence]);
+            })
+            .on('presence', { event: 'leave' }, ({ key, leftPresence }) => {
+                setOnlineUsers((prev) =>
+                    prev.filter((u) => !leftPresence.some((p) => p.user_id === u.user_id))
+                );
+            })
+            .subscribe(async (status) => {
+                if (status === 'SUBSCRIBED') {
+                    await channel.track({
+                        user_id: user!.id,
+                        status: 'online',
+                        last_active: new Date().toISOString(),
+                    });
+                }
+            });
+
+        return () => {
+            channel.unsubscribe();
+        };
+    }, [roomId, user]);
+
+    // Send message function
+    const sendMessage = async (content: string, attachments: File[] = []) => {
+        if (!user || !content.trim()) return;
+
+        // Upload attachments first
+        const mediaAttachments: MediaAttachment[] = [];
+        if (attachments.length > 0) {
+            for (const file of attachments) {
+                const { fileKey, encryptedFile } = await encryption.encryptFile(file);
+                const { data, error } = await supabase.storage
+                    .from('chat-attachments')
+                    .upload(`${roomId}/${file.name}`, encryptedFile);
+
+                if (data) {
+                    mediaAttachments.push({
+                        type: file.type.split('/')[0] as any,
+                        url: data.path,
+                        filename: file.name,
+                        size_bytes: file.size,
+                        mime_type: file.type,
+                        encrypted_key: fileKey,
+                    } as MediaAttachment);
+                }
+            }
         }
-      })
-      .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [roomId, user, toast]);
+        // Get room members for encryption
+        const { data: members } = await supabase
+            .from('chat_room_members')
+            .select('user_id, public_key')
+            .eq('room_id', roomId);
 
-  useEffect(() => {
-    // Scroll to bottom when messages change
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  const sendMessage = async (content: string, message_type: string = 'text') => {
-    if (!user) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to send messages.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      let content_encrypted = null;
-      let iv = null;
-      let file_url = null;
-
-      if (message_type === 'text') {
-        // Encrypt the message content
-        const { encrypted: encryptedContent, nonce } = E2EEncryption.encryptMessage(
-          content,
-          user?.private_key || '',
-          user?.user_metadata.publicKey
+        // Encrypt message for each recipient
+        const encryptedMessages = await Promise.all(
+            members!.map(async (member) => {
+                const { encrypted, iv } = await encryption.encryptMessage(
+                    content,
+                    user.private_key,
+                    member.public_key
+                );
+                return { user_id: member.user_id, encrypted, iv };
+            })
         );
 
-        if (encryptedContent && nonce) {
-          content_encrypted = encryptedContent;
-          iv = nonce;
-        }
-      } else if (message_type === 'file' && fileUrl) {
-        // For file messages, store the file URL
-        file_url = fileUrl;
-      }
-
-      const newMessage: Message = {
-        id: uuidv4(),
-        room_id: roomId,
-        sender_id: user.id,
-        content: content,
-        content_encrypted: content_encrypted,
-        iv: iv,
-        sender_public_key: user.user_metadata.publicKey,
-        created_at: new Date().toISOString(),
-        message_type: message_type,
-        file_url: file_url
-      };
-
-      const { error } = await supabase
-        .from('messages')
-        .insert(newMessage as any);
-
-      if (error) {
-        throw error;
-      }
-
-      // Optimistically update the local state
-      setMessages(prevMessages => [...prevMessages, newMessage]);
-    } catch (error) {
-      console.error('Error sending message:', error);
-      toast({
-        title: "Error",
-        description: "Failed to send message",
-        variant: "destructive"
-      });
-    } finally {
-      setFileUrl(null); // Reset file URL after sending
-    }
-  };
-
-  const uploadFile = async (file: File) => {
-    setUploading(true);
-    try {
-      // Encrypt the file
-      const { encrypted: encryptedFile, nonce } = await E2EEncryption.encryptFile(
-        file,
-        user?.private_key || '',
-        user?.user_metadata.publicKey
-      );
-
-      // Upload the encrypted file to Supabase storage
-      const filePath = `chat-files/${uuidv4()}-${file.name}`;
-      const { data, error } = await supabase.storage
-        .from('chat-files')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
+        // Send message
+        const { data, error } = await supabase.from('messages').insert({
+            room_id: roomId,
+            sender_id: user.id,
+            content_encrypted: JSON.stringify(encryptedMessages),
+            type: attachments.length > 0 ? 'media' : 'text',
+            metadata: {
+                attachments: mediaAttachments,
+            },
         });
 
-      if (error) {
-        throw error;
-      }
+        if (error) {
+            console.error('Error sending message:', error);
+        }
+    };
 
-      // Get the public URL of the uploaded file
-      const { data: fileData } = supabase.storage
-        .from('chat-files')
-        .getPublicUrl(filePath);
+    // Load more messages
+    const loadMoreMessages = async () => {
+        if (!hasMoreMessages || isLoading) return;
 
-      if (fileData) {
-        setFileUrl(fileData.publicUrl);
+        const { data, error } = await supabase
+            .from('messages')
+            .select('*')
+            .eq('room_id', roomId)
+            .order('created_at', { ascending: false })
+            .lt('created_at', messages[0].created_at)
+            .limit(50);
 
-        // Send the message with the file URL
-        await sendMessage(fileData.publicUrl, 'file');
-      }
-    } catch (error) {
-      console.error('Error uploading file:', error);
-      toast({
-        title: "Error",
-        description: "Failed to upload file",
-        variant: "destructive"
-      });
-    } finally {
-      setUploading(false);
-    }
-  };
+        if (data) {
+            const decryptedMessages = await Promise.all(
+                data.map(async (message) => {
+                    const decrypted = await encryption.decryptMessage(
+                        message.content_encrypted,
+                        message.iv,
+                        message.sender_public_key,
+                        user!.private_key
+                    );
+                    return { ...message, content: decrypted };
+                })
+            );
+            setMessages((prev) => [...decryptedMessages.reverse(), ...prev]);
+            setHasMoreMessages(data.length === 50);
+        }
+    };
 
-  const decryptFile = async (message: Message) => {
-    try {
-      // Fetch the encrypted file from Supabase storage
-      const { data, error } = await supabase.storage
-        .from('chat-files')
-        .download(message.file_url.split('/').pop());
+    // Handle typing indicator
+    const setTyping = async (isTyping: boolean) => {
+        if (!user) return;
 
-      if (error) {
-        throw error;
-      }
+        const channel = supabase.channel(`presence:${roomId}`);
+        await channel.track({
+            user_id: user.id,
+            typing_in_room: isTyping ? roomId : null,
+            typing_until: isTyping ? new Date(Date.now() + 3000).toISOString() : null,
+        });
+    };
 
-      // Decrypt the file
-      const decryptedContent = E2EEncryption.decryptMessage(
-        {
-          content_encrypted: message.content_encrypted,
-          iv: message.iv,
-          sender_public_key: message.sender_public_key
-        },
-        user?.private_key || ''
-      );
+    // Delete message
+    const deleteMessage = async (messageId: string, forEveryone: boolean) => {
+        if (!user) return;
 
-      // Create a blob from the decrypted data
-      const blob = new Blob([new Uint8Array(decryptedContent)], { type: message.file_type });
+        if (forEveryone) {
+            await supabase
+                .from('messages')
+                .update({ is_deleted: true })
+                .eq('id', messageId)
+                .eq('sender_id', user.id);
+        } else {
+            // Implement local message hiding
+        }
+    };
 
-      // Create a URL for the blob
-      const url = URL.createObjectURL(blob);
+    // Edit message
+    const editMessage = async (messageId: string, newContent: string) => {
+        if (!user || !newContent.trim()) return;
 
-      // Open the file in a new tab
-      window.open(url);
-    } catch (error) {
-      console.error('Error decrypting file:', error);
-      toast({
-        title: "Error",
-        description: "Failed to decrypt file",
-        variant: "destructive"
-      });
-    }
-  };
+        const { data: message } = await supabase
+            .from('messages')
+            .select('*')
+            .eq('id', messageId)
+            .single();
 
-  return {
-    messages,
-    loading,
-    sendMessage,
-    uploadFile,
-    uploading,
-    bottomRef,
-    decryptFile
-  };
-};
+        if (message && message.sender_id === user.id) {
+            // Re-encrypt message for all recipients
+            const { data: members } = await supabase
+                .from('chat_room_members')
+                .select('user_id, public_key')
+                .eq('room_id', roomId);
+
+            const encryptedMessages = await Promise.all(
+                members!.map(async (member) => {
+                    const { encrypted, iv } = await encryption.encryptMessage(
+                        newContent,
+                        user.private_key,
+                        member.public_key
+                    );
+                    return { user_id: member.user_id, encrypted, iv };
+                })
+            );
+
+            await supabase
+                .from('messages')
+                .update({
+                    content_encrypted: JSON.stringify(encryptedMessages),
+                    is_edited: true,
+                })
+                .eq('id', messageId);
+        }
+    };
+
+    // Add reaction
+    const addReaction = async (messageId: string, emoji: string) => {
+        if (!user) return;
+
+        await supabase.from('message_reactions').upsert({
+            message_id: messageId,
+            user_id: user.id,
+            emoji,
+        });
+    };
+
+    // Remove reaction
+    const removeReaction = async (messageId: string, emoji: string) => {
+        if (!user) return;
+
+        await supabase
+            .from('message_reactions')
+            .delete()
+            .eq('message_id', messageId)
+            .eq('user_id', user.id)
+            .eq('emoji', emoji);
+    };
+
+    return {
+        messages,
+        sendMessage,
+        isTyping,
+        onlineUsers,
+        setTyping,
+        roomInfo,
+        loadMoreMessages,
+        hasMoreMessages,
+        deleteMessage,
+        editMessage,
+        addReaction,
+        removeReaction,
+        isLoading,
+    };
+}; 
