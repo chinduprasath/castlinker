@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -36,6 +35,7 @@ const SignupForm = () => {
   const { toast } = useToast();
   const { signup, isLoading } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const shouldNavigate = true; 
   
   const {
     register,
