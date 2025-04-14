@@ -842,28 +842,64 @@ export type Database = {
       }
       profiles: {
         Row: {
+          achievements: string[] | null
+          availability_status: string | null
           avatar_url: string | null
           created_at: string | null
-          email: string | null
+          description: string | null
+          email: string
+          experience_years: number | null
           full_name: string | null
           id: string
-          role: string | null
+          is_verified: boolean | null
+          languages: string[] | null
+          likes: number | null
+          location: string | null
+          portfolio_urls: string[] | null
+          profession_type: string | null
+          rating: number | null
+          skills: string[] | null
+          updated_at: string | null
         }
         Insert: {
+          achievements?: string[] | null
+          availability_status?: string | null
           avatar_url?: string | null
           created_at?: string | null
-          email?: string | null
+          description?: string | null
+          email: string
+          experience_years?: number | null
           full_name?: string | null
           id: string
-          role?: string | null
+          is_verified?: boolean | null
+          languages?: string[] | null
+          likes?: number | null
+          location?: string | null
+          portfolio_urls?: string[] | null
+          profession_type?: string | null
+          rating?: number | null
+          skills?: string[] | null
+          updated_at?: string | null
         }
         Update: {
+          achievements?: string[] | null
+          availability_status?: string | null
           avatar_url?: string | null
           created_at?: string | null
-          email?: string | null
+          description?: string | null
+          email?: string
+          experience_years?: number | null
           full_name?: string | null
           id?: string
-          role?: string | null
+          is_verified?: boolean | null
+          languages?: string[] | null
+          likes?: number | null
+          location?: string | null
+          portfolio_urls?: string[] | null
+          profession_type?: string | null
+          rating?: number | null
+          skills?: string[] | null
+          updated_at?: string | null
         }
         Relationships: []
       }

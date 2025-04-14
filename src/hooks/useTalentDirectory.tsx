@@ -1,79 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useDebounce } from './useDebounce';
 import { Profession, PROFESSION_OPTIONS, TalentProfile, TalentFilters } from '@/types/talent';
 
-// Mock talent data for development
-const MOCK_TALENT_DATA: TalentProfile[] = [
-  {
-    id: '1',
-    userId: 'user-1',
-    name: 'John Smith',
-    role: 'Actor',
-    location: 'Los Angeles, CA',
-    avatar: 'https://i.pravatar.cc/150?img=1',
-    rating: 4.8,
-    reviews: 24,
-    isVerified: true,
-    isPremium: true,
-    isAvailable: true,
-    skills: ['Method Acting', 'Voice Acting', 'Stunts'],
-    experience: 8,
-    languages: ['English', 'Spanish'],
-    bio: 'Award-winning actor with extensive experience in film and television.',
-    featuredIn: ['The Last Stand', 'City Nights', 'Beyond the Horizon'],
-    likesCount: 156,
-    joinedDate: '2021-05-15'
-  },
-  {
-    id: '2',
-    userId: 'user-2',
-    name: 'Sarah Johnson',
-    role: 'Director',
-    location: 'New York, NY',
-    avatar: 'https://i.pravatar.cc/150?img=5',
-    rating: 4.9,
-    reviews: 32,
-    isVerified: true,
-    isPremium: true,
-    isAvailable: false,
-    skills: ['Narrative Direction', 'Documentary', 'Music Videos'],
-    experience: 12,
-    languages: ['English', 'French'],
-    bio: 'Passionate director focused on telling authentic and meaningful stories.',
-    featuredIn: ['Silent Echo', 'Midnight Blues', 'The Journey Within'],
-    likesCount: 210,
-    joinedDate: '2019-03-10'
-  },
-  {
-    id: '3',
-    userId: 'user-3',
-    name: 'Michael Chen',
-    role: 'Cinematographer',
-    location: 'Vancouver, BC',
-    avatar: 'https://i.pravatar.cc/150?img=7',
-    rating: 4.7,
-    reviews: 19,
-    isVerified: true,
-    isPremium: false,
-    isAvailable: true,
-    skills: ['Lighting Design', 'Drone Cinematography', 'Color Grading'],
-    experience: 6,
-    languages: ['English', 'Mandarin'],
-    bio: 'Cinematographer with a keen eye for composition and lighting.',
-    featuredIn: ['Crimson Sky', 'Urban Legends', 'Distant Shores'],
-    likesCount: 98,
-    joinedDate: '2020-11-22'
-  }
-];
-
-// Mock connection requests
-const MOCK_CONNECTION_REQUESTS = [
-  { id: 'conn-1', requesterId: 'user-1', recipientId: 'user-2', status: 'accepted' },
-  { id: 'conn-2', requesterId: 'user-3', recipientId: 'user-1', status: 'pending' }
-];
-
+// Default filters configuration
 const DEFAULT_FILTERS: TalentFilters = {
   searchTerm: '',
   selectedRoles: [],
@@ -93,7 +23,7 @@ export const useTalentDirectory = () => {
   const [locations, setLocations] = useState<string[]>([]);
   const [likedProfiles, setLikedProfiles] = useState<string[]>([]);
   const [wishlistedProfiles, setWishlistedProfiles] = useState<string[]>([]);
-  const [connectionRequests, setConnectionRequests] = useState(MOCK_CONNECTION_REQUESTS);
+  const [connectionRequests, setConnectionRequests] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 6;
   
@@ -104,17 +34,57 @@ export const useTalentDirectory = () => {
     const fetchTalents = async () => {
       setIsLoading(true);
       try {
-        // In a real implementation, this would call Supabase
-        // For now, use mock data
-        setTalents(MOCK_TALENT_DATA);
+        // Fetch profiles from Supabase
+        const { data: profiles, error } = await supabase
+          .from('profiles')
+          .select('*');
+          
+        if (error) {
+          console.error('Error fetching profiles:', error);
+          return;
+        }
+        
+        // Map profiles to talent format
+        const talentData: TalentProfile[] = profiles.map(profile => ({
+          id: profile.id,
+          userId: profile.id,
+          name: profile.full_name || 'Anonymous User',
+          role: profile.profession_type || 'Actor',
+          location: profile.location || 'Los Angeles, CA',
+          avatar: profile.avatar_url || `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`,
+          rating: profile.rating || (3.5 + Math.random() * 1.5), // Random rating between 3.5 and 5
+          reviews: Math.floor(Math.random() * 30) + 1, // Random number of reviews
+          isVerified: profile.is_verified || false,
+          isPremium: Math.random() > 0.7, // 30% chance of being premium
+          isAvailable: profile.availability_status === 'Available',
+          skills: profile.skills || ['Acting', 'Dancing', 'Singing'],
+          experience: profile.experience_years || Math.floor(Math.random() * 15) + 1,
+          languages: profile.languages || ['English'],
+          bio: profile.description || 'Film industry professional with diverse skills and experience.',
+          featuredIn: profile.achievements || ['Independent Film', 'Commercial', 'Theater Production'],
+          likesCount: profile.likes || Math.floor(Math.random() * 200),
+          joinedDate: profile.created_at
+        }));
+        
+        setTalents(talentData);
         
         // Extract unique locations
-        const uniqueLocations = Array.from(new Set(MOCK_TALENT_DATA.map(talent => talent.location)));
+        const uniqueLocations = Array.from(new Set(talentData.map(talent => talent.location)));
         setLocations(uniqueLocations);
         
         // Mock some liked and wishlisted profiles
-        setLikedProfiles(['1', '3']);
-        setWishlistedProfiles(['2']);
+        if (talentData.length > 0) {
+          setLikedProfiles([talentData[0].id]);
+          if (talentData.length > 1) {
+            setWishlistedProfiles([talentData[1].id]);
+          }
+        }
+        
+        // Mock connection requests
+        setConnectionRequests([
+          { id: 'conn-1', requesterId: 'current-user', recipientId: talentData.length > 0 ? talentData[0].userId : '', status: 'accepted' },
+          { id: 'conn-2', requesterId: talentData.length > 1 ? talentData[1].userId : '', recipientId: 'current-user', status: 'pending' }
+        ]);
       } catch (error) {
         console.error('Error fetching talents:', error);
       } finally {
@@ -211,7 +181,7 @@ export const useTalentDirectory = () => {
     currentPage * pageSize
   );
   
-  // Handle toggle likes
+  // Handler functions and return values
   const toggleLike = (profileId: string) => {
     setLikedProfiles(prev => 
       prev.includes(profileId) 
@@ -220,7 +190,6 @@ export const useTalentDirectory = () => {
     );
   };
 
-  // Handle toggle wishlist
   const toggleWishlist = (profileId: string) => {
     setWishlistedProfiles(prev => 
       prev.includes(profileId) 
@@ -229,7 +198,6 @@ export const useTalentDirectory = () => {
     );
   };
   
-  // Handle send connection request
   const sendConnectionRequest = (profile: TalentProfile) => {
     const newRequest = {
       id: `conn-${Date.now()}`,
@@ -242,26 +210,22 @@ export const useTalentDirectory = () => {
     return true;
   };
   
-  // Handle share profile
   const shareProfile = (profile: TalentProfile) => {
     // Mock implementation
     console.log(`Sharing profile: ${profile.name}`);
     alert(`Profile of ${profile.name} would be shared in a real app.`);
   };
   
-  // Handle send message
   const sendMessage = (profile: TalentProfile, message: string) => {
     // Mock implementation
     console.log(`Message to ${profile.name}: ${message}`);
     return true;
   };
   
-  // Change page
   const changePage = (page: number) => {
     setCurrentPage(page);
   };
   
-  // Update filters
   const updateFilters = (newFilters: Partial<TalentFilters>) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
   };
