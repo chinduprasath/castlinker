@@ -7,24 +7,65 @@ import { Send, Phone, Video, Info, Plus, Search, Filter } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/hooks/useAuth";
 import { ChatMessage } from "@/components/chat/ChatMessage";
-import { useChat } from "@/hooks/useChat";
+import { useChat } from "@/hooks/useChat.tsx";
 import { useDebounce } from "@/hooks/useDebounce";
 
 const Chat = () => {
   const { user } = useAuth();
   const [inputMessage, setInputMessage] = useState("");
   const messageEndRef = useRef<HTMLDivElement>(null);
-  const { 
-    chats, 
-    activeChat, 
-    messages, 
-    setActiveChat, 
-    sendMessage, 
-    searchQuery,
-    setSearchQuery,
-    isLoading
-  } = useChat();
   
+  // Use the hook with empty roomId for our main chat page
+  const { 
+    messages,
+    sendMessage,
+    isLoading
+  } = useChat(""); // Pass empty string as roomId
+  
+  // Use mock data from the useChat.tsx file for the sidebar
+  const [mockChats, setMockChats] = useState([
+    {
+      id: "1",
+      name: "Sarah Johnson",
+      lastMessage: "When can you send the audition tape?",
+      lastMessageTime: "10:30 AM",
+      unread: 2,
+      avatar: "/placeholder.svg",
+      role: "Casting Director",
+      online: true
+    },
+    {
+      id: "2",
+      name: "Michael Rodriguez",
+      lastMessage: "I loved your performance in that short film!",
+      lastMessageTime: "Yesterday",
+      unread: 0,
+      avatar: "/placeholder.svg",
+      role: "Director",
+      online: false
+    },
+    {
+      id: "3",
+      name: "Emma Thompson",
+      lastMessage: "Let's discuss the contract details",
+      lastMessageTime: "Monday",
+      unread: 0,
+      avatar: "/placeholder.svg",
+      role: "Producer",
+      online: true
+    },
+    {
+      id: "4",
+      name: "Film Project Team",
+      lastMessage: "Hey team, I've uploaded the latest schedule",
+      lastMessageTime: "08/10/2023",
+      unread: 3,
+      avatar: "/placeholder.svg"
+    }
+  ]);
+  
+  const [activeChat, setActiveChat] = useState(mockChats[0]);
+  const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchTerm = useDebounce(searchQuery, 300);
   
   // Scroll to bottom on new messages
@@ -90,7 +131,7 @@ const Chat = () => {
         {/* Contacts List */}
         <ScrollArea className="flex-1">
           <div className="space-y-1 p-2">
-            {chats.map((chat) => (
+            {mockChats.map((chat) => (
               <div 
                 key={chat.id}
                 onClick={() => setActiveChat(chat)}
