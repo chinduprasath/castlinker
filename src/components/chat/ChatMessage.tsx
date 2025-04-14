@@ -16,20 +16,40 @@ export interface Attachment {
   thumbnailUrl?: string;
 }
 
-// Custom reaction type that can handle both formats
+// Custom reaction type that works with different formats
 export interface MessageReaction {
   emoji: string;
   user_id: string;
   count: number;
 }
 
-// Define ChatMessage type that extends Message and adds the properties we need
-export interface ChatMessage extends Omit<Message, 'reactions'> {
+// Define ChatMessage type without extending Message to avoid type conflicts
+export interface ChatMessage {
+  id: string;
+  room_id: string;
+  sender_id: string;
+  content: string;
+  type: 'text' | 'image' | 'video' | 'audio' | 'document' | 'system';
+  metadata: {
+    fileName?: string;
+    fileSize?: number;
+    mimeType?: string;
+    duration?: number;
+    dimensions?: {
+      width: number;
+      height: number;
+    };
+  };
+  created_at: string;
+  updated_at: string;
+  is_edited: boolean;
+  is_deleted: boolean;
+  reply_to_id?: string;
+  reactions?: MessageReaction[];
   senderName?: string;
   senderRole?: string;
   isMe?: boolean;
   status?: 'sent' | 'delivered' | 'seen';
-  reactions?: MessageReaction[];
 }
 
 type MessageProps = {

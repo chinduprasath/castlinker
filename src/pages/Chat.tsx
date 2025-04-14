@@ -254,7 +254,7 @@ const Chat = () => {
                       status: 'seen' as const,
                       reactions: message.reactions?.map(reaction => ({
                         emoji: reaction.emoji,
-                        user_id: reaction.userId || reaction.user_id || user?.id || '',
+                        user_id: reaction.userId || reaction.user_id || '',
                         count: reaction.count || 1
                       }))
                     };
