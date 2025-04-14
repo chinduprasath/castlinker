@@ -17,6 +17,7 @@ export interface ChatMessage extends Omit<Message, 'attachments'> {
   isMe?: boolean;
   senderName?: string;
   senderRole?: string;
+  is_edited?: boolean;
 }
 
 type MessageProps = {

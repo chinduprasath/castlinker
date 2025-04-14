@@ -1,6 +1,4 @@
-
 import { useState, useEffect, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
@@ -71,15 +69,12 @@ export const useChat = () => {
   const [userTyping, setUserTyping] = useState<{userId: string, chatId: string} | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Load user's chats
   useEffect(() => {
     if (!user) return;
     
     const loadChats = async () => {
       setIsLoading(true);
       try {
-        // In a real implementation, we would fetch chats from Supabase
-        // For now, using dummy data
         const dummyChats = [
           {
             id: "1",
@@ -149,20 +144,16 @@ export const useChat = () => {
     setupRealtimeSubscription();
     
     return () => {
-      // Clean up realtime subscription
       cleanupRealtimeSubscription();
     };
   }, [user]);
   
-  // Load messages for active chat
   useEffect(() => {
     if (!activeChat) return;
     
     const loadMessages = async () => {
       setIsLoading(true);
       try {
-        // In a real implementation, we would fetch messages from Supabase
-        // For now, using dummy data for Sarah Johnson chat
         if (activeChat.id === "1") {
           const dummyMessages = [
             {
@@ -264,7 +255,6 @@ export const useChat = () => {
           ];
           setMessages(dummyMessages);
         } else {
-          // For other chats, show an empty conversation
           setMessages([]);
         }
       } catch (error) {
@@ -283,11 +273,9 @@ export const useChat = () => {
     markChatAsRead(activeChat.id);
   }, [activeChat, user]);
   
-  // Filter and sort chats
   useEffect(() => {
     let filtered = [...chats];
     
-    // Apply search filter
     if (searchQuery) {
       filtered = filtered.filter(chat => 
         chat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -295,16 +283,13 @@ export const useChat = () => {
       );
     }
     
-    // Apply unread filter
     if (showUnreadOnly) {
       filtered = filtered.filter(chat => chat.unread > 0);
     }
     
-    // Apply sorting
     filtered.sort((a, b) => {
       switch (sortBy) {
         case 'newest':
-          // Simple date comparison for the demo
           return a.lastMessageTime < b.lastMessageTime ? 1 : -1;
         case 'oldest':
           return a.lastMessageTime > b.lastMessageTime ? 1 : -1;
@@ -318,7 +303,6 @@ export const useChat = () => {
     setFilteredChats(filtered);
   }, [chats, searchQuery, showUnreadOnly, sortBy]);
   
-  // Handle sending a message
   const sendMessage = async (content: string, attachments?: File[], replyToMessageId?: string) => {
     if (!user || !activeChat) return false;
     
@@ -344,13 +328,9 @@ export const useChat = () => {
         isDeleted: false
       };
       
-      // Add message to local state
       setMessages(prev => [...prev, newMessage]);
       
-      // Update chat preview
       updateChatPreview(activeChat.id, content);
-      
-      // In a real implementation, we would save to Supabase here
       
       return true;
     } catch (error) {
@@ -364,7 +344,6 @@ export const useChat = () => {
     }
   };
   
-  // Update chat preview with latest message
   const updateChatPreview = (chatId: string, lastMessage: string) => {
     setChats(prevChats => 
       prevChats.map(chat => 
@@ -379,7 +358,6 @@ export const useChat = () => {
     );
   };
   
-  // Mark chat as read
   const markChatAsRead = (chatId: string) => {
     setChats(prevChats => 
       prevChats.map(chat => 
@@ -389,7 +367,6 @@ export const useChat = () => {
       )
     );
     
-    // Update message status to 'seen'
     setMessages(prevMessages => 
       prevMessages.map(message => 
         !message.isMe && message.status !== 'seen'
@@ -397,39 +374,23 @@ export const useChat = () => {
           : message
       )
     );
-    
-    // In a real implementation, we would update Supabase here
   };
   
-  // Handle user typing indicator
   const indicateTyping = (chatId: string) => {
     if (!user) return;
     
-    // In a real implementation, we would use Supabase Realtime
-    // For now, just update local state
-    
-    // Clear any existing timeout
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
     
-    // Set typing state
-    // We don't set it in this demo to avoid showing the typing indicator
-    // setUserTyping({ userId: user.id, chatId });
-    
-    // Clear typing indicator after 3 seconds
     typingTimeoutRef.current = setTimeout(() => {
       setUserTyping(null);
     }, 3000);
   };
   
-  // Setup Supabase Realtime subscription
   const setupRealtimeSubscription = () => {
     if (!user) return;
     
-    // In a full implementation, we would subscribe to Supabase Realtime here
-    // Example:
-    /*
     const channel = supabase
       .channel('chat-updates')
       .on(
@@ -441,27 +402,19 @@ export const useChat = () => {
           filter: `recipient_id=eq.${user.id}`
         },
         (payload) => {
-          // Handle new message
           const newMessage = payload.new;
-          // ...
+          // Handle new message
         }
       )
       .subscribe();
-    */
   };
   
-  // Cleanup Supabase Realtime subscription
   const cleanupRealtimeSubscription = () => {
-    // In a full implementation, we would unsubscribe from Supabase Realtime here
-    // Example:
-    /*
     if (channel) {
       supabase.removeChannel(channel);
     }
-    */
   };
   
-  // Handle editing a message
   const editMessage = async (messageId: string, newContent: string) => {
     try {
       setMessages(prev => 
@@ -471,8 +424,6 @@ export const useChat = () => {
             : message
         )
       );
-      
-      // In a real implementation, we would update Supabase here
       
       return true;
     } catch (error) {
@@ -486,11 +437,9 @@ export const useChat = () => {
     }
   };
   
-  // Handle deleting a message
   const deleteMessage = async (messageId: string, forEveryone: boolean = false) => {
     try {
       if (forEveryone) {
-        // Delete for everyone (replace content with "This message was deleted")
         setMessages(prev => 
           prev.map(message => 
             message.id === messageId
@@ -499,11 +448,8 @@ export const useChat = () => {
           )
         );
       } else {
-        // Delete just for the current user (remove from the list)
         setMessages(prev => prev.filter(message => message.id !== messageId));
       }
-      
-      // In a real implementation, we would update Supabase here
       
       return true;
     } catch (error) {
@@ -517,7 +463,6 @@ export const useChat = () => {
     }
   };
   
-  // Add reaction to a message
   const addReaction = async (messageId: string, emoji: string) => {
     if (!user) return false;
     
@@ -537,8 +482,6 @@ export const useChat = () => {
         )
       );
       
-      // In a real implementation, we would update Supabase here
-      
       return true;
     } catch (error) {
       console.error('Error adding reaction:', error);
@@ -551,7 +494,6 @@ export const useChat = () => {
     }
   };
   
-  // Create a group chat
   const createGroupChat = async (name: string, participantIds: string[]) => {
     if (!user) return false;
     
@@ -572,8 +514,6 @@ export const useChat = () => {
       setChats(prev => [newChat, ...prev]);
       setActiveChat(newChat);
       
-      // In a real implementation, we would save to Supabase here
-      
       return true;
     } catch (error) {
       console.error('Error creating group chat:', error);
@@ -586,11 +526,8 @@ export const useChat = () => {
     }
   };
   
-  // Upload attachment for a message
   const uploadAttachment = async (file: File) => {
     try {
-      // In a real implementation, we would upload to Supabase Storage here
-      // and return the URL
       return {
         success: true,
         url: URL.createObjectURL(file),

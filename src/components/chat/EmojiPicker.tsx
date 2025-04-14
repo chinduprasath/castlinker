@@ -2,8 +2,8 @@
 import React, { useState } from 'react';
 import { Smile } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import data from 'emoji-picker-react';
 import Picker from 'emoji-picker-react';
+import { Theme } from 'emoji-picker-react';
 
 interface EmojiPickerProps {
   onSelect: (emoji: string) => void;
@@ -34,7 +34,7 @@ export function EmojiPicker({ onSelect }: EmojiPickerProps) {
       >
         <Picker 
           onEmojiClick={handleEmojiClick} 
-          theme="dark"
+          theme="dark" as Theme
         />
       </PopoverContent>
     </Popover>

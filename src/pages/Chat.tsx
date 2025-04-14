@@ -7,20 +7,21 @@ import { Send, Phone, Video, Info, Plus, Search, Filter } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/hooks/useAuth";
 import { ChatMessage } from "@/components/chat/ChatMessage";
-import { useChat } from "@/hooks/useChat.tsx";
+import { useChat } from "@/hooks/useChat";
 import { useDebounce } from "@/hooks/useDebounce";
+import { EmojiPicker } from "@/components/chat/EmojiPicker";
 
 const Chat = () => {
   const { user } = useAuth();
   const [inputMessage, setInputMessage] = useState("");
   const messageEndRef = useRef<HTMLDivElement>(null);
   
-  // Use the hook with empty roomId for our main chat page
+  // Use the hook without an argument
   const { 
     messages,
     sendMessage,
     isLoading
-  } = useChat(""); // Pass empty string as roomId
+  } = useChat(); 
   
   // Use mock data from the useChat.tsx file for the sidebar
   const [mockChats, setMockChats] = useState([
@@ -85,6 +86,10 @@ const Chat = () => {
       e.preventDefault();
       handleSendMessage();
     }
+  };
+
+  const handleEmojiSelect = (emoji: string) => {
+    setInputMessage(prev => prev + emoji);
   };
 
   return (
@@ -250,18 +255,25 @@ const Chat = () => {
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {messages.map((message, index) => (
-                    <ChatMessage
-                      key={message.id}
-                      message={{
-                        ...message,
-                        senderName: message.isMe ? user?.email?.split('@')[0] : activeChat.name,
-                        senderRole: message.isMe ? '' : activeChat.role
-                      }}
-                      showAvatar={true}
-                      isLastInGroup={true}
-                    />
-                  ))}
+                  {messages.map((message) => {
+                    // Convert the message to the expected ChatMessage format
+                    const chatMessage = {
+                      ...message,
+                      senderName: message.isMe ? user?.email?.split('@')[0] : activeChat.name,
+                      senderRole: message.isMe ? '' : activeChat.role,
+                      is_edited: message.is_edited || message.isEdited || false,
+                      created_at: message.created_at || message.timestamp || new Date().toISOString()
+                    };
+                    
+                    return (
+                      <ChatMessage
+                        key={message.id}
+                        message={chatMessage}
+                        showAvatar={true}
+                        isLastInGroup={true}
+                      />
+                    );
+                  })}
                   <div ref={messageEndRef} />
                 </div>
               )}
@@ -270,13 +282,18 @@ const Chat = () => {
             {/* Message Input */}
             <div className="p-4 border-t border-white/10">
               <div className="flex items-center gap-3">
-                <Input 
-                  value={inputMessage}
-                  onChange={(e) => setInputMessage(e.target.value)}
-                  onKeyDown={handleKeyPress}
-                  placeholder="Type a message..."
-                  className="bg-[#222222] border-0 text-white placeholder:text-gray-400 focus-visible:ring-gold/30"
-                />
+                <div className="flex-1 relative">
+                  <Input 
+                    value={inputMessage}
+                    onChange={(e) => setInputMessage(e.target.value)}
+                    onKeyDown={handleKeyPress}
+                    placeholder="Type a message..."
+                    className="bg-[#222222] border-0 text-white placeholder:text-gray-400 focus-visible:ring-gold/30 pr-10"
+                  />
+                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                    <EmojiPicker onSelect={handleEmojiSelect} />
+                  </div>
+                </div>
                 <Button 
                   onClick={handleSendMessage} 
                   className="rounded-full bg-gold hover:bg-gold/90 text-black"
