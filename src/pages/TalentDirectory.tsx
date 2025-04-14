@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,9 +46,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { ProfessionFilter } from "@/components/filters/ProfessionFilter";
 import { PROFESSION_OPTIONS, Profession } from "@/hooks/useTalentDirectory";
 import { LocationFilter, INDIA_LOCATIONS } from "@/components/filters/LocationFilter";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 const TalentDirectory = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
+  const { toast } = useToast();
   const {
     profiles,
     isLoading,
@@ -75,6 +80,64 @@ const TalentDirectory = () => {
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   const [connectDialogOpen, setConnectDialogOpen] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<TalentProfile | null>(null);
+
+  // New state for database users
+  const [dbUsers, setDbUsers] = useState<any[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(true);
+  
+  // Fetch users from the database
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setLoadingUsers(true);
+      try {
+        // Get users from user_profiles table
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .select('*');
+        
+        if (error) {
+          throw error;
+        }
+        
+        if (data) {
+          // Filter out the current user
+          const filteredUsers = user ? data.filter(u => u.id !== user.id) : data;
+          setDbUsers(filteredUsers);
+        }
+      } catch (error) {
+        console.error('Error fetching users:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load users",
+          variant: "destructive"
+        });
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+
+    // Only fetch if the user is logged in
+    if (user) {
+      fetchUsers();
+
+      // Subscribe to changes in user_profiles table
+      const userProfilesChannel = supabase
+        .channel('user_profiles_changes')
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'user_profiles'
+        }, () => {
+          // Refetch users when there are changes
+          fetchUsers();
+        })
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(userProfilesChannel);
+      };
+    }
+  }, [user]);
   
   const handleMessageClick = (profile: TalentProfile) => {
     setSelectedProfile(profile);
@@ -90,7 +153,47 @@ const TalentDirectory = () => {
     setSelectedProfile(profile);
     setConnectDialogOpen(true);
   };
+
+  // New function to handle connecting with a database user
+  const handleConnectUser = async (userId: string) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "You need to be logged in to connect with users",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Call the create_dm_chat_room function
+      const { data, error } = await supabase
+        .rpc('create_dm_chat_room', {
+          other_user_id: userId
+        });
+      
+      if (error) throw error;
+      
+      if (data) {
+        toast({
+          title: "Success",
+          description: "Chat created successfully",
+        });
+        
+        // Navigate to chat page
+        navigate("/chat");
+      }
+    } catch (error) {
+      console.error('Error connecting with user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to connect with user",
+        variant: "destructive"
+      });
+    }
+  };
   
+  // Toggle role function
   const toggleRole = (role: Profession) => {
     updateFilters({
       selectedRoles: filters.selectedRoles.includes(role)
@@ -402,14 +505,120 @@ const TalentDirectory = () => {
         </div>
       )}
       
-      {/* Results Count */}
+      {/* Results Count for DB Users */}
+      <div className="flex justify-between items-center mt-3">
+        <p className="text-sm text-foreground/70">
+          Found <span className="text-gold font-medium">{dbUsers.length}</span> registered users
+        </p>
+      </div>
+      
+      {/* Database Users Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-3">
+        {loadingUsers ? (
+          // Loading skeletons
+          Array(3).fill(0).map((_, index) => (
+            <Card key={`skeleton-${index}`} className="bg-card border-gold/10 overflow-hidden shadow-lg">
+              <CardHeader className="p-4 border-b border-gold/10 bg-gradient-to-r from-gold/5 to-transparent">
+                <div className="flex items-start gap-3">
+                  <Skeleton className="h-14 w-14 rounded-full" />
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <Skeleton className="h-5 w-32" />
+                    <Skeleton className="h-4 w-40" />
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4">
+                <Skeleton className="h-10 w-full mb-3" />
+                <div className="flex flex-wrap gap-1 mb-3">
+                  <Skeleton className="h-5 w-16 rounded-full" />
+                  <Skeleton className="h-5 w-20 rounded-full" />
+                  <Skeleton className="h-5 w-14 rounded-full" />
+                </div>
+              </CardContent>
+              <CardFooter className="px-4 py-3 border-t border-gold/10 flex justify-between">
+                <Skeleton className="h-9 w-28" />
+                <Skeleton className="h-9 w-28" />
+              </CardFooter>
+            </Card>
+          ))
+        ) : dbUsers.length > 0 ? (
+          dbUsers.map((dbUser) => (
+            <Card key={dbUser.id} className="bg-card border-gold/10 overflow-hidden shadow-lg hover:border-gold/30 transition-all">
+              <CardHeader className="p-4 border-b border-gold/10 bg-gradient-to-r from-gold/5 to-transparent">
+                <div className="flex items-start gap-3">
+                  <Avatar className="h-14 w-14 border-2 border-gold/30">
+                    <AvatarImage src={dbUser.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${dbUser.id}`} />
+                    <AvatarFallback>{dbUser.full_name ? dbUser.full_name.charAt(0) : '?'}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="text-lg truncate">{dbUser.full_name || "User"}</CardTitle>
+                    <div className="flex items-center gap-2 text-sm text-foreground/70">
+                      <span>{dbUser.role || "Film Professional"}</span>
+                      {dbUser.location && (
+                        <>
+                          <span className="text-xs">•</span>
+                          <div className="flex items-center">
+                            <MapPin className="h-3 w-3 mr-1" />
+                            <span className="truncate">{dbUser.location}</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4">
+                <p className="text-sm text-foreground/80 line-clamp-3 mb-3">
+                  {dbUser.bio || "Film industry professional ready to connect and collaborate."}
+                </p>
+              </CardContent>
+              <CardFooter className="px-4 py-3 border-t border-gold/10 flex justify-between bg-gradient-to-r from-transparent to-gold/5">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-1 border-gold/20 hover:bg-gold/10"
+                  onClick={() => handleConnectUser(dbUser.id)}
+                >
+                  <MessageCircle className="h-3.5 w-3.5" />
+                  Message
+                </Button>
+                
+                <Button 
+                  size="sm" 
+                  className="gap-1 bg-gold text-black hover:bg-gold/90"
+                  onClick={() => handleConnectUser(dbUser.id)}
+                >
+                  <UserPlus className="h-3.5 w-3.5" />
+                  Connect
+                </Button>
+              </CardFooter>
+            </Card>
+          ))
+        ) : (
+          <div className="col-span-3 bg-card border border-gold/10 rounded-xl p-8 text-center">
+            <BadgeIcon className="h-12 w-12 text-gold/30 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold mb-2">No users found</h3>
+            <p className="text-foreground/70 mb-4">
+              There are no other registered users at the moment.
+            </p>
+          </div>
+        )}
+      </div>
+      
+      {/* Separator between DB users and talent profiles */}
+      <Separator className="my-8 bg-gold/10" />
+      
+      {/* Talent Directory title */}
+      <h2 className="text-xl font-bold">Featured Talent</h2>
+      
+      {/* Results Count for Talent Profiles */}
       <div className="flex justify-between items-center mt-3">
         <p className="text-sm text-foreground/70">
           Found <span className="text-gold font-medium">{totalCount}</span> talents
         </p>
       </div>
       
-      {/* Talent Grid */}
+      {/* Talent Grid (Original functionality) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-3">
         {isLoading ? (
           // Loading skeletons

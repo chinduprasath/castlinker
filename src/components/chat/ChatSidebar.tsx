@@ -1,86 +1,79 @@
+
 import React from 'react';
-import { format } from 'date-fns';
-import { useSupabaseClient } from '@supabase/auth-helpers-react';
-import { useAuth } from '../../hooks/useAuth';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { PlusCircle } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 
 interface ChatRoom {
-    id: string;
-    type: 'one_to_one' | 'group';
-    name: string;
-    last_message_at: string;
-    metadata: {
-        last_message?: string;
-        unread_count?: number;
-    };
+  id: string;
+  name: string;
+  type: 'one_to_one' | 'group';
+  last_message_at: string;
+  metadata: any;
+  users?: any[];
 }
 
 interface ChatSidebarProps {
-    rooms: ChatRoom[];
-    selectedRoom: string | null;
-    onRoomSelect: (roomId: string) => void;
+  rooms: ChatRoom[];
+  selectedRoom: string | null;
+  loading: boolean;
+  onSelectRoom: (roomId: string) => void;
 }
 
 export const ChatSidebar: React.FC<ChatSidebarProps> = ({
-    rooms,
-    selectedRoom,
-    onRoomSelect
+  rooms,
+  selectedRoom,
+  loading,
+  onSelectRoom
 }) => {
-    const { user } = useAuth();
-    const supabase = useSupabaseClient();
-
-    const createNewChat = async () => {
-        // TODO: Implement new chat creation
-    };
-
-    return (
-        <div className="w-80 bg-white border-r border-gray-200">
-            <div className="p-4 border-b border-gray-200">
-                <button
-                    onClick={createNewChat}
-                    className="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
-                >
-                    New Chat
-                </button>
+  return (
+    <div className="w-80 border-r border-border bg-card flex flex-col">
+      <div className="p-4 border-b border-border flex justify-between items-center">
+        <h2 className="font-medium text-lg">Messages</h2>
+        <Button variant="ghost" size="icon">
+          <PlusCircle className="h-5 w-5" />
+        </Button>
+      </div>
+      <div className="overflow-y-auto flex-1">
+        {loading ? (
+          <div className="p-4 text-center text-muted-foreground">Loading...</div>
+        ) : rooms.length === 0 ? (
+          <div className="p-4 text-center text-muted-foreground">
+            No conversations yet.
+          </div>
+        ) : (
+          rooms.map(room => (
+            <div
+              key={room.id}
+              className={`p-3 cursor-pointer hover:bg-accent/50 border-b border-border flex items-start gap-3 ${
+                selectedRoom === room.id ? 'bg-accent' : ''
+              }`}
+              onClick={() => onSelectRoom(room.id)}
+            >
+              <Avatar className="h-10 w-10">
+                {room.users && room.users[0] ? (
+                  <AvatarImage src={room.users[0].avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${room.users[0].id}`} />
+                ) : null}
+                <AvatarFallback>
+                  {room.name ? room.name.charAt(0).toUpperCase() : 'C'}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <div className="flex justify-between items-center">
+                  <p className="font-medium truncate">{room.name}</p>
+                  <span className="text-xs text-muted-foreground">
+                    {formatDistanceToNow(new Date(room.last_message_at), { addSuffix: true })}
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground truncate">
+                  {room.metadata?.last_message || "Start a conversation"}
+                </p>
+              </div>
             </div>
-            <div className="overflow-y-auto h-[calc(100vh-73px)]">
-                {rooms.map((room) => (
-                    <div
-                        key={room.id}
-                        className={`p-4 cursor-pointer hover:bg-gray-50 ${
-                            selectedRoom === room.id ? 'bg-gray-100' : ''
-                        }`}
-                        onClick={() => onRoomSelect(room.id)}
-                    >
-                        <div className="flex justify-between items-start">
-                            <div>
-                                <h3 className="font-medium text-gray-900">
-                                    {room.name}
-                                </h3>
-                                {room.metadata.last_message && (
-                                    <p className="text-sm text-gray-500 truncate">
-                                        {room.metadata.last_message}
-                                    </p>
-                                )}
-                            </div>
-                            <div className="flex flex-col items-end">
-                                {room.last_message_at && (
-                                    <span className="text-xs text-gray-500">
-                                        {format(
-                                            new Date(room.last_message_at),
-                                            'MMM d, h:mm a'
-                                        )}
-                                    </span>
-                                )}
-                                {room.metadata.unread_count > 0 && (
-                                    <span className="mt-1 px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded-full">
-                                        {room.metadata.unread_count}
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-}; 
+          ))
+        )}
+      </div>
+    </div>
+  );
+};

@@ -1,281 +1,122 @@
-import { createContext, useState, useContext, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { User as SupabaseUser } from '@supabase/supabase-js';
-import { useToast } from '@/hooks/use-toast';
 
-// Define User interface
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  avatar: string;
-  isLoggedIn: boolean;
-}
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Session, User } from "@supabase/supabase-js";
 
-// Define AuthContext interface
-interface AuthContextType {
+interface AuthContextProps {
   user: User | null;
-  login: (email: string, password: string, rememberMe: boolean) => Promise<void>;
-  logout: () => void;
-  signup: (email: string, password: string, name: string, role: string) => Promise<void>;
-  isLoading: boolean;
-  error: string | null;
+  session: Session | null;
+  loading: boolean;
+  signIn: (email: string, password: string) => Promise<{
+    success: boolean;
+    error?: string;
+  }>;
+  signUp: (email: string, password: string, userData?: Record<string, any>) => Promise<{
+    success: boolean;
+    error?: string;
+  }>;
+  signOut: () => Promise<void>;
 }
 
-// Create context with default values
-const AuthContext = createContext<AuthContextType>({
-  user: null,
-  login: async () => {},
-  logout: () => {},
-  signup: async () => {},
-  isLoading: false,
-  error: null,
-});
+export const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
-// Create custom hook to use auth context
-export const useAuth = () => {
-  return useContext(AuthContext);
-};
-
-// Convert Supabase user to our User format
-const formatUser = (supabaseUser: SupabaseUser | null): User | null => {
-  if (!supabaseUser) return null;
-  
-  return {
-    id: supabaseUser.id,
-    name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || '',
-    email: supabaseUser.email || '',
-    role: supabaseUser.user_metadata?.role || 'Actor',
-    avatar: supabaseUser.user_metadata?.avatar_url || '/images/avatar.png',
-    isLoggedIn: true
-  };
-};
-
-// Auth Provider component
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Check for existing session on mount
   useEffect(() => {
-    // First set up the auth state listener to prevent missing auth events
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        const formattedUser = formatUser(session?.user || null);
-        setUser(formattedUser);
-        setIsLoading(false);
-        
-        if (event === 'SIGNED_IN' && formattedUser) {
-          toast({
-            title: "Welcome back!",
-            description: `You are logged in as ${formattedUser.name}`,
-          });
-        }
-        
-        if (event === 'SIGNED_OUT') {
-          toast({
-            title: "Signed out",
-            description: "You have been logged out successfully",
-          });
-        }
+      (event, newSession) => {
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
       }
     );
 
-    // Then check for existing session
-    const checkSession = async () => {
-      try {
-        const { data, error } = await supabase.auth.getSession();
-        if (error) throw error;
-        
-        if (data.session) {
-          const formattedUser = formatUser(data.session.user);
-          setUser(formattedUser);
-        }
-      } catch (err) {
-        console.error('Error checking auth session:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkSession();
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
+      setLoading(false);
+    });
 
     return () => {
-      subscription?.unsubscribe();
+      subscription.unsubscribe();
     };
-  }, [toast]);
+  }, []);
 
-  const login = async (email: string, password: string, rememberMe: boolean): Promise<void> => {
+  const signIn = async (email: string, password: string) => {
     try {
-      setIsLoading(true);
-      setError(null);
-      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-      
-      if (error) throw error;
-      
-      if (rememberMe) {
-        localStorage.setItem('rememberLogin', 'true');
-      } else {
-        localStorage.removeItem('rememberLogin');
+
+      if (error) {
+        return { success: false, error: error.message };
       }
+
+      return { success: true };
     } catch (error: any) {
-      setError(error.message || 'Failed to login');
-      toast({
-        title: "Login failed",
-        description: error.message || "Check your credentials and try again",
-        variant: "destructive",
-      });
-      throw error;
-    } finally {
-      setIsLoading(false);
+      return {
+        success: false,
+        error: error.message || "Failed to sign in",
+      };
     }
   };
 
-  const signup = async (email: string, password: string, name: string, role: string): Promise<void> => {
+  const signUp = async (
+    email: string, 
+    password: string, 
+    userData?: Record<string, any>
+  ) => {
     try {
-      setIsLoading(true);
-      setError(null);
-      
-      // First, create the auth account
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: {
-            name,
-            role: role || "Actor",
-            avatar_url: "/images/avatar.png"
-          }
-        }
+          data: userData || {},
+        },
       });
-      
-      if (error) throw error;
-      
-      if (data.user) {
-        // Create the user profile
-        const { error: profileError } = await supabase
-          .from('castlinker_escyvd_user_profiles')
-          .insert({
-            user_email: email,
-            display_name: name,
-            role: role || "Actor",
-            avatar_url: "/images/avatar.png",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            verified: false,
-            bio: `Hi, I'm ${name}! I'm a ${role || "Actor"} looking to connect with other film industry professionals.`,
-            headline: `${role || "Actor"} | Available for Projects`,
-            location: "Remote"
-          });
 
-        if (profileError) {
-          console.error('Error creating user profile:', profileError);
-          // Don't throw here as the auth account is already created
-          toast({
-            title: "Profile Creation Warning",
-            description: "Account created but profile setup incomplete. Please contact support.",
-            variant: "destructive",
-          });
-        } else {
-          // Create initial skills based on role
-          const defaultSkills = getDefaultSkillsForRole(role);
-          if (defaultSkills.length > 0) {
-            const skillsToInsert = defaultSkills.map(skill => ({
-              user_email: email,
-              skill,
-              created_at: new Date().toISOString()
-            }));
-            
-            const { error: skillsError } = await supabase
-              .from('castlinker_escyvd_user_skills')
-              .insert(skillsToInsert);
-
-            if (skillsError) {
-              console.error('Error creating initial skills:', skillsError);
-            }
-          }
-
-          toast({
-            title: "Account created successfully!",
-            description: "Welcome to CastLinker!",
-          });
-        }
+      if (error) {
+        return { success: false, error: error.message };
       }
+
+      return { success: true };
     } catch (error: any) {
-      setError(error.message || 'Failed to create account');
-      toast({
-        title: "Signup failed",
-        description: error.message || "Please try again with different credentials",
-        variant: "destructive",
-      });
-      throw error;
-    } finally {
-      setIsLoading(false);
+      return {
+        success: false,
+        error: error.message || "Failed to sign up",
+      };
     }
   };
 
-  // Helper function to get default skills based on role
-  const getDefaultSkillsForRole = (role: string): string[] => {
-    switch (role) {
-      case "Actor":
-        return ["Method Acting", "Improvisation", "Voice Acting"];
-      case "Director":
-        return ["Shot Composition", "Script Analysis", "Team Leadership"];
-      case "Producer":
-        return ["Project Management", "Budgeting", "Team Coordination"];
-      case "Screenwriter":
-        return ["Story Development", "Character Creation", "Dialogue Writing"];
-      case "Cinematographer":
-        return ["Camera Operation", "Lighting", "Shot Composition"];
-      case "Editor":
-        return ["Video Editing", "Sound Editing", "Color Correction"];
-      case "Sound Designer":
-        return ["Sound Mixing", "Foley Art", "Audio Post-production"];
-      case "Production Designer":
-        return ["Set Design", "Art Direction", "Visual Storytelling"];
-      default:
-        return [];
-    }
-  };
-
-  const logout = async () => {
-    setIsLoading(true);
-    try {
-      await supabase.auth.signOut();
-      localStorage.removeItem('rememberLogin');
-    } catch (error: any) {
-      console.error('Error signing out:', error);
-      toast({
-        title: "Error signing out",
-        description: error.message || "An error occurred while logging out",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const value = {
-    user,
-    login,
-    logout,
-    signup,
-    isLoading,
-    error
+  const signOut = async () => {
+    await supabase.auth.signOut();
   };
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        loading,
+        signIn,
+        signUp,
+        signOut,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 };
 
-export default AuthContext;
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+};
