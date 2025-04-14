@@ -2,7 +2,7 @@
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Check } from 'lucide-react';
-import { Message } from '@/types/chat';
+import { Message, MessageReaction as TypedMessageReaction } from '@/types/chat';
 import { format } from 'date-fns';
 
 // Define MediaAttachment from types
@@ -16,19 +16,20 @@ export interface Attachment {
   thumbnailUrl?: string;
 }
 
+// Custom reaction type that can handle both formats
+export interface MessageReaction {
+  emoji: string;
+  user_id: string;
+  count: number;
+}
+
 // Define ChatMessage type that extends Message and adds the properties we need
-export interface ChatMessage extends Message {
+export interface ChatMessage extends Omit<Message, 'reactions'> {
   senderName?: string;
   senderRole?: string;
   isMe?: boolean;
   status?: 'sent' | 'delivered' | 'seen';
-  // Make reactions compatible with either format
-  reactions?: Array<{
-    emoji: string;
-    user_id?: string;
-    userId?: string;
-    count?: number;
-  }>;
+  reactions?: MessageReaction[];
 }
 
 type MessageProps = {

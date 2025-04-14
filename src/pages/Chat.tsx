@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,14 +16,12 @@ const Chat = () => {
   const [inputMessage, setInputMessage] = useState("");
   const messageEndRef = useRef<HTMLDivElement>(null);
   
-  // Use the hook with an empty string as roomId
   const { 
     messages,
     sendMessage,
     isLoading
   } = useChat(''); 
   
-  // Use mock data from the useChat.tsx file for the sidebar
   const [mockChats, setMockChats] = useState([
     {
       id: "1",
@@ -70,7 +67,6 @@ const Chat = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchTerm = useDebounce(searchQuery, 300);
   
-  // Scroll to bottom on new messages
   useEffect(() => {
     messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -95,9 +91,7 @@ const Chat = () => {
 
   return (
     <div className="flex h-[calc(100vh-120px)] bg-[#121212] text-white">
-      {/* Sidebar */}
       <div className="w-96 border-r border-white/10 flex flex-col">
-        {/* Sidebar Header */}
         <div className="p-4 border-b border-white/10 flex justify-between items-center">
           <h2 className="text-xl font-semibold text-gold">Messages</h2>
           <div className="flex gap-2">
@@ -118,7 +112,6 @@ const Chat = () => {
           </div>
         </div>
         
-        {/* Search */}
         <div className="p-4">
           <div className="relative">
             <Search 
@@ -134,7 +127,6 @@ const Chat = () => {
           </div>
         </div>
         
-        {/* Contacts List */}
         <ScrollArea className="flex-1">
           <div className="space-y-1 p-2">
             {mockChats.map((chat) => (
@@ -186,7 +178,6 @@ const Chat = () => {
         </ScrollArea>
       </div>
       
-      {/* Main Chat */}
       <div className="flex-1 flex flex-col">
         {!activeChat ? (
           <div className="flex items-center justify-center h-full text-gray-400">
@@ -194,7 +185,6 @@ const Chat = () => {
           </div>
         ) : (
           <>
-            {/* Chat Header */}
             <div className="p-4 border-b border-white/10 flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <Avatar className="h-12 w-12">
@@ -244,7 +234,6 @@ const Chat = () => {
               </div>
             </div>
             
-            {/* Messages */}
             <ScrollArea className="flex-1 p-6">
               {isLoading ? (
                 <div className="flex justify-center p-4">
@@ -257,18 +246,15 @@ const Chat = () => {
               ) : (
                 <div className="space-y-6">
                   {messages.map((message) => {
-                    // Convert the message from useChat.Message to ChatMessage type with the required fields
-                    // Making sure the reactions format is compatible
                     const chatMessage: ChatMessage = {
                       ...message,
                       senderName: message.sender_id === user?.id ? user?.email?.split('@')[0] : 'User',
                       senderRole: message.sender_id === user?.id ? '' : 'Role',
                       isMe: message.sender_id === user?.id,
                       status: 'seen' as const,
-                      // Ensure reactions are compatible
                       reactions: message.reactions?.map(reaction => ({
                         emoji: reaction.emoji,
-                        user_id: reaction.userId || reaction.user_id,
+                        user_id: reaction.userId || reaction.user_id || user?.id || '',
                         count: reaction.count || 1
                       }))
                     };
@@ -287,7 +273,6 @@ const Chat = () => {
               )}
             </ScrollArea>
             
-            {/* Message Input */}
             <div className="p-4 border-t border-white/10">
               <div className="flex items-center gap-3">
                 <div className="flex-1 relative">
