@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Check, MapPin, Star, Film, Bookmark, Clock, MessageCircle } from 'lucide-react';
-import { TalentProfile } from '@/hooks/useTalentDirectory';
+import { TalentProfile } from '@/types/talent';
 import { Separator } from '@/components/ui/separator';
 
 type ProfileDialogProps = {

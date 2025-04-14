@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -32,8 +33,8 @@ const formSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   role: z.string().min(1, "Please select a role"),
-  agreeToTerms: z.boolean().refine(value => value === true, {
-    message: "You must agree to the terms and conditions"
+  agreeToTerms: z.literal(true, {
+    errorMap: () => ({ message: "You must agree to the terms and conditions" })
   })
 });
 

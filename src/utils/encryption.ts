@@ -1,3 +1,4 @@
+
 import { generateKeyPair, box, randomBytes, secretbox } from 'tweetnacl';
 import {
     encodeBase64,
@@ -8,7 +9,7 @@ import {
 
 export class E2EEncryption {
     // Generate a new key pair for a user
-    static generateUserKeys(): { publicKey: string; privateKey: string } {
+    generateUserKeys(): { publicKey: string; privateKey: string } {
         const keyPair = generateKeyPair();
         return {
             publicKey: encodeBase64(keyPair.publicKey),
@@ -17,7 +18,7 @@ export class E2EEncryption {
     }
 
     // Encrypt message for a recipient
-    static async encryptMessage(
+    async encryptMessage(
         message: string,
         senderPrivateKey: string,
         recipientPublicKey: string
@@ -37,7 +38,7 @@ export class E2EEncryption {
     }
 
     // Decrypt message from a sender
-    static async decryptMessage(
+    async decryptMessage(
         encrypted: string,
         iv: string,
         senderPublicKey: string,
@@ -58,7 +59,7 @@ export class E2EEncryption {
     }
 
     // Encrypt file
-    static async encryptFile(
+    async encryptFile(
         file: File
     ): Promise<{ fileKey: string; encryptedFile: Uint8Array }> {
         const fileKey = randomBytes(32);
@@ -81,7 +82,7 @@ export class E2EEncryption {
     }
 
     // Decrypt file
-    static async decryptFile(
+    async decryptFile(
         encryptedFile: Uint8Array,
         fileKey: string
     ): Promise<Uint8Array> {
@@ -99,7 +100,7 @@ export class E2EEncryption {
     }
 
     // Encrypt file key for a recipient
-    static async encryptFileKey(
+    async encryptFileKey(
         fileKey: string,
         recipientPublicKey: string,
         senderPrivateKey: string
@@ -108,7 +109,7 @@ export class E2EEncryption {
     }
 
     // Decrypt file key from a sender
-    static async decryptFileKey(
+    async decryptFileKey(
         encryptedKey: string,
         iv: string,
         senderPublicKey: string,
@@ -121,4 +122,4 @@ export class E2EEncryption {
             recipientPrivateKey
         );
     }
-} 
+}

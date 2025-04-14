@@ -1,5 +1,7 @@
+
 import { useState, useEffect, useCallback } from 'react';
-import { useSupabaseClient } from '@supabase/auth-helpers-react';
+import { v4 as uuidv4 } from 'uuid';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { E2EEncryption } from '../utils/encryption';
 import {
@@ -17,7 +19,6 @@ export const useChat = (roomId: string) => {
     const [hasMoreMessages, setHasMoreMessages] = useState(true);
     const [isLoading, setIsLoading] = useState(true);
 
-    const supabase = useSupabaseClient();
     const { user } = useAuth();
     const encryption = new E2EEncryption();
 
@@ -152,13 +153,13 @@ export const useChat = (roomId: string) => {
 
                 if (data) {
                     mediaAttachments.push({
-                        type: file.type.split('/')[0] as any,
+                        type: file.type.split('/')[0] as "image" | "audio" | "video" | "document",
                         url: data.path,
                         filename: file.name,
                         size_bytes: file.size,
                         mime_type: file.type,
                         encrypted_key: fileKey,
-                    } as MediaAttachment);
+                    });
                 }
             }
         }
@@ -329,4 +330,4 @@ export const useChat = (roomId: string) => {
         removeReaction,
         isLoading,
     };
-}; 
+};

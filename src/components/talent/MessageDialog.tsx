@@ -22,7 +22,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { MessageCircle } from 'lucide-react';
-import { TalentProfile } from '@/hooks/useTalentDirectory';
+import { TalentProfile } from '@/types/talent';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 

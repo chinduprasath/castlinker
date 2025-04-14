@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -14,7 +15,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { PROFESSION_OPTIONS, Profession } from '@/hooks/useTalentDirectory';
+import { PROFESSION_OPTIONS, type Profession } from '@/types/talent';
 
 interface ProfessionFilterProps {
   selectedProfessions: Profession[];
@@ -82,4 +83,4 @@ export function ProfessionFilter({
       </PopoverContent>
     </Popover>
   );
-} 
+}
