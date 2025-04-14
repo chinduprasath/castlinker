@@ -1,237 +1,152 @@
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Session, User } from "@supabase/supabase-js";
-import { useToast } from "@/hooks/use-toast";
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { User, Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
+import { UserProfile } from '@/types/supabase';
 
-// Extend the User type to include the fields our app needs
 export interface ExtendedUser extends User {
   name?: string;
-  avatar?: string;
+  avatar?: string; 
   role?: string;
 }
 
-interface AuthContextProps {
+export interface AuthContextProps {
   user: ExtendedUser | null;
   session: Session | null;
-  loading: boolean;
-  isLoading: boolean; // Alias for loading for compatibility
-  signIn: (email: string, password: string) => Promise<{
-    success: boolean;
-    error?: string;
-  }>;
-  signUp: (email: string, password: string, userData?: Record<string, any>) => Promise<{
-    success: boolean;
-    error?: string;
-  }>;
-  signOut: () => Promise<void>;
-  logout: () => Promise<void>; // Alias for signOut for compatibility
-  login: (email: string, password: string) => Promise<{
-    success: boolean;
-    error?: string;
-  }>; // Alias for signIn for compatibility
-  signup: (email: string, password: string, userData?: Record<string, any>) => Promise<{
-    success: boolean;
-    error?: string;
-  }>; // Alias for signUp for compatibility
+  profile: UserProfile | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  signup: (email: string, password: string, userData?: object) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
-export const AuthContext = createContext<AuthContextProps | undefined>(undefined);
+const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<ExtendedUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, newSession) => {
+      (event, newSession) => {
         setSession(newSession);
+        setUser(newSession?.user ?? null);
         
+        // If there's a user, fetch their profile
         if (newSession?.user) {
-          // Fetch user profile data to get additional fields
-          try {
-            const { data: profileData, error } = await supabase
-              .from('user_profiles')
-              .select('*')
-              .eq('id', newSession.user.id)
-              .single();
-            
-            if (profileData) {
-              // Create extended user with profile data
-              const extendedUser: ExtendedUser = {
-                ...newSession.user,
-                name: profileData.full_name,
-                avatar: profileData.avatar_url,
-                role: profileData.role
-              };
-              setUser(extendedUser);
-            } else {
-              setUser(newSession.user);
-            }
-          } catch (err) {
-            console.error("Error fetching profile:", err);
-            setUser(newSession.user);
-          }
+          setTimeout(() => {
+            fetchUserProfile(newSession.user.id);
+          }, 0);
         } else {
-          setUser(null);
+          setProfile(null);
         }
       }
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(async ({ data: { session: currentSession } }) => {
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       setSession(currentSession);
+      setUser(currentSession?.user ?? null);
       
+      // If there's a user, fetch their profile
       if (currentSession?.user) {
-        // Fetch user profile data
-        try {
-          const { data: profileData, error } = await supabase
-            .from('user_profiles')
-            .select('*')
-            .eq('id', currentSession.user.id)
-            .single();
-          
-          if (profileData) {
-            // Create extended user with profile data
-            const extendedUser: ExtendedUser = {
-              ...currentSession.user,
-              name: profileData.full_name,
-              avatar: profileData.avatar_url,
-              role: profileData.role
-            };
-            setUser(extendedUser);
-          } else {
-            setUser(currentSession.user);
-          }
-        } catch (err) {
-          console.error("Error fetching profile:", err);
-          setUser(currentSession.user);
-        }
-      } else {
-        setUser(null);
+        fetchUserProfile(currentSession.user.id);
       }
       
-      setLoading(false);
+      setIsLoading(false);
     });
 
-    return () => {
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const fetchUserProfile = async (userId: string) => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      // For now, just fetch from profiles table
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
 
-      if (error) {
-        toast({
-          title: "Error signing in",
-          description: error.message,
-          variant: "destructive",
+      if (error) throw error;
+
+      if (data) {
+        setProfile(data as UserProfile);
+        setUser(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            name: data.full_name || '',
+            avatar: data.avatar_url || '',
+            role: data.role || 'user',
+          };
         });
-        return { success: false, error: error.message };
       }
-
-      toast({
-        title: "Signed in successfully",
-        variant: "default",
-      });
-      return { success: true };
-    } catch (error: any) {
-      toast({
-        title: "Error signing in",
-        description: error.message || "An unknown error occurred",
-        variant: "destructive",
-      });
-      return {
-        success: false,
-        error: error.message || "Failed to sign in",
-      };
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
     }
   };
 
-  const signUp = async (
-    email: string, 
-    password: string, 
-    userData?: Record<string, any>
-  ) => {
+  const login = async (email: string, password: string) => {
+    setIsLoading(true);
+    
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: userData || {},
-        },
-      });
-
-      if (error) {
-        toast({
-          title: "Error signing up",
-          description: error.message,
-          variant: "destructive",
-        });
-        return { success: false, error: error.message };
-      }
-
-      toast({
-        title: "Signed up successfully",
-        description: "Please check your email for a confirmation link.",
-        variant: "default",
-      });
-      return { success: true };
-    } catch (error: any) {
-      toast({
-        title: "Error signing up",
-        description: error.message || "An unknown error occurred",
-        variant: "destructive",
-      });
-      return {
-        success: false,
-        error: error.message || "Failed to sign up",
-      };
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const signOut = async () => {
+  const signup = async (email: string, password: string, userData = {}) => {
+    setIsLoading(true);
+    
     try {
-      await supabase.auth.signOut();
-      toast({
-        title: "Signed out successfully",
-        variant: "default",
+      const { error } = await supabase.auth.signUp({ 
+        email, 
+        password, 
+        options: { 
+          data: userData
+        }
       });
-    } catch (error: any) {
-      toast({
-        title: "Error signing out",
-        description: error.message || "An unknown error occurred",
-        variant: "destructive",
-      });
+      if (error) throw error;
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Create alias functions for compatibility
-  const login = signIn;
-  const signup = signUp;
-  const logout = signOut;
+  const logout = async () => {
+    setIsLoading(true);
+    
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <AuthContext.Provider
       value={{
         user,
         session,
-        loading,
-        isLoading: loading, // Alias for compatibility
-        signIn,
-        login, // Alias for signIn
-        signUp,
-        signup, // Alias for signUp
-        signOut,
-        logout, // Alias for signOut
+        profile,
+        isAuthenticated: !!user,
+        isLoading,
+        login,
+        signup,
+        logout,
       }}
     >
       {children}
@@ -242,7 +157,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 };
+
+export default useAuth;

@@ -26,9 +26,9 @@ const TalentDirectory = () => {
     const fetchUsers = async () => {
       setLoadingUsers(true);
       try {
-        // Get users from user_profiles table
+        // Get users from profiles table
         const { data, error } = await supabase
-          .from('user_profiles')
+          .from('profiles')
           .select('*');
         
         if (error) {
@@ -38,7 +38,7 @@ const TalentDirectory = () => {
         if (data) {
           // Filter out the current user
           const filteredUsers = user ? data.filter(u => u.id !== user.id) : data;
-          setDbUsers(filteredUsers);
+          setDbUsers(filteredUsers as UserProfile[]);
         }
       } catch (error) {
         console.error('Error fetching users:', error);
@@ -54,13 +54,13 @@ const TalentDirectory = () => {
 
     fetchUsers();
 
-    // Subscribe to changes in user_profiles table
+    // Subscribe to changes in profiles table
     const channel = supabase
-      .channel('user_profiles_changes')
+      .channel('profiles_changes')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
-        table: 'user_profiles'
+        table: 'profiles'
       }, () => {
         fetchUsers();
       })
@@ -87,7 +87,7 @@ const TalentDirectory = () => {
       const { data, error } = await supabase
         .rpc('create_dm_chat_room', {
           other_user_id: userId
-        });
+        }) as { data: any, error: any };
       
       if (error) throw error;
       

@@ -22,15 +22,28 @@ export const ChatPage: React.FC = () => {
       try {
         // Get chat rooms through RPC function
         const { data: roomsData, error: roomsError } = await supabase
-          .rpc('get_user_chat_rooms');
+          .rpc('get_user_chat_rooms') as { data: any, error: any };
         
         if (roomsError) throw roomsError;
         
         if (roomsData && roomsData.length > 0) {
-          setRooms(roomsData);
+          // Format the data to match ChatRoom type
+          const formattedRooms = roomsData.map((room: any) => ({
+            id: room.id,
+            name: room.name,
+            type: room.type || 'one_to_one',
+            created_at: room.created_at,
+            updated_at: room.updated_at,
+            last_message_at: room.last_message_at || room.created_at,
+            metadata: room.metadata || {},
+            users: room.users || []
+          }));
+          
+          setRooms(formattedRooms);
+          
           // If we have rooms and no selected room, select the first one
-          if (!selectedRoom) {
-            setSelectedRoom(roomsData[0].id);
+          if (!selectedRoom && formattedRooms.length > 0) {
+            setSelectedRoom(formattedRooms[0].id);
           }
         } else {
           setRooms([]);

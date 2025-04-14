@@ -26,16 +26,26 @@ import {
   Trash, 
   X 
 } from 'lucide-react';
-import { ChatMessage as MessageType, Attachment } from '@/hooks/useChat';
 
-type MessageProps = {
-  message: MessageType;
+// Define types locally instead of importing
+interface Attachment {
+  id: string;
+  messageId: string;
+  fileUrl: string;
+  fileName: string;
+  fileType: string;
+  fileSize: number;
+  thumbnailUrl?: string;
+}
+
+interface MessageProps {
+  message: any; // Use any temporarily to fix type issues
   onEdit: (messageId: string, content: string) => Promise<boolean>;
   onDelete: (messageId: string, forEveryone: boolean) => Promise<boolean>;
   onReact: (messageId: string, emoji: string) => Promise<boolean>;
   showAvatar?: boolean;
   isLastInGroup?: boolean;
-};
+}
 
 export function ChatMessage({ 
   message, 
@@ -190,7 +200,7 @@ export function ChatMessage({
                 : 'bg-card/80 border border-gold/5 rounded-bl-none shadow-sm'
             } ${showAvatar ? 'mt-2' : 'mt-1'}`}
           >
-            {message.isDeleted ? (
+            {message.is_deleted ? (
               <p className="text-sm italic text-foreground/60">{message.content}</p>
             ) : (
               <>
@@ -199,7 +209,7 @@ export function ChatMessage({
                 {/* Attachments */}
                 {message.attachments && message.attachments.length > 0 && (
                   <div className="mt-1 space-y-2">
-                    {message.attachments.map((attachment) => (
+                    {message.attachments.map((attachment: Attachment) => (
                       <div key={attachment.id}>
                         {renderAttachment(attachment)}
                       </div>
@@ -210,8 +220,8 @@ export function ChatMessage({
                 {/* Reactions */}
                 {message.reactions && message.reactions.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-1.5">
-                    {Array.from(new Set(message.reactions.map(r => r.emoji))).map(emoji => {
-                      const count = message.reactions?.filter(r => r.emoji === emoji).length || 0;
+                    {Array.from(new Set(message.reactions.map((r: any) => r.emoji))).map((emoji: string) => {
+                      const count = message.reactions?.filter((r: any) => r.emoji === emoji).length || 0;
                       return (
                         <div 
                           key={emoji} 
@@ -229,7 +239,7 @@ export function ChatMessage({
           </div>
           
           {/* Message actions */}
-          {!message.isDeleted && (
+          {!message.is_deleted && (
             <div className={`absolute ${message.isMe ? 'left-0' : 'right-0'} top-0 -m-2 opacity-0 group-hover:opacity-100 transition-opacity`}>
               <div className="flex items-center bg-card/95 border border-border rounded-full shadow-md">
                 {/* Emoji reaction button */}
@@ -259,7 +269,7 @@ export function ChatMessage({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align={message.isMe ? "end" : "start"}>
-                    {message.isMe && (
+                    {message.sender_id === message.user?.id && (
                       <>
                         <DropdownMenuItem onClick={startEditing}>
                           <Edit className="h-4 w-4 mr-2" />
@@ -282,7 +292,7 @@ export function ChatMessage({
               {/* Quick emoji reactions */}
               {emojiPickerOpen && (
                 <div className="absolute top-8 bg-card/95 border border-border rounded-full p-1 shadow-lg flex z-10">
-                  {quickEmojis.map(emoji => (
+                  {quickEmojis.map((emoji) => (
                     <button
                       key={emoji}
                       className="h-8 w-8 flex items-center justify-center hover:bg-background/50 rounded-full text-lg"
@@ -302,8 +312,8 @@ export function ChatMessage({
           {/* Message info */}
           {isLastInGroup && (
             <div className={`flex items-center text-xs text-foreground/60 mt-1 px-1 ${message.isMe ? 'justify-end' : 'justify-start'}`}>
-              {message.isEdited && <span className="mr-1 italic">Edited</span>}
-              <span>{message.timestamp}</span>
+              {message.is_edited && <span className="mr-1 italic">Edited</span>}
+              <span>{message.created_at}</span>
               {renderStatus()}
             </div>
           )}

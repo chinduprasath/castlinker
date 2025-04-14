@@ -14,27 +14,17 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Shield, Loader2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
 
 const formSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
+  fullName: z.string().min(2, "Name is required"),
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  role: z.string().min(1, "Please select a role"),
-  agreeToTerms: z.boolean().refine(value => value === true, {
-    message: "You must agree to the terms and conditions"
-  })
+  confirmPassword: z.string().min(6, "Password must be at least 6 characters"),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -44,17 +34,15 @@ const SignupForm = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
+      fullName: "",
       email: "",
       password: "",
-      role: "",
-      agreeToTerms: false,
-    },
+      confirmPassword: "",
+    }
   });
 
   const onSubmit = async (data: FormValues) => {
@@ -62,17 +50,15 @@ const SignupForm = () => {
     setError(null);
     
     try {
-      await signup(data.email, data.password, data.name, data.role);
-      toast({
-        title: "Account created!",
-        description: "You can now login with your credentials",
+      await signup(data.email, data.password, {
+        name: data.fullName,
       });
       navigate("/dashboard");
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
       } else {
-        setError("Failed to create account. Please try again.");
+        setError("Failed to sign up. Please try again.");
       }
     } finally {
       setIsLoading(false);
@@ -96,7 +82,7 @@ const SignupForm = () => {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <FormField
             control={form.control}
-            name="name"
+            name="fullName"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Full Name</FormLabel>
@@ -151,62 +137,19 @@ const SignupForm = () => {
           
           <FormField
             control={form.control}
-            name="role"
+            name="confirmPassword"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>I am a</FormLabel>
-                <Select 
-                  onValueChange={field.onChange} 
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger className="bg-background/70">
-                      <SelectValue placeholder="Select your role" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="Actor">Actor</SelectItem>
-                    <SelectItem value="Director">Director</SelectItem>
-                    <SelectItem value="Producer">Producer</SelectItem>
-                    <SelectItem value="Screenwriter">Screenwriter</SelectItem>
-                    <SelectItem value="Cinematographer">Cinematographer</SelectItem>
-                    <SelectItem value="Casting Director">Casting Director</SelectItem>
-                    <SelectItem value="Agent">Agent</SelectItem>
-                    <SelectItem value="Production Company">Production Company</SelectItem>
-                    <SelectItem value="Editor">Editor</SelectItem>
-                    <SelectItem value="Sound Designer">Sound Designer</SelectItem>
-                    <SelectItem value="Production Designer">Production Designer</SelectItem>
-                    <SelectItem value="Costume Designer">Costume Designer</SelectItem>
-                    <SelectItem value="Makeup Artist">Makeup Artist</SelectItem>
-                    <SelectItem value="Stunt Coordinator">Stunt Coordinator</SelectItem>
-                    <SelectItem value="Visual Effects Artist">Visual Effects Artist</SelectItem>
-                    <SelectItem value="Music Composer">Music Composer</SelectItem>
-                    <SelectItem value="Art Director">Art Director</SelectItem>
-                    <SelectItem value="Location Manager">Location Manager</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="agreeToTerms"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md p-4 bg-gold/5">
+                <FormLabel>Confirm Password</FormLabel>
                 <FormControl>
-                  <Checkbox
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
+                  <Input 
+                    type="password" 
+                    placeholder="••••••••" 
+                    {...field}
+                    className="bg-background/70" 
                   />
                 </FormControl>
-                <div className="space-y-1 leading-none">
-                  <FormLabel className="text-sm font-normal cursor-pointer">
-                    I agree to the <Link to="/terms" className="text-gold hover:text-gold/80">Terms of Service</Link> and <Link to="/privacy" className="text-gold hover:text-gold/80">Privacy Policy</Link>
-                  </FormLabel>
-                  <FormMessage />
-                </div>
+                <FormMessage />
               </FormItem>
             )}
           />

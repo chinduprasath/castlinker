@@ -1,5 +1,5 @@
 
--- Function to get all chat rooms for the current user
+-- Function to get all chat rooms for a user
 CREATE OR REPLACE FUNCTION public.get_user_chat_rooms()
 RETURNS TABLE (
   id UUID,
@@ -9,8 +9,7 @@ RETURNS TABLE (
   updated_at TIMESTAMPTZ,
   last_message_at TIMESTAMPTZ,
   metadata JSONB,
-  users JSONB,
-  unread INTEGER
+  users JSONB
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -19,16 +18,7 @@ BEGIN
   RETURN QUERY
   SELECT 
     cr.id,
-    CASE 
-      WHEN cr.type = 'one_to_one' THEN 
-        COALESCE(
-          (SELECT up.full_name FROM public.chat_room_members crm2
-           JOIN public.user_profiles up ON crm2.user_id = up.id
-           WHERE crm2.room_id = cr.id AND crm2.user_id != auth.uid() LIMIT 1),
-           cr.name
-        )
-      ELSE cr.name
-    END as name,
+    cr.name,
     cr.type,
     cr.created_at,
     cr.updated_at,
@@ -44,23 +34,19 @@ BEGIN
             'role', up.role
           )
         )
-        FROM public.chat_room_members crm2
-        JOIN public.user_profiles up ON crm2.user_id = up.id
-        WHERE crm2.room_id = cr.id AND crm2.user_id != auth.uid()
+        FROM public.chat_room_members crm
+        JOIN public.profiles up ON crm.user_id = up.id
+        WHERE crm.room_id = cr.id AND crm.user_id != auth.uid()
       ),
       '[]'::jsonb
-    ) as users,
-    COALESCE(
-      (SELECT COUNT(*) FROM public.messages m
-       WHERE m.room_id = cr.id
-       AND m.created_at > crm.last_read_at),
-       0
-    )::INTEGER as unread
+    ) as users
   FROM 
     public.chat_rooms cr
-  JOIN
-    public.chat_room_members crm ON cr.id = crm.room_id AND crm.user_id = auth.uid()
+  JOIN 
+    public.chat_room_members crm ON cr.id = crm.room_id
+  WHERE 
+    crm.user_id = auth.uid()
   ORDER BY 
-    cr.last_message_at DESC;
+    cr.last_message_at DESC NULLS LAST;
 END;
 $$;

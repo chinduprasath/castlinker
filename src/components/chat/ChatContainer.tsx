@@ -29,23 +29,26 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ roomId }) => {
     
     const fetchRoomInfo = async () => {
       try {
-        // Get room details using the function for now
-        const { data: roomData, error: roomError } = await supabase
-          .rpc('get_chat_room', { room_id: roomId });
+        // Get room details using the RPC function
+        const { data: roomData, error: roomError } = await supabase.rpc(
+          'get_chat_room',
+          { room_id: roomId }
+        ) as { data: any, error: any };
         
         if (roomError) throw roomError;
         
-        // For now, set basic room info
-        if (roomData) {
+        if (roomData && roomData.length > 0) {
+          const room = roomData[0];
+          // Set the room info based on the returned data
           setRoomInfo({
-            id: roomId,
-            name: roomData.name || 'Chat',
-            type: roomData.type || 'one_to_one',
-            created_at: roomData.created_at,
-            updated_at: roomData.updated_at,
-            last_message_at: roomData.last_message_at,
-            metadata: roomData.metadata || {},
-            users: roomData.users || []
+            id: room.id || roomId,
+            name: room.name || 'Chat',
+            type: room.type || 'one_to_one',
+            created_at: room.created_at || new Date().toISOString(),
+            updated_at: room.updated_at || new Date().toISOString(),
+            last_message_at: room.last_message_at || new Date().toISOString(),
+            metadata: room.metadata || {},
+            users: room.users || []
           });
         }
       } catch (error) {
@@ -61,14 +64,31 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ roomId }) => {
     const fetchMessages = async () => {
       setLoading(true);
       try {
-        // Get messages for this room using function
-        const { data: messagesData, error: messagesError } = await supabase
-          .rpc('get_room_messages', { room_id: roomId });
+        // Get messages for this room using RPC function
+        const { data: messagesData, error: messagesError } = await supabase.rpc(
+          'get_room_messages',
+          { room_id: roomId }
+        ) as { data: any, error: any };
         
         if (messagesError) throw messagesError;
         
         if (messagesData && messagesData.length > 0) {
-          setMessages(messagesData);
+          // Transform the data to match Message type
+          const formattedMessages = messagesData.map((msg: any) => ({
+            id: msg.id,
+            room_id: msg.room_id,
+            sender_id: msg.sender_id,
+            content: msg.content,
+            type: msg.type,
+            metadata: msg.metadata,
+            created_at: msg.created_at,
+            updated_at: msg.updated_at,
+            is_edited: msg.is_edited,
+            is_deleted: msg.is_deleted,
+            reply_to_id: msg.reply_to_id,
+            sender: msg.sender
+          }));
+          setMessages(formattedMessages);
         } else {
           setMessages([]);
         }
@@ -118,11 +138,14 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ roomId }) => {
     if (!user || !newMessage.trim() || !roomId) return;
     
     try {
-      const { data, error } = await supabase.rpc('send_message', {
-        room_id: roomId,
-        content: newMessage.trim(),
-        message_type: 'text'
-      });
+      const { data, error } = await supabase.rpc(
+        'send_message',
+        {
+          room_id: roomId,
+          content: newMessage.trim(),
+          message_type: 'text'
+        }
+      );
       
       if (error) throw error;
       
