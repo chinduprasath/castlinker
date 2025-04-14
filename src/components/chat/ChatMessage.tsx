@@ -22,6 +22,13 @@ export interface ChatMessage extends Message {
   senderRole?: string;
   isMe?: boolean;
   status?: 'sent' | 'delivered' | 'seen';
+  // Make reactions compatible with either format
+  reactions?: Array<{
+    emoji: string;
+    user_id?: string;
+    userId?: string;
+    count?: number;
+  }>;
 }
 
 type MessageProps = {

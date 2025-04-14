@@ -6,11 +6,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Send, Phone, Video, Info, Plus, Search, Filter } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/hooks/useAuth";
-import { ChatMessage as ChatMessageComponent } from "@/components/chat/ChatMessage";
+import { ChatMessage as ChatMessageComponent, ChatMessage } from "@/components/chat/ChatMessage";
 import { useChat } from "@/hooks/useChat";
 import { useDebounce } from "@/hooks/useDebounce";
 import { EmojiPicker } from "@/components/chat/EmojiPicker";
-import { Message as ChatMessage } from "@/types/chat";
+import { Message } from "@/types/chat";
 
 const Chat = () => {
   const { user } = useAuth();
@@ -258,12 +258,19 @@ const Chat = () => {
                 <div className="space-y-6">
                   {messages.map((message) => {
                     // Convert the message from useChat.Message to ChatMessage type with the required fields
-                    const chatMessage = {
+                    // Making sure the reactions format is compatible
+                    const chatMessage: ChatMessage = {
                       ...message,
                       senderName: message.sender_id === user?.id ? user?.email?.split('@')[0] : 'User',
                       senderRole: message.sender_id === user?.id ? '' : 'Role',
                       isMe: message.sender_id === user?.id,
-                      status: 'seen' as const
+                      status: 'seen' as const,
+                      // Ensure reactions are compatible
+                      reactions: message.reactions?.map(reaction => ({
+                        emoji: reaction.emoji,
+                        user_id: reaction.userId || reaction.user_id,
+                        count: reaction.count || 1
+                      }))
                     };
                     
                     return (

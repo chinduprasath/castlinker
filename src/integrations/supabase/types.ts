@@ -347,6 +347,65 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_x1yc7_conversations: {
+        Row: {
+          created_at: string
+          creator_email: string
+          id: number
+          last_message: string | null
+          last_message_at: string | null
+          participant_email: string
+        }
+        Insert: {
+          created_at?: string
+          creator_email: string
+          id?: number
+          last_message?: string | null
+          last_message_at?: string | null
+          participant_email: string
+        }
+        Update: {
+          created_at?: string
+          creator_email?: string
+          id?: number
+          last_message?: string | null
+          last_message_at?: string | null
+          participant_email?: string
+        }
+        Relationships: []
+      }
+      chat_x1yc7_messages: {
+        Row: {
+          content: string
+          conversation_id: number
+          created_at: string
+          id: number
+          sender_email: string
+        }
+        Insert: {
+          content: string
+          conversation_id: number
+          created_at?: string
+          id?: number
+          sender_email: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: number
+          created_at?: string
+          id?: number
+          sender_email?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_x1yc7_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chat_x1yc7_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           created_at: string | null
