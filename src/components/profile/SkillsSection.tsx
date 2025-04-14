@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -9,6 +8,7 @@ import { Form, FormField, FormItem, FormLabel, FormControl } from "@/components/
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { useForm } from "react-hook-form";
+import { Textarea } from "@/components/ui/textarea";
 
 const SkillsSection = () => {
   const [isEditingActing, setIsEditingActing] = useState(false);
@@ -16,7 +16,6 @@ const SkillsSection = () => {
   const [isEditingSpecial, setIsEditingSpecial] = useState(false);
   const [isEditingPhysical, setIsEditingPhysical] = useState(false);
   
-  // In a real app, this data would come from API/context
   const skills = {
     acting: [
       { name: "Method Acting", level: 90 },
@@ -51,7 +50,6 @@ const SkillsSection = () => {
     ]
   };
 
-  // Forms for each section
   const actingForm = useForm({
     defaultValues: {
       acting: skills.acting.map(skill => ({
@@ -108,7 +106,6 @@ const SkillsSection = () => {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {/* Acting Skills */}
       <Card className="bg-card-gradient border-gold/10">
         <CardContent className="p-6">
           <div className="flex justify-between items-center mb-4">
@@ -140,7 +137,6 @@ const SkillsSection = () => {
         </CardContent>
       </Card>
       
-      {/* Technical Skills */}
       <Card className="bg-card-gradient border-gold/10">
         <CardContent className="p-6">
           <div className="flex justify-between items-center mb-4">
@@ -172,7 +168,6 @@ const SkillsSection = () => {
         </CardContent>
       </Card>
       
-      {/* Special Skills */}
       <Card className="bg-card-gradient border-gold/10">
         <CardContent className="p-6">
           <div className="flex justify-between items-center mb-4">
@@ -199,7 +194,6 @@ const SkillsSection = () => {
         </CardContent>
       </Card>
       
-      {/* Physical Attributes */}
       <Card className="bg-card-gradient border-gold/10">
         <CardContent className="p-6">
           <div className="flex justify-between items-center mb-4">
@@ -224,7 +218,6 @@ const SkillsSection = () => {
         </CardContent>
       </Card>
 
-      {/* Edit Dialogs */}
       <EditProfileDialog
         title="Edit Acting Skills"
         description="Update your acting skills and proficiency levels"
