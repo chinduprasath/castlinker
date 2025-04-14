@@ -1,115 +1,253 @@
 
-import { useState, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Send } from "lucide-react";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Send, Phone, Video, Info, Plus, Search, Filter } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/hooks/useAuth";
+import { ChatMessage } from "@/components/chat/ChatMessage";
+import { useChat } from "@/hooks/useChat";
+import { useDebounce } from "@/hooks/useDebounce";
 
 const Chat = () => {
   const { user } = useAuth();
-  const [messages, setMessages] = useState([
-    { id: "1", sender: "Sarah", content: "Hi there! How's your project coming along?", isMe: false },
-    { id: "2", sender: user?.email || "You", content: "It's going well, thanks for asking!", isMe: true },
-    { id: "3", sender: "Sarah", content: "That's great to hear! Let me know if you need any help with casting.", isMe: false },
-  ]);
-  const [newMessage, setNewMessage] = useState("");
+  const [inputMessage, setInputMessage] = useState("");
   const messageEndRef = useRef<HTMLDivElement>(null);
-
-  const handleSend = () => {
-    if (newMessage.trim()) {
-      setMessages([
-        ...messages,
-        { 
-          id: Date.now().toString(), 
-          sender: user?.email || "You", 
-          content: newMessage, 
-          isMe: true 
-        },
-      ]);
-      setNewMessage("");
+  const { 
+    chats, 
+    activeChat, 
+    messages, 
+    setActiveChat, 
+    sendMessage, 
+    searchQuery,
+    setSearchQuery,
+    isLoading
+  } = useChat();
+  
+  const debouncedSearchTerm = useDebounce(searchQuery, 300);
+  
+  // Scroll to bottom on new messages
+  useEffect(() => {
+    messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+  
+  const handleSendMessage = () => {
+    if (inputMessage.trim()) {
+      sendMessage(inputMessage);
+      setInputMessage("");
     }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      handleSendMessage();
     }
   };
 
   return (
-    <Card className="h-[calc(100vh-120px)] border-none rounded-xl overflow-hidden shadow-2xl bg-card/95">
-      <CardHeader className="px-6 py-3 border-b border-gold/10 bg-card/40 backdrop-blur-sm">
-        <div className="flex items-center gap-3">
-          <Avatar className="h-10 w-10 border border-gold/10">
-            <AvatarImage src="/placeholder.svg" />
-            <AvatarFallback className="bg-gold/10 text-gold">S</AvatarFallback>
-          </Avatar>
-          <div>
-            <h3 className="font-semibold text-lg gold-gradient-text">Sarah Johnson</h3>
-            <div className="flex items-center gap-2 text-sm text-foreground/60">
-              <span className="h-2 w-2 rounded-full bg-green-500"></span>
-              <span>Online</span>
-              <span>•</span>
-              <span>Casting Director</span>
-            </div>
+    <div className="flex h-[calc(100vh-120px)] bg-[#121212] text-white">
+      {/* Sidebar */}
+      <div className="w-96 border-r border-white/10 flex flex-col">
+        {/* Sidebar Header */}
+        <div className="p-4 border-b border-white/10 flex justify-between items-center">
+          <h2 className="text-xl font-semibold text-gold">Messages</h2>
+          <div className="flex gap-2">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-gold hover:bg-gold/10 rounded-full"
+            >
+              <Plus size={20} />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-gold hover:bg-gold/10 rounded-full"
+            >
+              <Filter size={20} />
+            </Button>
           </div>
         </div>
-      </CardHeader>
-      
-      <CardContent className="p-0 flex-1 overflow-hidden">
-        <ScrollArea className="h-[calc(100vh-220px)] p-6">
-          <div className="space-y-4">
-            {messages.map((message) => (
-              <div key={message.id} className={`flex ${message.isMe ? "justify-end" : "justify-start"}`}>
-                <div className={`flex ${message.isMe ? "flex-row-reverse" : "flex-row"} gap-2 max-w-[75%] group`}>
-                  {!message.isMe && (
-                    <Avatar className="h-8 w-8 mt-1">
-                      <AvatarImage src="/placeholder.svg" />
-                      <AvatarFallback className="bg-gold/10 text-gold">S</AvatarFallback>
-                    </Avatar>
+        
+        {/* Search */}
+        <div className="p-4">
+          <div className="relative">
+            <Search 
+              size={18} 
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" 
+            />
+            <Input 
+              placeholder="Search conversations..." 
+              className="pl-10 bg-[#222222] border-0 text-white placeholder:text-gray-400 focus-visible:ring-gold/30"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+        </div>
+        
+        {/* Contacts List */}
+        <ScrollArea className="flex-1">
+          <div className="space-y-1 p-2">
+            {chats.map((chat) => (
+              <div 
+                key={chat.id}
+                onClick={() => setActiveChat(chat)}
+                className={`
+                  flex items-center gap-3 p-3 rounded-lg cursor-pointer
+                  ${activeChat?.id === chat.id ? 'bg-gold/20 border-l-2 border-gold' : 'hover:bg-[#222222]'}
+                `}
+              >
+                <div className="relative">
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage src={chat.avatar} alt={chat.name} />
+                    <AvatarFallback className={`
+                      ${activeChat?.id === chat.id ? 'bg-gold/20 text-gold' : 'bg-[#333333] text-gray-300'}
+                    `}>
+                      {chat.name.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  {chat.online && (
+                    <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#121212] rounded-full"></span>
                   )}
-                  
-                  <div className="relative">
-                    <div 
-                      className={`py-2.5 px-3.5 rounded-2xl ${
-                        message.isMe 
-                          ? 'bg-gold/20 text-foreground rounded-br-none shadow-sm' 
-                          : 'bg-card/80 border border-gold/5 rounded-bl-none shadow-sm'
-                      } mt-1`}
-                    >
-                      <p className="text-sm">{message.content}</p>
-                    </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-center">
+                    <h3 className={`font-medium truncate ${activeChat?.id === chat.id ? 'text-gold' : 'text-white'}`}>
+                      {chat.name}
+                    </h3>
+                    <span className="text-xs text-gray-400">{chat.lastMessageTime}</span>
                   </div>
+                  <div className="flex items-center gap-1">
+                    <p className="text-sm text-gray-400 truncate">
+                      {chat.lastMessage}
+                    </p>
+                    {chat.unread > 0 && (
+                      <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-medium bg-gold text-black rounded-full">
+                        {chat.unread}
+                      </span>
+                    )}
+                  </div>
+                  {chat.role && (
+                    <span className="text-xs text-gray-500">{chat.role}</span>
+                  )}
                 </div>
               </div>
             ))}
-            <div ref={messageEndRef} />
           </div>
         </ScrollArea>
-      </CardContent>
+      </div>
       
-      <CardFooter className="p-4 border-t border-gold/10 bg-card/40 backdrop-blur-sm mt-auto">
-        <div className="flex items-center w-full gap-3">
-          <Input
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyDown={handleKeyPress}
-            placeholder="Type a message..."
-            className="bg-background/50 border-gold/10 focus-visible:ring-gold/30"
-          />
-          <Button 
-            onClick={handleSend} 
-            className="rounded-full h-10 w-10 p-2.5 bg-gold hover:bg-gold/90 text-black"
-          >
-            <Send className="h-5 w-5" />
-          </Button>
-        </div>
-      </CardFooter>
-    </Card>
+      {/* Main Chat */}
+      <div className="flex-1 flex flex-col">
+        {!activeChat ? (
+          <div className="flex items-center justify-center h-full text-gray-400">
+            Select a conversation to start messaging
+          </div>
+        ) : (
+          <>
+            {/* Chat Header */}
+            <div className="p-4 border-b border-white/10 flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <Avatar className="h-12 w-12">
+                  <AvatarImage src={activeChat.avatar} alt={activeChat.name} />
+                  <AvatarFallback className="bg-gold/20 text-gold">{activeChat.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <h2 className="text-lg font-semibold text-gold">{activeChat.name}</h2>
+                  <div className="flex items-center gap-2">
+                    {activeChat.online && (
+                      <>
+                        <span className="h-2 w-2 rounded-full bg-green-500"></span>
+                        <span className="text-sm text-gray-300">Online</span>
+                      </>
+                    )}
+                    {activeChat.role && (
+                      <>
+                        <span className="text-gray-400">•</span>
+                        <span className="text-sm text-gray-300">{activeChat.role}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  className="rounded-full text-gold hover:bg-gold/10"
+                >
+                  <Phone size={20} />
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  className="rounded-full text-gold hover:bg-gold/10"
+                >
+                  <Video size={20} />
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  className="rounded-full text-gold hover:bg-gold/10"
+                >
+                  <Info size={20} />
+                </Button>
+              </div>
+            </div>
+            
+            {/* Messages */}
+            <ScrollArea className="flex-1 p-6">
+              {isLoading ? (
+                <div className="flex justify-center p-4">
+                  <span className="text-gray-400">Loading messages...</span>
+                </div>
+              ) : messages.length === 0 ? (
+                <div className="flex justify-center p-4">
+                  <span className="text-gray-400">No messages yet</span>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {messages.map((message, index) => (
+                    <ChatMessage
+                      key={message.id}
+                      message={{
+                        ...message,
+                        senderName: message.isMe ? user?.email?.split('@')[0] : activeChat.name,
+                        senderRole: message.isMe ? '' : activeChat.role
+                      }}
+                      showAvatar={true}
+                      isLastInGroup={true}
+                    />
+                  ))}
+                  <div ref={messageEndRef} />
+                </div>
+              )}
+            </ScrollArea>
+            
+            {/* Message Input */}
+            <div className="p-4 border-t border-white/10">
+              <div className="flex items-center gap-3">
+                <Input 
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  onKeyDown={handleKeyPress}
+                  placeholder="Type a message..."
+                  className="bg-[#222222] border-0 text-white placeholder:text-gray-400 focus-visible:ring-gold/30"
+                />
+                <Button 
+                  onClick={handleSendMessage} 
+                  className="rounded-full bg-gold hover:bg-gold/90 text-black"
+                >
+                  <Send size={18} />
+                </Button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
   );
 };
 

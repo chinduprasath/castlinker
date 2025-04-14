@@ -1,9 +1,9 @@
 
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { MoreHorizontal, ThumbsUp } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { Message, Attachment as MessageAttachment } from '@/hooks/useChat';
+import { format } from 'date-fns';
 
 // Define Attachment type for ChatMessage component that is compatible with useChat's Attachment
 export interface Attachment extends MessageAttachment {
@@ -15,13 +15,15 @@ export interface ChatMessage extends Omit<Message, 'attachments'> {
   // Override attachments with our local type
   attachments?: Attachment[];
   isMe?: boolean;
+  senderName?: string;
+  senderRole?: string;
 }
 
 type MessageProps = {
   message: ChatMessage;
-  onEdit: (messageId: string, content: string) => Promise<boolean>;
-  onDelete: (messageId: string, forEveryone: boolean) => Promise<boolean>;
-  onReact: (messageId: string, emoji: string) => Promise<boolean>;
+  onEdit?: (messageId: string, content: string) => Promise<boolean>;
+  onDelete?: (messageId: string, forEveryone: boolean) => Promise<boolean>;
+  onReact?: (messageId: string, emoji: string) => Promise<boolean>;
   showAvatar?: boolean;
   isLastInGroup?: boolean;
 };
@@ -34,41 +36,53 @@ export function ChatMessage({
   showAvatar = true, 
   isLastInGroup = true 
 }: MessageProps) {
-  // Simple implementation for now
   return (
-    <div className={`flex ${message.isMe ? 'justify-end' : 'justify-start'} mb-4`}>
+    <div className={`flex ${message.isMe ? 'justify-end' : 'justify-start'} mb-4 group`}>
       {!message.isMe && showAvatar && (
-        <Avatar className="h-8 w-8 mr-2">
-          <AvatarImage src="/placeholder.svg" />
-          <AvatarFallback>U</AvatarFallback>
+        <Avatar className="h-10 w-10 mr-3 mt-1">
+          <AvatarImage src="/placeholder.svg" alt={message.senderName || 'User'} />
+          <AvatarFallback>{(message.senderName || 'U').charAt(0)}</AvatarFallback>
         </Avatar>
       )}
       
-      <div className={`p-3 rounded-lg ${message.isMe ? 'bg-blue-100' : 'bg-gray-100'}`}>
-        <p>{message.content}</p>
-        
-        {message.is_edited && (
-          <span className="text-xs text-gray-500">(edited)</span>
+      <div className="flex flex-col max-w-[80%]">
+        {!message.isMe && showAvatar && (
+          <div className="mb-1 text-sm text-gold/80">
+            {message.senderName && <span className="font-medium">{message.senderName}</span>}
+            {message.senderRole && <span className="text-xs ml-2 text-gold/60">{message.senderRole}</span>}
+          </div>
         )}
         
-        <div className="flex gap-2 mt-1">
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={() => onReact(message.id, '👍')}
-          >
-            <ThumbsUp size={16} />
-          </Button>
+        <div className={`p-4 rounded-2xl ${message.isMe 
+          ? 'bg-gold/20 text-white rounded-tr-none' 
+          : 'bg-[#222222] text-white rounded-tl-none'}`}
+        >
+          <p className="text-sm">{message.content}</p>
           
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={() => onDelete(message.id, false)}
-          >
-            <MoreHorizontal size={16} />
-          </Button>
+          {message.is_edited && (
+            <span className="text-xs text-gold/40 mt-1 inline-block">(edited)</span>
+          )}
+        </div>
+        
+        <div className={`flex items-center mt-1 text-xs ${message.isMe ? 'justify-end' : 'justify-start'}`}>
+          <span className="text-gray-400">
+            {message.created_at && format(new Date(message.created_at), 'h:mm a')}
+          </span>
+          
+          {message.isMe && message.status === 'seen' && (
+            <div className="ml-1 text-blue-400">
+              <Check size={14} />
+            </div>
+          )}
         </div>
       </div>
+      
+      {message.isMe && showAvatar && (
+        <Avatar className="h-10 w-10 ml-3 mt-1">
+          <AvatarImage src="/placeholder.svg" alt="You" />
+          <AvatarFallback>{(message.senderName || 'Y').charAt(0)}</AvatarFallback>
+        </Avatar>
+      )}
     </div>
   );
 }
