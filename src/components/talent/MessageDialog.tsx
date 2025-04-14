@@ -1,145 +1,89 @@
 
 import { useState } from 'react';
-import { z } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle,
-  DialogFooter,
-  DialogDescription
-} from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { MessageCircle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Send } from 'lucide-react';
 import { TalentProfile } from '@/types/talent';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
 
-const formSchema = z.object({
-  message: z.string().min(10, "Message must be at least 10 characters"),
-});
-
-type MessageDialogProps = {
+interface MessageDialogProps {
+  talent: TalentProfile | null;
   isOpen: boolean;
   onClose: () => void;
-  profile: TalentProfile | null;
-  onSendMessage: (talentId: string, message: string) => Promise<{ success: boolean }>;
-};
+}
 
-export function MessageDialog({ isOpen, onClose, profile, onSendMessage }: MessageDialogProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
-  const { user } = useAuth();
+export function MessageDialog({ talent, isOpen, onClose }: MessageDialogProps) {
+  const [subject, setSubject] = useState('');
+  const [message, setMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      message: ""
-    }
-  });
-
-  const handleSubmit = async (values: z.infer<typeof formSchema>) => {
-    if (!profile || !user) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to send messages",
-        variant: "destructive",
-      });
-      return;
-    }
+  const handleSend = async () => {
+    if (!talent || !subject.trim() || !message.trim()) return;
     
-    setIsSubmitting(true);
+    setIsLoading(true);
     
     try {
-      const { success } = await onSendMessage(profile.id, values.message);
+      // In a real app, this would send the message to the API
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      if (success) {
-        form.reset();
-        toast({
-          title: "Message sent",
-          description: `Your message to ${profile.name} has been sent successfully.`,
-        });
-        onClose();
-      } else {
-        throw new Error("Failed to send message");
-      }
+      // Success
+      setSubject('');
+      setMessage('');
+      onClose();
     } catch (error) {
-      console.error("Error sending message:", error);
-      toast({
-        title: "Error",
-        description: "Failed to send message. Please try again.",
-        variant: "destructive",
-      });
+      console.error('Error sending message:', error);
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
   
-  if (!profile) return null;
-  
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] bg-cinematic-dark border-gold/20">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold flex items-center gap-2">
-            <MessageCircle className="h-5 w-5 text-gold" />
-            Message {profile.name}
-          </DialogTitle>
+          <DialogTitle>Message {talent?.name}</DialogTitle>
           <DialogDescription>
-            Send a direct message to start a conversation about potential collaborations.
+            Send a direct message to this {talent?.role.toLowerCase()}
           </DialogDescription>
         </DialogHeader>
         
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="message"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Your Message</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder={`Hello ${profile.name}, I'm interested in working with you...`} 
-                      {...field} 
-                      rows={6}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="subject">Subject</Label>
+            <Input 
+              id="subject"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder="Project Opportunity"
             />
-            
-            <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={onClose}
-                className="border-gold/20"
-              >
-                Cancel
-              </Button>
-              <Button 
-                type="submit" 
-                className="bg-gold hover:bg-gold/90 text-black"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? "Sending..." : "Send Message"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="message">Message</Label>
+            <Textarea
+              id="message"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="I'd like to discuss a potential project with you..."
+              className="min-h-32"
+            />
+          </div>
+        </div>
+        
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSend}
+            disabled={isLoading || !subject.trim() || !message.trim()}
+          >
+            <Send className="mr-2 h-4 w-4" />
+            {isLoading ? 'Sending...' : 'Send Message'}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

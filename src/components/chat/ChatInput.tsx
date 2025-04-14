@@ -1,261 +1,107 @@
 
-import { useState, useRef, ChangeEvent } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { 
-  PaperclipIcon, 
-  Send, 
-  Smile,
-  Image as ImageIcon,
-  File,
-  Mic,
-  Video,
-  X
-} from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
-import { 
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
+import { Send, Paperclip, Smile } from 'lucide-react';
 
-type ChatInputProps = {
+interface ChatInputProps {
   onSendMessage: (content: string, attachments?: File[]) => Promise<boolean>;
   onTyping: () => void;
-  disabled?: boolean;
-};
+}
 
-export function ChatInput({ onSendMessage, onTyping, disabled = false }: ChatInputProps) {
+export function ChatInput({ onSendMessage, onTyping }: ChatInputProps) {
   const [message, setMessage] = useState('');
   const [attachments, setAttachments] = useState<File[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  
-  // Handle text input changes
-  const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
-    setMessage(e.target.value);
-    onTyping();
-  };
-  
-  // Handle sending a message
-  const handleSendMessage = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
+
+  const handleSend = async () => {
+    if (!message.trim() && attachments.length === 0) return;
     
-    if ((!message.trim() && attachments.length === 0) || isSubmitting) return;
-    
-    setIsSubmitting(true);
-    try {
-      const success = await onSendMessage(message, attachments.length > 0 ? attachments : undefined);
-      if (success) {
-        setMessage('');
-        setAttachments([]);
-      }
-    } finally {
-      setIsSubmitting(false);
+    const success = await onSendMessage(message, attachments);
+    if (success) {
+      setMessage('');
+      setAttachments([]);
     }
   };
-  
-  // Handle emoji selection
-  const handleEmojiClick = (emojiData: EmojiClickData) => {
-    // Insert emoji at current cursor position
-    if (textareaRef.current) {
-      const start = textareaRef.current.selectionStart;
-      const end = textareaRef.current.selectionEnd;
-      const newMessage = 
-        message.substring(0, start) + 
-        emojiData.emoji + 
-        message.substring(end);
-      
-      setMessage(newMessage);
-      
-      // Set cursor position after the inserted emoji
-      setTimeout(() => {
-        if (textareaRef.current) {
-          textareaRef.current.selectionStart = start + emojiData.emoji.length;
-          textareaRef.current.selectionEnd = start + emojiData.emoji.length;
-          textareaRef.current.focus();
-        }
-      }, 10);
-    } else {
-      // If textarea ref not available, just append to end
-      setMessage(prev => prev + emojiData.emoji);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
     }
   };
-  
-  // Handle file attachment
-  const handleFileAttachment = (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const newFiles = Array.from(e.target.files);
-      setAttachments(prev => [...prev, ...newFiles]);
-      
-      // Clear input to allow selecting the same file again
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setAttachments(Array.from(e.target.files));
     }
   };
-  
-  // Handle removing an attachment
-  const removeAttachment = (index: number) => {
-    setAttachments(prev => prev.filter((_, i) => i !== index));
-  };
-  
-  // Format file size
-  const formatFileSize = (size: number) => {
-    if (size < 1024) return `${size} B`;
-    if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
-    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
-  };
-  
+
   return (
-    <form onSubmit={handleSendMessage} className="w-full">
-      {/* Attachment previews */}
+    <div className="flex flex-col w-full">
       {attachments.length > 0 && (
-        <div className="mb-2 p-2 bg-background/30 rounded-lg border border-border/50">
-          <div className="text-xs font-medium mb-1 flex justify-between">
-            <span>Attachments ({attachments.length})</span>
-            <Button 
-              type="button" 
-              variant="ghost" 
-              size="sm" 
-              className="h-5 px-1.5 text-xs"
-              onClick={() => setAttachments([])}
-            >
-              Clear all
-            </Button>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {attachments.map((file, index) => (
-              <div 
-                key={index} 
-                className="relative bg-background/50 rounded p-2 flex items-center gap-2 pr-8"
+        <div className="flex gap-2 mb-2 flex-wrap">
+          {attachments.map((file, index) => (
+            <div key={index} className="bg-gray-100 rounded p-2 text-sm flex items-center">
+              <span className="truncate max-w-[100px]">{file.name}</span>
+              <button 
+                className="ml-2 text-gray-500 hover:text-gray-700"
+                onClick={() => setAttachments(attachments.filter((_, i) => i !== index))}
               >
-                {file.type.startsWith('image/') ? (
-                  <ImageIcon className="h-4 w-4 text-blue-500" />
-                ) : (
-                  <File className="h-4 w-4 text-amber-500" />
-                )}
-                <div className="text-xs">
-                  <div className="font-medium truncate max-w-[150px]">{file.name}</div>
-                  <div className="text-foreground/60">{formatFileSize(file.size)}</div>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 absolute right-1 top-1 text-foreground/60 hover:text-foreground"
-                  onClick={() => removeAttachment(index)}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              </div>
-            ))}
-          </div>
+                &times;
+              </button>
+            </div>
+          ))}
         </div>
       )}
-      
-      {/* Input area */}
-      <div className="flex gap-2 w-full items-end">
+    
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          className="rounded-full"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <Paperclip className="h-5 w-5" />
+        </Button>
+        
         <input
           type="file"
           ref={fileInputRef}
-          onChange={handleFileAttachment}
+          onChange={handleFileSelect}
           className="hidden"
           multiple
         />
         
-        {/* Attachment button */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button 
-              type="button" 
-              variant="ghost" 
-              size="icon" 
-              className="rounded-full h-10 w-10 hover:bg-gold/10 flex-shrink-0"
-              disabled={disabled}
-            >
-              <PaperclipIcon className="h-5 w-5 text-foreground/70" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
-              <ImageIcon className="h-4 w-4 mr-2 text-blue-500" />
-              Images
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
-              <File className="h-4 w-4 mr-2 text-amber-500" />
-              Documents
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <Mic className="h-4 w-4 mr-2 text-red-500" />
-              Audio message
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex-1 relative">
+          <textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onFocus={onTyping}
+            placeholder="Type a message..."
+            className="w-full p-2 pr-10 border rounded-lg resize-none min-h-[40px] max-h-[120px]"
+            rows={1}
+          />
+          
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-full"
+          >
+            <Smile className="h-5 w-5" />
+          </Button>
+        </div>
         
-        {/* Message input */}
-        <Textarea 
-          ref={textareaRef}
-          placeholder="Type a message..." 
-          value={message}
-          onChange={handleChange}
-          disabled={disabled}
-          className="bg-background/50 border-gold/10 focus-visible:ring-gold/30 rounded-lg min-h-[44px] max-h-[120px] resize-none"
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              handleSendMessage();
-            }
-          }}
-        />
-        
-        {/* Emoji button */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button 
-              type="button" 
-              variant="ghost" 
-              size="icon" 
-              className="rounded-full h-10 w-10 hover:bg-gold/10 flex-shrink-0"
-              disabled={disabled}
-            >
-              <Smile className="h-5 w-5 text-foreground/70" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent side="top" align="end" className="p-0 w-auto border-gold/10">
-            <EmojiPicker
-              onEmojiClick={handleEmojiClick}
-              skinTonesDisabled
-              searchDisabled={false}
-              width={300}
-              height={400}
-              previewConfig={{
-                showPreview: false
-              }}
-            />
-          </PopoverContent>
-        </Popover>
-        
-        {/* Send button */}
-        <Button 
-          type="submit" 
-          className="bg-gold hover:bg-gold/90 text-black rounded-full h-10 w-10 px-0 flex items-center justify-center flex-shrink-0"
-          disabled={(!message.trim() && attachments.length === 0) || isSubmitting || disabled}
+        <Button
+          type="button"
+          className="rounded-full bg-blue-500 hover:bg-blue-600"
+          onClick={handleSend}
         >
-          <Send className="h-4 w-4" />
+          <Send className="h-5 w-5" />
         </Button>
       </div>
-    </form>
+    </div>
   );
 }
