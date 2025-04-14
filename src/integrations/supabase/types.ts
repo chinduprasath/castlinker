@@ -347,6 +347,213 @@ export type Database = {
         }
         Relationships: []
       }
+      castlinker_x1yc7_portfolio_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: number
+          media_type: string | null
+          media_url: string | null
+          title: string
+          user_email: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: number
+          media_type?: string | null
+          media_url?: string | null
+          title: string
+          user_email: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: number
+          media_type?: string | null
+          media_url?: string | null
+          title?: string
+          user_email?: string
+        }
+        Relationships: []
+      }
+      castlinker_x1yc7_user_bookmarks: {
+        Row: {
+          bookmarked_user_email: string
+          created_at: string
+          id: number
+          user_email: string
+        }
+        Insert: {
+          bookmarked_user_email: string
+          created_at?: string
+          id?: number
+          user_email: string
+        }
+        Update: {
+          bookmarked_user_email?: string
+          created_at?: string
+          id?: number
+          user_email?: string
+        }
+        Relationships: []
+      }
+      castlinker_x1yc7_user_connections: {
+        Row: {
+          created_at: string
+          id: number
+          receiver_email: string
+          requester_email: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          receiver_email: string
+          requester_email: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          receiver_email?: string
+          requester_email?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      castlinker_x1yc7_user_experiences: {
+        Row: {
+          company: string
+          created_at: string
+          description: string | null
+          end_date: string | null
+          id: number
+          location: string | null
+          start_date: string
+          title: string
+          user_email: string
+        }
+        Insert: {
+          company: string
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: number
+          location?: string | null
+          start_date: string
+          title: string
+          user_email: string
+        }
+        Update: {
+          company?: string
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: number
+          location?: string | null
+          start_date?: string
+          title?: string
+          user_email?: string
+        }
+        Relationships: []
+      }
+      castlinker_x1yc7_user_likes: {
+        Row: {
+          created_at: string
+          id: number
+          liked_user_email: string
+          liker_email: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          liked_user_email: string
+          liker_email: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          liked_user_email?: string
+          liker_email?: string
+        }
+        Relationships: []
+      }
+      castlinker_x1yc7_user_profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          display_name: string
+          headline: string | null
+          id: string
+          likes_count: number | null
+          location: string | null
+          rating: number | null
+          role: string | null
+          updated_at: string
+          user_email: string
+          verified: boolean | null
+          website: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name: string
+          headline?: string | null
+          id?: string
+          likes_count?: number | null
+          location?: string | null
+          rating?: number | null
+          role?: string | null
+          updated_at?: string
+          user_email: string
+          verified?: boolean | null
+          website?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string
+          headline?: string | null
+          id?: string
+          likes_count?: number | null
+          location?: string | null
+          rating?: number | null
+          role?: string | null
+          updated_at?: string
+          user_email?: string
+          verified?: boolean | null
+          website?: string | null
+        }
+        Relationships: []
+      }
+      castlinker_x1yc7_user_skills: {
+        Row: {
+          created_at: string
+          id: number
+          skill: string
+          user_email: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          skill: string
+          user_email: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          skill?: string
+          user_email?: string
+        }
+        Relationships: []
+      }
       chat_x1yc7_conversations: {
         Row: {
           created_at: string
