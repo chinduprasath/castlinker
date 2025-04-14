@@ -16,12 +16,13 @@ import { roles, permissions } from "@/lib/adminPermissions";
 import { toast } from "sonner";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import RoleEditor from "@/components/admin/RoleEditor";
+import { AdminUserRole, AdminTeamRole } from "@/types/adminTypes";
 
 interface TeamMember {
   id: string;
   name: string;
   email: string;
-  role: string;
+  role: AdminTeamRole;
   joined_date: string;
   avatar_url?: string;
 }
@@ -42,7 +43,7 @@ const TeamManagement = () => {
   const [newMemberData, setNewMemberData] = useState({
     name: "",
     email: "",
-    role: "moderator"
+    role: "moderator" as AdminTeamRole
   });
 
   // Fetch team members on component mount
@@ -71,12 +72,14 @@ const TeamManagement = () => {
 
   const handleAddMember = async () => {
     try {
+      const roleValue = newMemberData.role as unknown as AdminUserRole;
+      
       const { data, error } = await supabase
         .from('users_management')
         .insert({
           name: newMemberData.name,
           email: newMemberData.email,
-          role: newMemberData.role,
+          role: roleValue,
           verified: true,
           status: 'active'
         })
@@ -100,15 +103,17 @@ const TeamManagement = () => {
     if (!currentMember) return;
     
     try {
+      const roleValue = selectedRole as unknown as AdminUserRole;
+      
       const { error } = await supabase
         .from('users_management')
-        .update({ role: selectedRole })
+        .update({ role: roleValue })
         .eq('id', currentMember.id);
       
       if (error) throw error;
       
       setTeamMembers(prev => prev.map(member => 
-        member.id === currentMember.id ? { ...member, role: selectedRole } : member
+        member.id === currentMember.id ? { ...member, role: selectedRole as AdminTeamRole } : member
       ));
       setShowRoleDialog(false);
       toast.success(`${currentMember.name}'s role updated to ${selectedRole}`);
@@ -256,7 +261,6 @@ const TeamManagement = () => {
         </CardContent>
       </Card>
 
-      {/* Add Member Dialog */}
       <Dialog open={showAddMemberDialog} onOpenChange={setShowAddMemberDialog}>
         <DialogContent className="bg-card-gradient backdrop-blur-sm border-gold/10 sm:max-w-[525px]">
           <DialogHeader>
@@ -291,7 +295,7 @@ const TeamManagement = () => {
               <Label htmlFor="role">Role</Label>
               <Select 
                 value={newMemberData.role}
-                onValueChange={(value) => setNewMemberData({...newMemberData, role: value})}
+                onValueChange={(value: string) => setNewMemberData({...newMemberData, role: value as AdminTeamRole})}
               >
                 <SelectTrigger className="bg-background/50 border-gold/10">
                   <SelectValue placeholder="Select role" />
@@ -318,7 +322,6 @@ const TeamManagement = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Role Dialog */}
       <Dialog open={showRoleDialog} onOpenChange={setShowRoleDialog}>
         <DialogContent className="bg-card-gradient backdrop-blur-sm border-gold/10 sm:max-w-[525px]">
           <DialogHeader>
@@ -373,7 +376,6 @@ const TeamManagement = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Role Editor Dialog */}
       <Dialog open={showRoleEditorDialog} onOpenChange={setShowRoleEditorDialog}>
         <DialogContent className="bg-card-gradient backdrop-blur-sm border-gold/10 sm:max-w-[800px] max-h-[90vh] overflow-auto">
           <DialogHeader>
