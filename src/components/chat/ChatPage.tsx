@@ -22,21 +22,21 @@ export const ChatPage: React.FC = () => {
       try {
         // Get chat rooms through RPC function
         const { data: roomsData, error: roomsError } = await supabase
-          .rpc('get_user_chat_rooms') as { data: any, error: any };
+          .rpc('get_user_chat_rooms');
         
         if (roomsError) throw roomsError;
         
-        if (roomsData && roomsData.length > 0) {
+        if (Array.isArray(roomsData) && roomsData.length > 0) {
           // Format the data to match ChatRoom type
           const formattedRooms = roomsData.map((room: any) => ({
             id: room.id,
-            name: room.name,
+            name: room.name || '',
             type: room.type || 'one_to_one',
-            created_at: room.created_at,
-            updated_at: room.updated_at,
-            last_message_at: room.last_message_at || room.created_at,
+            created_at: room.created_at || '',
+            updated_at: room.updated_at || '',
+            last_message_at: room.last_message_at || room.created_at || '',
             metadata: room.metadata || {},
-            users: room.users || []
+            users: Array.isArray(room.users) ? room.users : []
           }));
           
           setRooms(formattedRooms);
@@ -76,7 +76,7 @@ export const ChatPage: React.FC = () => {
         event: '*',
         schema: 'public',
         table: 'chat_room_members',
-        filter: `user_id=eq.${user.id}`
+        filter: user ? `user_id=eq.${user.id}` : undefined
       }, () => {
         loadChatRooms();
       })

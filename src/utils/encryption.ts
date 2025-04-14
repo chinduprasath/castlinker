@@ -1,18 +1,15 @@
-import { generateKeyPair, box, randomBytes, secretbox } from 'tweetnacl';
-import {
-    encodeBase64,
-    decodeBase64,
-    encodeUTF8,
-    decodeUTF8,
-} from '@stablelib/base64';
+
+import * as nacl from 'tweetnacl';
+import * as base64 from '@stablelib/base64';
+import { encode as encodeUTF8, decode as decodeUTF8 } from '@stablelib/utf8';
 
 export class E2EEncryption {
     // Generate a new key pair for a user
     static generateUserKeys(): { publicKey: string; privateKey: string } {
-        const keyPair = generateKeyPair();
+        const keyPair = nacl.box.keyPair();
         return {
-            publicKey: encodeBase64(keyPair.publicKey),
-            privateKey: encodeBase64(keyPair.secretKey),
+            publicKey: base64.encode(keyPair.publicKey),
+            privateKey: base64.encode(keyPair.secretKey),
         };
     }
 
@@ -22,17 +19,17 @@ export class E2EEncryption {
         senderPrivateKey: string,
         recipientPublicKey: string
     ): Promise<{ encrypted: string; iv: string }> {
-        const iv = randomBytes(24);
-        const encrypted = box(
-            decodeUTF8(message),
+        const iv = nacl.randomBytes(24);
+        const encrypted = nacl.box(
+            encodeUTF8(message),
             iv,
-            decodeBase64(recipientPublicKey),
-            decodeBase64(senderPrivateKey)
+            base64.decode(recipientPublicKey),
+            base64.decode(senderPrivateKey)
         );
 
         return {
-            encrypted: encodeBase64(encrypted),
-            iv: encodeBase64(iv),
+            encrypted: base64.encode(encrypted),
+            iv: base64.encode(iv),
         };
     }
 
@@ -43,31 +40,31 @@ export class E2EEncryption {
         senderPublicKey: string,
         recipientPrivateKey: string
     ): Promise<string> {
-        const decrypted = box.open(
-            decodeBase64(encrypted),
-            decodeBase64(iv),
-            decodeBase64(senderPublicKey),
-            decodeBase64(recipientPrivateKey)
+        const decrypted = nacl.box.open(
+            base64.decode(encrypted),
+            base64.decode(iv),
+            base64.decode(senderPublicKey),
+            base64.decode(recipientPrivateKey)
         );
 
         if (!decrypted) {
             throw new Error('Failed to decrypt message');
         }
 
-        return encodeUTF8(decrypted);
+        return decodeUTF8(decrypted);
     }
 
     // Encrypt file
     static async encryptFile(
         file: File
     ): Promise<{ fileKey: string; encryptedFile: Uint8Array }> {
-        const fileKey = randomBytes(32);
-        const iv = randomBytes(24);
+        const fileKey = nacl.randomBytes(32);
+        const iv = nacl.randomBytes(24);
 
         const fileBuffer = await file.arrayBuffer();
         const fileData = new Uint8Array(fileBuffer);
 
-        const encrypted = secretbox(fileData, iv, fileKey);
+        const encrypted = nacl.secretbox(fileData, iv, fileKey);
 
         // Combine IV and encrypted data
         const encryptedFile = new Uint8Array(iv.length + encrypted.length);
@@ -75,7 +72,7 @@ export class E2EEncryption {
         encryptedFile.set(encrypted, iv.length);
 
         return {
-            fileKey: encodeBase64(fileKey),
+            fileKey: base64.encode(fileKey),
             encryptedFile,
         };
     }
@@ -85,11 +82,11 @@ export class E2EEncryption {
         encryptedFile: Uint8Array,
         fileKey: string
     ): Promise<Uint8Array> {
-        const key = decodeBase64(fileKey);
+        const key = base64.decode(fileKey);
         const iv = encryptedFile.slice(0, 24);
         const data = encryptedFile.slice(24);
 
-        const decrypted = secretbox.open(data, iv, key);
+        const decrypted = nacl.secretbox.open(data, iv, key);
 
         if (!decrypted) {
             throw new Error('Failed to decrypt file');
@@ -121,4 +118,4 @@ export class E2EEncryption {
             recipientPrivateKey
         );
     }
-} 
+}

@@ -1,13 +1,16 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, Session } from '@supabase/supabase-js';
+import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile } from '@/types/supabase';
 
-export interface ExtendedUser extends User {
+export interface ExtendedUser extends SupabaseUser {
+  id: string;  // Explicitly add id for type safety
+  email: string; // Add email property
   name?: string;
   avatar?: string; 
   role?: string;
+  private_key?: string; // For encryption
 }
 
 export interface AuthContextProps {
@@ -34,14 +37,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, newSession) => {
         setSession(newSession);
-        setUser(newSession?.user ?? null);
-        
-        // If there's a user, fetch their profile
         if (newSession?.user) {
+          // Convert to ExtendedUser with required properties
+          setUser({
+            ...newSession.user,
+            id: newSession.user.id,
+            email: newSession.user.email || ''
+          } as ExtendedUser);
+          
+          // If there's a user, fetch their profile
           setTimeout(() => {
             fetchUserProfile(newSession.user.id);
           }, 0);
         } else {
+          setUser(null);
           setProfile(null);
         }
       }
@@ -50,10 +59,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-      
-      // If there's a user, fetch their profile
       if (currentSession?.user) {
+        // Convert to ExtendedUser with required properties
+        setUser({
+          ...currentSession.user,
+          id: currentSession.user.id,
+          email: currentSession.user.email || ''
+        } as ExtendedUser);
+        
+        // If there's a user, fetch their profile
         fetchUserProfile(currentSession.user.id);
       }
       

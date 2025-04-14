@@ -33,11 +33,11 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ roomId }) => {
         const { data: roomData, error: roomError } = await supabase.rpc(
           'get_chat_room',
           { room_id: roomId }
-        ) as { data: any, error: any };
+        );
         
         if (roomError) throw roomError;
         
-        if (roomData && roomData.length > 0) {
+        if (Array.isArray(roomData) && roomData.length > 0) {
           const room = roomData[0];
           // Set the room info based on the returned data
           setRoomInfo({
@@ -48,7 +48,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ roomId }) => {
             updated_at: room.updated_at || new Date().toISOString(),
             last_message_at: room.last_message_at || new Date().toISOString(),
             metadata: room.metadata || {},
-            users: room.users || []
+            users: Array.isArray(room.users) ? room.users : []
           });
         }
       } catch (error) {
@@ -68,23 +68,23 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ roomId }) => {
         const { data: messagesData, error: messagesError } = await supabase.rpc(
           'get_room_messages',
           { room_id: roomId }
-        ) as { data: any, error: any };
+        );
         
         if (messagesError) throw messagesError;
         
-        if (messagesData && messagesData.length > 0) {
+        if (Array.isArray(messagesData) && messagesData.length > 0) {
           // Transform the data to match Message type
           const formattedMessages = messagesData.map((msg: any) => ({
             id: msg.id,
             room_id: msg.room_id,
             sender_id: msg.sender_id,
             content: msg.content,
-            type: msg.type,
-            metadata: msg.metadata,
+            type: msg.type || 'text',
+            metadata: msg.metadata || {},
             created_at: msg.created_at,
-            updated_at: msg.updated_at,
-            is_edited: msg.is_edited,
-            is_deleted: msg.is_deleted,
+            updated_at: msg.updated_at || msg.created_at,
+            is_edited: msg.is_edited || false,
+            is_deleted: msg.is_deleted || false,
             reply_to_id: msg.reply_to_id,
             sender: msg.sender
           }));
@@ -219,7 +219,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ roomId }) => {
                     )}
                     <p className="break-words">{message.content}</p>
                     <p className="text-xs mt-1 opacity-70">
-                      {format(new Date(message.created_at), 'h:mm a')}
+                      {message.created_at ? format(new Date(message.created_at), 'h:mm a') : ''}
                     </p>
                   </>
                 )}

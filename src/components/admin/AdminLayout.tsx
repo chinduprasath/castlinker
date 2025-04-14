@@ -30,7 +30,13 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     setCollapsed(!collapsed);
   };
 
-  if (!user || !user.email.includes("admin")) {
+  // Check if the user is an admin based on role or email
+  const isAdmin = user && (
+    user.role === 'admin' || 
+    (user.email && user.email.includes("admin"))
+  );
+
+  if (!isAdmin) {
     return <AccessDenied />;
   }
 

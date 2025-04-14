@@ -22,4 +22,33 @@ declare module "@supabase/supabase-js" {
       params?: Parameters<import('supabase-rpc-types').SupabaseRpcFunctions[T]>[0]
     ): PostgrestFilterBuilder<any, any, unknown>;
   }
+
+  // Export User and Session types
+  export interface User {
+    id: string;
+    app_metadata: {
+      provider?: string;
+      [key: string]: any;
+    };
+    user_metadata: {
+      [key: string]: any;
+    };
+    aud: string;
+    confirmation_sent_at?: string;
+    email?: string;
+    created_at: string;
+    confirmed_at?: string;
+    last_sign_in_at?: string;
+    role?: string;
+    updated_at?: string;
+  }
+
+  export interface Session {
+    access_token: string;
+    refresh_token: string;
+    expires_in: number;
+    expires_at?: number;
+    token_type: string;
+    user: User;
+  }
 }
