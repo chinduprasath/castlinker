@@ -60,12 +60,12 @@ export function PortfolioSection() {
     // For development, just use mock data
     setContents(mockContents);
     
-    // In a real implementation, we would fetch from Supabase
-    // This is commented out since it won't work without the proper tables
-    /*
+    // Real implementation commented out since tables don't exist yet
+    /* 
     const loadContent = async () => {
       setIsLoading(true);
       try {
+        // This would be the real implementation when the database is ready
         const { data, error } = await supabase
           .from('portfolio_content')
           .select('*')
@@ -103,7 +103,7 @@ export function PortfolioSection() {
     
     setContents([newContent, ...contents]);
     
-    // In a real implementation, we would save to Supabase
+    // Real implementation commented out
     /*
     try {
       const { data, error } = await supabase
@@ -245,3 +245,6 @@ export function PortfolioSection() {
     </div>
   );
 }
+
+// Also export as default for backward compatibility
+export default PortfolioSection;

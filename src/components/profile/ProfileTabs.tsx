@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Job, JobType, LocationType, RoleCategory } from "@/hooks/useJobsData";
 import AboutSection from "./AboutSection";
-import PortfolioSection from "./PortfolioSection";
+import { PortfolioSection } from "./PortfolioSection";
 import SkillsSection from "./SkillsSection";
 import ExperienceSection from "./ExperienceSection";
 import SavedJobsSection from "./SavedJobsSection";
