@@ -57,7 +57,7 @@ export class E2EEncryption {
             throw new Error('Failed to decrypt message');
         }
 
-        return encodeUTF8(decrypted);
+        return decodeUTF8(decrypted);
     }
 
     // Encrypt file

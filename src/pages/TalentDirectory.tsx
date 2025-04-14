@@ -107,7 +107,6 @@ const TalentDirectory = () => {
     });
   };
   
-  // Check if a connection request exists for this profile
   const getConnectionStatus = (profile: TalentProfile) => {
     if (!user) return null;
     
@@ -120,7 +119,6 @@ const TalentDirectory = () => {
     return connection ? connection.status : null;
   };
   
-  // Generate array of page numbers for pagination display
   const getPageNumbers = () => {
     const pages = [];
     if (totalPages <= 7) {
@@ -132,7 +130,6 @@ const TalentDirectory = () => {
       
       if (currentPage > 3) pages.push('ellipsis');
       
-      // Pages around the current page
       const start = Math.max(2, currentPage - 1);
       const end = Math.min(totalPages - 1, currentPage + 1);
       
@@ -149,7 +146,6 @@ const TalentDirectory = () => {
 
   return (
     <div className="space-y-4 pr-1">
-      {/* Header Section */}
       <div className="flex flex-col space-y-1">
         <div className="flex items-center justify-between">
           <div>
@@ -171,7 +167,6 @@ const TalentDirectory = () => {
         </div>
       </div>
       
-      {/* Search and Filter Bar */}
       <Card className="bg-card/50 backdrop-blur border-gold/10">
         <CardHeader className="px-4 py-4">
           <div className="flex flex-col md:flex-row gap-4">
@@ -310,7 +305,6 @@ const TalentDirectory = () => {
         </CardHeader>
       </Card>
       
-      {/* Applied Filters */}
       {(filters.selectedRoles.length > 0 || filters.selectedLocations.length > 0 || filters.verifiedOnly || 
         filters.availableOnly || filters.experienceRange[0] > 0 || filters.experienceRange[1] < 20 ||
         filters.likesMinimum > 0) && (
@@ -402,17 +396,14 @@ const TalentDirectory = () => {
         </div>
       )}
       
-      {/* Results Count */}
       <div className="flex justify-between items-center mt-3">
         <p className="text-sm text-foreground/70">
           Found <span className="text-gold font-medium">{totalCount}</span> talents
         </p>
       </div>
       
-      {/* Talent Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-3">
         {isLoading ? (
-          // Loading skeletons
           Array(6).fill(0).map((_, index) => (
             <Card key={index} className="bg-card border-gold/10 overflow-hidden shadow-lg">
               <CardHeader className="p-4 border-b border-gold/10 bg-gradient-to-r from-gold/5 to-transparent">
@@ -514,7 +505,6 @@ const TalentDirectory = () => {
                   </div>
                 </div>
                 
-                {/* User Interaction Buttons */}
                 <div className="flex justify-between mt-4">
                   <Button 
                     variant="outline"
@@ -623,7 +613,6 @@ const TalentDirectory = () => {
         )}
       </div>
       
-      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex justify-center mt-6">
           <Pagination>
@@ -663,25 +652,25 @@ const TalentDirectory = () => {
         </div>
       )}
 
-      {/* Dialogs */}
       <MessageDialog 
         isOpen={messageDialogOpen}
         onClose={() => setMessageDialogOpen(false)}
-        profile={selectedProfile}
+        talent={selectedProfile}
         onSendMessage={sendMessage}
       />
       
       <ProfileDialog
         isOpen={profileDialogOpen}
         onClose={() => setProfileDialogOpen(false)}
-        profile={selectedProfile}
+        talent={selectedProfile}
         onMessage={handleMessageClick}
+        onConnect={handleConnectClick}
       />
       
       <ConnectDialog 
         isOpen={connectDialogOpen}
         onClose={() => setConnectDialogOpen(false)}
-        profile={selectedProfile}
+        talent={selectedProfile}
         onConnect={sendConnectionRequest}
       />
     </div>
