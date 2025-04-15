@@ -70,7 +70,7 @@ export function ProfessionFilter({
             {safeOptions.map((profession) => (
               <CommandItem
                 key={profession}
-                value={profession || ''} // Ensure value is never undefined
+                value={profession || 'unknown'} // Ensure value is never undefined or empty
                 onSelect={() => toggleProfession(profession)}
                 className="flex items-center space-x-2"
               >

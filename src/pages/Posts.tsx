@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import usePosts from "@/hooks/usePosts";
@@ -106,9 +105,7 @@ const Posts = () => {
     }
   };
 
-  // Filter posts by date and location
   const filteredPosts = posts.filter(post => {
-    // First apply the existing filters (category and search)
     if (filters.category !== 'all' && post.category !== filters.category) {
       return false;
     }
@@ -125,14 +122,12 @@ const Posts = () => {
       if (!matchesSearch) return false;
     }
     
-    // Apply location filter
     if (selectedLocation && selectedLocation !== "Any Location") {
       if (!post.location || !post.location.includes(selectedLocation)) {
         return false;
       }
     }
     
-    // Apply post date range filter
     if (postDateRange?.from) {
       const postDate = new Date(post.created_at);
       if (isBefore(postDate, postDateRange.from)) {
@@ -147,7 +142,6 @@ const Posts = () => {
       }
     }
     
-    // Apply event date (deadline) range filter
     if (deadlineDateRange?.from && post.event_date) {
       const eventDate = new Date(post.event_date);
       if (isBefore(eventDate, deadlineDateRange.from)) {
@@ -165,7 +159,6 @@ const Posts = () => {
     return true;
   });
   
-  // Pagination
   const totalPages = Math.ceil(filteredPosts.length / ITEMS_PER_PAGE);
   const startIdx = (currentPage - 1) * ITEMS_PER_PAGE;
   const paginatedPosts = filteredPosts.slice(startIdx, startIdx + ITEMS_PER_PAGE);
@@ -241,9 +234,8 @@ const Posts = () => {
           </div>
           
           <div className="flex flex-col md:flex-row gap-4">
-            {/* Location Filter */}
             <Select
-              value={selectedLocation || ""}
+              value={selectedLocation || "any"}
               onValueChange={setSelectedLocation}
             >
               <SelectTrigger className="w-full md:w-[180px]">
@@ -255,8 +247,8 @@ const Posts = () => {
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Any Location</SelectItem>
-                {LOCATIONS.map((location) => (
+                <SelectItem value="any">Any Location</SelectItem>
+                {LOCATIONS.filter(location => location !== "Any Location").map((location) => (
                   <SelectItem key={location} value={location}>
                     {location}
                   </SelectItem>
@@ -264,7 +256,6 @@ const Posts = () => {
               </SelectContent>
             </Select>
             
-            {/* Post Date Range */}
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -300,7 +291,6 @@ const Posts = () => {
               </PopoverContent>
             </Popover>
             
-            {/* Deadline Date Range */}
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -391,7 +381,6 @@ const Posts = () => {
             ))}
           </div>
           
-          {/* Pagination */}
           {totalPages > 1 && (
             <Pagination className="mt-8">
               <PaginationContent>
@@ -405,7 +394,6 @@ const Posts = () => {
                 {[...Array(totalPages)].map((_, index) => {
                   const page = index + 1;
                   
-                  // Show first page, last page, current page, and pages around current page
                   if (
                     page === 1 ||
                     page === totalPages ||
@@ -423,7 +411,6 @@ const Posts = () => {
                     );
                   }
                   
-                  // Show ellipsis for skipped pages
                   if (page === 2 || page === totalPages - 1) {
                     return (
                       <PaginationItem key={`ellipsis-${page}`}>

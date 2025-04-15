@@ -83,7 +83,7 @@ export function LocationFilter({
             {validAvailableLocations.map((location) => (
               <CommandItem
                 key={location}
-                value={location || ''} // Ensure value is never undefined
+                value={location || 'unknown'} // Ensure value is never undefined or empty
                 onSelect={() => toggleLocation(location)}
                 className="flex items-center space-x-2"
               >
