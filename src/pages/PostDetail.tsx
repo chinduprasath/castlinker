@@ -1,692 +1,660 @@
-import { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
-import useAdminAuth from "@/hooks/useAdminAuth";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { toast } from "@/hooks/use-toast";
-import { format } from "date-fns";
-import {
-  Calendar,
-  ExternalLink,
-  Heart,
-  MapPin,
-  MoreHorizontal,
-  Share,
-  Users,
-  X,
-  Edit,
-} from "lucide-react";
-import {
-  fetchPostById,
-  checkIfApplied,
-  checkIfLiked,
-  togglePostLike,
-  applyToPost,
-  getApplicantsByPostId,
-  deletePost,
-} from "@/services/postsService";
 
-// Filter components
-import { DatePickerWithRange } from "@/components/ui/date-range-picker";
-import { ProfessionFilter } from "@/components/filters/ProfessionFilter";
-import { LocationFilter } from "@/components/filters/LocationFilter";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { DateRange } from "react-day-picker";
-import { Profession } from "@/types/talent";
-import CreatePostDialog from "@/components/posts/CreatePostDialog";
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { fetchPostById, getApplicantsByPostId, PostApplication, Post, checkIfLiked, togglePostLike } from '@/services/postsService';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { format } from 'date-fns';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Heart, Share2, Calendar, MapPin, Link2, ArrowLeft, Users, Pencil, Trash2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
+import { useApplicantFilters } from '@/hooks/useApplicantFilters';
+import { ProfessionFilter } from '@/components/filters/ProfessionFilter';
+import { LocationFilter } from '@/components/filters/LocationFilter';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const PostDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
-  const { isAdmin } = useAdminAuth();
   const navigate = useNavigate();
-  const [post, setPost] = useState<any>(null);
+  const { user } = useAuth();
+  const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isApplied, setIsApplied] = useState(false);
+  const [applicants, setApplicants] = useState<PostApplication[] | null>(null);
   const [isLiked, setIsLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(0);
-  const [applicants, setApplicants] = useState<any[]>([]);
-  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [activeTab, setActiveTab] = useState('details');
 
-  // Initialize filter states with proper defaults
-  const [professionFilter, setProfessionFilter] = useState<Profession[]>([]);
-  const [locationFilter, setLocationFilter] = useState<string[]>([]);
-  const [dateFilter, setDateFilter] = useState<DateRange | undefined>(undefined);
-  const [ratingFilter, setRatingFilter] = useState<string>("all");
+  // Fetch post and applicant data
+  useEffect(() => {
+    const loadPostData = async () => {
+      if (!id) return;
+      
+      try {
+        setLoading(true);
+        const postData = await fetchPostById(id);
+        setPost(postData);
+        
+        // Check if the user has liked the post
+        if (user) {
+          const liked = await checkIfLiked(id, user.id);
+          setIsLiked(liked);
+        }
+        
+        // Fetch applicants
+        const applicantsData = await getApplicantsByPostId(id);
+        setApplicants(applicantsData);
+      } catch (error) {
+        console.error('Error loading post:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load post details',
+          variant: 'destructive'
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadPostData();
+  }, [id, user]);
   
-  const [filteredApplicants, setFilteredApplicants] = useState<any[]>([]);
-
-  useEffect(() => {
-    if (!id) return;
-    fetchPostData();
-  }, [id]);
-
-  useEffect(() => {
-    if (!applicants || !Array.isArray(applicants)) return;
-    applyFilters();
-  }, [professionFilter, locationFilter, dateFilter, ratingFilter, applicants]);
-
-  const fetchPostData = async () => {
+  // Set up applicant filters
+  const {
+    selectedProfessions,
+    setSelectedProfessions,
+    selectedLocations,
+    setSelectedLocations,
+    searchTerm,
+    setSearchTerm,
+    availableProfessions,
+    availableLocations,
+    filteredApplicants,
+    resetFilters
+  } = useApplicantFilters(applicants);
+  
+  // Handle post like/unlike
+  const handleLikeToggle = async () => {
+    if (!user || !post) return;
+    
     try {
-      setLoading(true);
-      const postData = await fetchPostById(id!);
+      const result = await togglePostLike(post.id, user.id);
       
-      if (!postData) {
-        toast({
-          title: "Post not found",
-          description: "The post you're looking for doesn't exist or has been removed.",
-          variant: "destructive",
-        });
-        navigate("/posts");
-        return;
-      }
-      
-      setPost(postData);
-      setLikeCount(postData.like_count || 0);
-      
-      if (user) {
-        const applied = await checkIfApplied(id!, user.id);
-        const liked = await checkIfLiked(id!, user.id);
-        setIsApplied(applied);
-        setIsLiked(liked);
-      }
-      
-      // If user is creator or admin, fetch applicants
-      if (user && (postData.created_by === user.id || isAdmin)) {
-        const applicantData = await getApplicantsByPostId(id!);
-        setApplicants(applicantData || []);
-        setFilteredApplicants(applicantData || []);
-      }
-    } catch (error) {
-      console.error("Error fetching post:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load post details. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLike = async () => {
-    if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to like posts.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const result = await togglePostLike(id!, user.id);
-      setIsLiked(!!result);
-      setLikeCount(prev => result ? prev + 1 : Math.max(0, prev - 1));
-    } catch (error) {
-      console.error("Error liking post:", error);
-      toast({
-        title: "Error",
-        description: "Failed to like post. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleApply = async () => {
-    if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to apply for this opportunity.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (isApplied) {
-      toast({
-        title: "Already Applied",
-        description: "You have already applied to this post.",
-      });
-      return;
-    }
-
-    try {
-      const result = await applyToPost(id!, user.id);
-      if (result) {
-        setIsApplied(true);
-        toast({
-          title: "Application Submitted",
-          description: "Your application has been successfully submitted.",
+      if (result !== null) {
+        setIsLiked(result);
+        setPost(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            like_count: result 
+              ? prev.like_count + 1 
+              : Math.max(0, prev.like_count - 1)
+          };
         });
       }
     } catch (error) {
-      console.error("Error applying to post:", error);
+      console.error('Error toggling like:', error);
       toast({
-        title: "Error",
-        description: "Failed to submit application. Please try again.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to like post',
+        variant: 'destructive'
       });
     }
   };
-
+  
+  // Share post function
   const handleShare = () => {
-    const url = window.location.href;
+    if (!post) return;
+    
+    const postUrl = window.location.href;
     
     if (navigator.share) {
       navigator.share({
         title: post.title,
-        text: post.description,
-        url: url,
-      })
-      .catch((error) => {
+        text: post.description.substring(0, 100) + (post.description.length > 100 ? '...' : ''),
+        url: postUrl,
+      }).catch(error => {
         console.error('Error sharing:', error);
-        navigator.clipboard.writeText(url);
-        toast({
-          title: "Link Copied",
-          description: "Post link has been copied to clipboard.",
-        });
+        copyToClipboard(postUrl);
       });
     } else {
-      navigator.clipboard.writeText(url);
-      toast({
-        title: "Link Copied",
-        description: "Post link has been copied to clipboard.",
-      });
+      copyToClipboard(postUrl);
     }
   };
-
-  const confirmDelete = () => {
-    setShowConfirmDelete(true);
+  
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+      .then(() => {
+        toast({
+          title: "Link copied",
+          description: "Post link has been copied to clipboard",
+        });
+      })
+      .catch(err => {
+        console.error('Failed to copy:', err);
+        toast({
+          title: "Failed to copy",
+          description: "Could not copy the link to clipboard",
+          variant: "destructive"
+        });
+      });
   };
 
-  const handleDelete = async () => {
+  // Delete post function
+  const handleDeletePost = async () => {
+    if (!post || !user) return;
+    
     try {
-      const success = await deletePost(id!);
+      // Import and call deletePost function
+      const { deletePost } = await import('@/services/postsService');
+      const success = await deletePost(post.id);
+      
       if (success) {
         toast({
-          title: "Post Deleted",
-          description: "The post has been successfully deleted.",
+          title: 'Success',
+          description: 'Post has been deleted',
         });
-        navigate("/posts");
+        navigate('/posts');
       } else {
-        throw new Error("Failed to delete post");
+        throw new Error('Failed to delete post');
       }
     } catch (error) {
-      console.error("Error deleting post:", error);
+      console.error('Error deleting post:', error);
       toast({
-        title: "Error",
-        description: "Failed to delete post. Please try again.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to delete post',
+        variant: 'destructive'
       });
     } finally {
-      setShowConfirmDelete(false);
+      setShowDeleteDialog(false);
     }
   };
-
-  const applyFilters = () => {
-    // Ensure applicants is always an array
-    const safeApplicants = Array.isArray(applicants) ? applicants : [];
-    
-    if (!safeApplicants.length) {
-      setFilteredApplicants([]);
-      return;
-    }
-    
-    let filtered = [...safeApplicants];
-    
-    // Filter by profession - ensure all arrays are valid
-    const safeProfessionFilter = Array.isArray(professionFilter) ? professionFilter : [];
-    if (safeProfessionFilter.length > 0) {
-      filtered = filtered.filter(applicant => 
-        applicant?.profile && 
-        applicant.profile.profession_type && 
-        safeProfessionFilter.includes(applicant.profile.profession_type)
-      );
-    }
-    
-    // Filter by location
-    const safeLocationFilter = Array.isArray(locationFilter) ? locationFilter : [];
-    if (safeLocationFilter.length > 0) {
-      filtered = filtered.filter(applicant => 
-        applicant?.profile && 
-        applicant.profile.location && 
-        safeLocationFilter.some(loc => 
-          applicant.profile.location.includes(loc)
-        )
-      );
-    }
-    
-    // Filter by date range
-    if (dateFilter && dateFilter.from) {
-      const fromDate = dateFilter.from;
-      const toDate = dateFilter.to || fromDate;
-      
-      filtered = filtered.filter(applicant => {
-        if (!applicant?.applied_at) return false;
-        const appliedDate = new Date(applicant.applied_at);
-        return appliedDate >= fromDate && appliedDate <= toDate;
-      });
-    }
-    
-    // Filter by rating
-    if (ratingFilter && ratingFilter !== "all") {
-      const minRating = parseInt(ratingFilter);
-      filtered = filtered.filter(applicant => 
-        applicant?.profile && 
-        applicant.profile.rating && 
-        applicant.profile.rating >= minRating
-      );
-    }
-    
-    setFilteredApplicants(filtered);
-  };
-
-  const clearFilters = () => {
-    setProfessionFilter([]);
-    setLocationFilter([]);
-    setDateFilter(undefined);
-    setRatingFilter("all");
-  };
-
+  
+  // Check if user is creator or admin
   const isCreator = user && post && user.id === post.created_by;
-  const canManagePost = isCreator || isAdmin;
-
+  const isAdmin = user?.email?.includes("admin");
+  const canModify = isCreator || isAdmin;
+  
   if (loading) {
     return (
-      <div className="container max-w-4xl py-8">
-        <div className="space-y-6">
-          <Skeleton className="h-12 w-3/4" />
-          <Skeleton className="h-24 w-full" />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Skeleton className="h-40 w-full" />
-            <Skeleton className="h-40 w-full md:col-span-2" />
+      <div className="container max-w-4xl py-8 space-y-6">
+        <div className="flex items-center space-x-2">
+          <Skeleton className="h-10 w-10 rounded-full" />
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-40" />
+            <Skeleton className="h-4 w-24" />
           </div>
-          <Skeleton className="h-32 w-full" />
+        </div>
+        <Skeleton className="h-[300px] w-full rounded-lg" />
+        <div className="space-y-2">
+          <Skeleton className="h-6 w-1/2" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-3/4" />
         </div>
       </div>
     );
   }
-
+  
   if (!post) {
     return (
-      <div className="container max-w-4xl py-8">
-        <div className="text-center py-12">
-          <h1 className="text-2xl font-bold mb-4">Post Not Found</h1>
-          <p className="mb-6">The post you're looking for doesn't exist or has been removed.</p>
-          <Button asChild>
-            <Link to="/posts">Back to Posts</Link>
-          </Button>
-        </div>
+      <div className="container max-w-4xl py-8 text-center">
+        <h1 className="text-2xl font-bold">Post not found</h1>
+        <p className="text-muted-foreground mt-2">The post you're looking for doesn't exist or has been removed.</p>
+        <Button 
+          className="mt-4" 
+          onClick={() => navigate('/posts')}
+          variant="outline"
+        >
+          Back to Posts
+        </Button>
       </div>
     );
   }
-
+  
+  // Format dates
+  const formattedDate = format(new Date(post.created_at), 'MMM dd, yyyy');
+  const eventDate = post.event_date ? format(new Date(post.event_date), 'MMM dd, yyyy') : null;
+  
   return (
     <div className="container max-w-4xl py-8">
-      <div className="mb-6">
-        <Link to="/posts" className="text-muted-foreground hover:text-foreground transition-colors">
-          ← Back to Posts
-        </Link>
-      </div>
+      {/* Back button */}
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        className="mb-4 -ml-2 text-muted-foreground"
+        onClick={() => navigate('/posts')}
+      >
+        <ArrowLeft className="h-4 w-4 mr-1" />
+        Back to Posts
+      </Button>
       
-      {loading ? (
-        <div className="space-y-6">
-          <Skeleton className="h-12 w-3/4" />
-          <Skeleton className="h-24 w-full" />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Skeleton className="h-40 w-full" />
-            <Skeleton className="h-40 w-full md:col-span-2" />
+      <div className="space-y-6">
+        {/* Post Header */}
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold">{post.title}</h1>
+            <div className="flex items-center mt-2 text-muted-foreground">
+              <p>Posted by {post.creator_name || 'Anonymous'}</p>
+              {post.creator_profession && (
+                <Badge variant="outline" className="ml-2">
+                  {post.creator_profession}
+                </Badge>
+              )}
+              <span className="mx-2">•</span>
+              <p>{formattedDate}</p>
+            </div>
           </div>
-          <Skeleton className="h-32 w-full" />
-        </div>
-      ) : !post ? (
-        <div className="text-center py-12">
-          <h1 className="text-2xl font-bold mb-4">Post Not Found</h1>
-          <p className="mb-6">The post you're looking for doesn't exist or has been removed.</p>
-          <Button asChild>
-            <Link to="/posts">Back to Posts</Link>
-          </Button>
-        </div>
-      ) : (
-        <>
-          <div className="bg-card rounded-lg shadow-sm overflow-hidden">
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h1 className="text-3xl font-bold mb-2">{post.title}</h1>
-                  <div className="flex items-center text-muted-foreground gap-2 flex-wrap">
-                    <Badge variant="outline">{post.category}</Badge>
-                    <span className="text-sm">
-                      Posted {format(new Date(post.created_at), "PP")}
-                    </span>
-                    <span className="text-sm">
-                      by {post.creator_name || "Anonymous"}
-                      {post.creator_profession && ` • ${post.creator_profession}`}
-                    </span>
-                  </div>
-                </div>
+          
+          {/* Action buttons */}
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className={cn(
+                isLiked && "text-red-500 border-red-500 hover:text-red-600 hover:border-red-600"
+              )}
+              onClick={handleLikeToggle}
+            >
+              <Heart className={cn("h-4 w-4 mr-2", isLiked && "fill-red-500")} />
+              <span>{post.like_count}</span>
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleShare}
+            >
+              <Share2 className="h-4 w-4 mr-2" />
+              Share
+            </Button>
+            
+            {canModify && (
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate(`/posts/${post.id}/edit`)}
+                >
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
                 
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="icon" onClick={handleShare} title="Share">
-                    <Share className="h-4 w-4" />
-                  </Button>
-                  
-                  {canManagePost && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setShowEditDialog(true)} className="cursor-pointer">
-                          <Edit className="h-4 w-4 mr-2" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={confirmDelete} className="cursor-pointer text-destructive">
-                          <X className="h-4 w-4 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
-                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-destructive hover:text-destructive"
+                  onClick={() => setShowDeleteDialog(true)}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
               </div>
-              
-              {post.media_url && (
-                <div className="mb-6 rounded-md overflow-hidden bg-muted">
-                  {post.media_type === 'image' ? (
-                    <img 
-                      src={post.media_url} 
-                      alt={post.title} 
-                      className="w-full h-auto max-h-[400px] object-contain"
-                    />
-                  ) : post.media_type === 'video' ? (
-                    <video 
-                      src={post.media_url} 
-                      controls
-                      className="w-full h-auto max-h-[400px]"
-                    />
-                  ) : null}
+            )}
+          </div>
+        </div>
+        
+        {/* Post Category */}
+        <div>
+          <Badge variant="secondary" className="text-sm">
+            {post.category}
+          </Badge>
+          
+          {post.tags && post.tags.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-3">
+              {post.tags.map((tag, index) => (
+                <Badge key={index} variant="outline" className="text-xs">
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+          )}
+        </div>
+        
+        {/* Tabs */}
+        <Tabs 
+          defaultValue="details" 
+          value={activeTab} 
+          onValueChange={setActiveTab}
+          className="mt-6"
+        >
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="details">Post Details</TabsTrigger>
+            <TabsTrigger value="applicants">
+              Applicants
+              {applicants && applicants.length > 0 && (
+                <Badge variant="outline" className="ml-2">
+                  {applicants.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="details" className="space-y-6 mt-6">
+            {/* Post Image */}
+            {post.media_url && post.media_type === 'image' && (
+              <div className="rounded-lg overflow-hidden">
+                <img
+                  src={post.media_url}
+                  alt={post.title}
+                  className="w-full h-auto max-h-[500px] object-cover"
+                />
+              </div>
+            )}
+            
+            {/* Post Video */}
+            {post.media_url && post.media_type === 'video' && (
+              <div className="rounded-lg overflow-hidden">
+                <video 
+                  src={post.media_url} 
+                  controls 
+                  className="w-full"
+                />
+              </div>
+            )}
+            
+            {/* Post Body */}
+            <div className="prose prose-lg max-w-none dark:prose-invert">
+              <p className="whitespace-pre-wrap">{post.description}</p>
+            </div>
+            
+            {/* Post Metadata */}
+            <div className="bg-muted/40 rounded-lg p-4 space-y-3 mt-6">
+              {eventDate && (
+                <div className="flex items-center">
+                  <Calendar className="h-5 w-5 mr-3 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">Event Date</p>
+                    <p className="text-sm text-muted-foreground">{eventDate}</p>
+                  </div>
                 </div>
               )}
               
-              <div className="mb-6 prose dark:prose-invert max-w-none">
-                <p className="whitespace-pre-line">{post.description}</p>
-              </div>
+              {(post.place || post.location || post.pincode) && (
+                <div className="flex items-center">
+                  <MapPin className="h-5 w-5 mr-3 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">Location</p>
+                    <p className="text-sm text-muted-foreground">
+                      {[
+                        post.place, 
+                        post.location, 
+                        post.pincode
+                      ].filter(Boolean).join(', ')}
+                    </p>
+                  </div>
+                </div>
+              )}
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <Card className="bg-muted/50">
-                  <CardContent className="p-4 space-y-3">
-                    {post.event_date && (
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span>Event Date: {format(new Date(post.event_date), "PPP")}</span>
-                      </div>
-                    )}
-                    
-                    {(post.location || post.place || post.pincode) && (
-                      <div className="flex gap-2">
-                        <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-1" />
-                        <div>
-                          {post.place && <div>{post.place}</div>}
-                          {post.location && (
-                            <div>
-                              {post.location}
-                              {post.pincode && ` - ${post.pincode}`}
-                            </div>
-                          )}
-                          {post.landmark && <div className="text-sm text-muted-foreground">Landmark: {post.landmark}</div>}
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-                
-                <Card className="bg-muted/50">
-                  <CardContent className="p-4 space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      <span>{applicants.length} Applications</span>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <Heart className="h-4 w-4 text-muted-foreground" />
-                      <span>{likeCount} Likes</span>
-                    </div>
-                    
-                    {post.external_url && (
-                      <div className="flex items-center gap-2">
-                        <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                        <a 
-                          href={post.external_url}
-                          target="_blank"
-                          rel="noopener noreferrer" 
-                          className="text-primary truncate hover:underline"
-                        >
-                          External Link
-                        </a>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
+              {post.external_url && (
+                <div className="flex items-center">
+                  <Link2 className="h-5 w-5 mr-3 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">External Link</p>
+                    <a 
+                      href={post.external_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="text-sm text-primary hover:underline"
+                    >
+                      {post.external_url.replace(/^https?:\/\//, '')}
+                    </a>
+                  </div>
+                </div>
+              )}
               
-              {post.tags && post.tags.length > 0 && (
-                <div className="mb-6">
-                  <div className="text-sm font-medium mb-2">Tags:</div>
-                  <div className="flex flex-wrap gap-2">
-                    {post.tags.map((tag: string, index: number) => (
-                      <Badge key={index} variant="outline">
-                        {tag}
-                      </Badge>
-                    ))}
+              {applicants && (
+                <div className="flex items-center">
+                  <Users className="h-5 w-5 mr-3 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">Applications</p>
+                    <p className="text-sm text-muted-foreground">
+                      {applicants.length} {applicants.length === 1 ? 'person' : 'people'} applied
+                    </p>
                   </div>
                 </div>
               )}
             </div>
             
-            <CardFooter className="bg-muted/30 p-4 flex flex-col sm:flex-row gap-4 justify-between">
-              <div className="flex items-center gap-4">
-                <Button
-                  variant={isLiked ? "default" : "outline"} 
-                  size="sm"
-                  onClick={handleLike}
-                  className={isLiked ? "bg-pink-600 hover:bg-pink-700" : ""}
+            {/* Apply button */}
+            {user && (
+              <div className="mt-8 flex justify-center">
+                <Button 
+                  className="w-full max-w-xs bg-gold hover:bg-gold/90 text-black dark:text-black"
+                  size="lg"
+                  disabled={applicants?.some(app => app.user_id === user.id)}
+                  onClick={async () => {
+                    try {
+                      const { applyToPost } = await import('@/services/postsService');
+                      await applyToPost(post.id, user.id);
+                      
+                      toast({
+                        title: "Application Submitted",
+                        description: "Your application has been sent successfully.",
+                      });
+                      
+                      // Refresh applicants list
+                      const updatedApplicants = await getApplicantsByPostId(post.id);
+                      setApplicants(updatedApplicants);
+                      
+                      // Switch to applicants tab
+                      setActiveTab('applicants');
+                    } catch (error) {
+                      console.error('Error applying:', error);
+                      toast({
+                        title: "Error",
+                        description: "Failed to submit your application. Please try again.",
+                        variant: "destructive"
+                      });
+                    }
+                  }}
                 >
-                  <Heart className={`h-4 w-4 mr-2 ${isLiked ? "fill-current" : ""}`} />
-                  {isLiked ? "Liked" : "Like"}
-                </Button>
-                
-                <Button variant="outline" size="sm" onClick={handleShare}>
-                  <Share className="h-4 w-4 mr-2" />
-                  Share
+                  {applicants?.some(app => app.user_id === user.id) 
+                    ? 'Already Applied' 
+                    : 'Apply Now'}
                 </Button>
               </div>
-              
-              {!isCreator && (
-                <Button 
-                  onClick={handleApply}
-                  disabled={isApplied}
-                >
-                  {isApplied ? "Applied" : "Apply Now"}
-                </Button>
-              )}
-            </CardFooter>
-          </div>
-
-          {canManagePost && (
-            <div className="mt-8">
-              <Tabs defaultValue="applicants" className="w-full">
-                <TabsList className="grid grid-cols-1 md:grid-cols-2">
-                  <TabsTrigger value="applicants">Applicants ({applicants.length})</TabsTrigger>
-                  <TabsTrigger value="filters">Filter Applicants</TabsTrigger>
-                </TabsList>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="applicants" className="space-y-6 mt-6">
+            {/* Applicants section */}
+            {(!applicants || applicants.length === 0) ? (
+              <div className="text-center py-12">
+                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium">No Applications Yet</h3>
+                <p className="text-muted-foreground mt-1">
+                  Be the first to apply for this post!
+                </p>
+                {user && (
+                  <Button 
+                    className="mt-4 bg-gold hover:bg-gold/90 text-black"
+                    onClick={async () => {
+                      try {
+                        const { applyToPost } = await import('@/services/postsService');
+                        await applyToPost(post.id, user.id);
+                        
+                        toast({
+                          title: "Application Submitted",
+                          description: "Your application has been sent successfully.",
+                        });
+                        
+                        // Refresh applicants list
+                        const updatedApplicants = await getApplicantsByPostId(post.id);
+                        setApplicants(updatedApplicants);
+                      } catch (error) {
+                        console.error('Error applying:', error);
+                        toast({
+                          title: "Error",
+                          description: "Failed to submit your application. Please try again.",
+                          variant: "destructive"
+                        });
+                      }
+                    }}
+                  >
+                    Apply Now
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <>
+                {/* Applicant filters */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Filter Applicants</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="relative">
+                      <Input
+                        placeholder="Search by name..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full"
+                      />
+                    </div>
+                    
+                    <div>
+                      <ProfessionFilter
+                        selectedProfessions={selectedProfessions as any[]}
+                        onProfessionChange={setSelectedProfessions as any}
+                      />
+                    </div>
+                    
+                    <div>
+                      <LocationFilter
+                        selectedLocations={selectedLocations}
+                        onLocationChange={setSelectedLocations}
+                        availableLocations={availableLocations}
+                      />
+                    </div>
+                  </div>
+                  
+                  {(selectedProfessions.length > 0 || selectedLocations.length > 0 || searchTerm) && (
+                    <div className="flex justify-end">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={resetFilters}
+                      >
+                        Clear Filters
+                      </Button>
+                    </div>
+                  )}
+                </div>
                 
-                <TabsContent value="applicants">
-                  <Card>
-                    <CardContent className="p-6">
-                      {filteredApplicants.length === 0 ? (
-                        <div className="text-center py-8">
-                          <p className="text-muted-foreground">
-                            {applicants.length === 0 
-                              ? "No applications received yet." 
-                              : "No applicants match your filter criteria."}
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          {filteredApplicants.map((applicant) => (
-                            <div 
-                              key={applicant.id} 
-                              className="flex items-center gap-4 p-4 rounded-lg bg-muted/30"
-                            >
+                <Separator />
+                
+                {/* Applicant list */}
+                <div>
+                  <h3 className="text-lg font-medium mb-4">
+                    Applicants ({filteredApplicants.length})
+                  </h3>
+                  
+                  <div className="space-y-4">
+                    {filteredApplicants.length === 0 ? (
+                      <div className="text-center py-8">
+                        <p className="text-muted-foreground">
+                          No applicants match your filter criteria.
+                        </p>
+                      </div>
+                    ) : (
+                      filteredApplicants.map((applicant) => (
+                        <Card key={applicant.id} className="overflow-hidden">
+                          <CardContent className="p-4">
+                            <div className="flex items-center">
                               <Avatar className="h-12 w-12">
-                                <AvatarImage 
-                                  src={applicant.profile?.avatar_url} 
-                                  alt={applicant.profile?.full_name || "User"} 
-                                />
+                                {applicant.profile?.avatar_url && (
+                                  <AvatarImage 
+                                    src={applicant.profile.avatar_url} 
+                                    alt={applicant.profile.full_name || "User"} 
+                                  />
+                                )}
                                 <AvatarFallback>
-                                  {(applicant.profile?.full_name || "U").charAt(0)}
+                                  {applicant.profile?.full_name?.[0] || "U"}
                                 </AvatarFallback>
                               </Avatar>
                               
-                              <div className="flex-1">
-                                <div className="font-medium">
-                                  {applicant.profile?.full_name || "Anonymous User"}
-                                </div>
-                                {applicant.profile?.profession_type && (
-                                  <div className="text-sm text-muted-foreground">
-                                    {applicant.profile.profession_type}
+                              <div className="ml-4 flex-1">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <h4 className="font-medium">
+                                      {applicant.profile?.full_name || "User"}
+                                    </h4>
+                                    <p className="text-sm text-muted-foreground">
+                                      {applicant.profile?.profession_type || "Unknown profession"}
+                                    </p>
                                   </div>
-                                )}
-                                <div className="text-xs text-muted-foreground">
-                                  Applied {format(new Date(applicant.applied_at), "PP")}
+                                  <div>
+                                    {applicant.profile?.location && (
+                                      <Badge variant="outline" className="ml-2">
+                                        {applicant.profile.location}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                                
+                                <div className="flex justify-between items-center mt-2">
+                                  <p className="text-sm text-muted-foreground">
+                                    Applied {format(new Date(applicant.applied_at), 'MMM dd, yyyy')}
+                                  </p>
+                                  
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      if (applicant.user_id) {
+                                        navigate(`/profile/${applicant.user_id}`);
+                                      } else {
+                                        toast({
+                                          title: "Error",
+                                          description: "Could not find user profile",
+                                          variant: "destructive"
+                                        });
+                                      }
+                                    }}
+                                  >
+                                    View Profile
+                                  </Button>
                                 </div>
                               </div>
-                              
-                              <Button asChild variant="outline" size="sm">
-                                <Link to={`/profile/${applicant.user_id}`}>
-                                  View Profile
-                                </Link>
-                              </Button>
                             </div>
-                          ))}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-                
-                <TabsContent value="filters">
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Profession Type</label>
-                          <ProfessionFilter 
-                            selectedProfessions={professionFilter || []}
-                            onProfessionChange={setProfessionFilter} 
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Location</label>
-                          <LocationFilter 
-                            selectedLocations={locationFilter || []}
-                            onLocationChange={setLocationFilter} 
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Application Date Range</label>
-                          <DatePickerWithRange 
-                            date={dateFilter} 
-                            setDate={setDateFilter}
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Rating</label>
-                          <Select value={ratingFilter || "all"} onValueChange={setRatingFilter}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select Rating" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all">Any Rating</SelectItem>
-                              <SelectItem value="5">5 Stars</SelectItem>
-                              <SelectItem value="4">4+ Stars</SelectItem>
-                              <SelectItem value="3">3+ Stars</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      
-                      <div className="mt-6 flex justify-end">
-                        <Button variant="outline" onClick={clearFilters}>Clear Filters</Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              </Tabs>
-            </div>
-          )}
-
-          <Dialog open={showConfirmDelete} onOpenChange={setShowConfirmDelete}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Delete Post</DialogTitle>
-                <DialogDescription>
-                  Are you sure you want to delete this post? This action cannot be undone.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setShowConfirmDelete(false)}>
-                  Cancel
-                </Button>
-                <Button variant="destructive" onClick={() => handleDelete()}>
-                  Delete
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-
-          {showEditDialog && (
-            <CreatePostDialog 
-              open={showEditDialog} 
-              onOpenChange={setShowEditDialog} 
-              editPost={post}
-            />
-          )}
-        </>
-      )}
+                          </CardContent>
+                        </Card>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
+      
+      {/* Confirm delete dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Post</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this post? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeletePost}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

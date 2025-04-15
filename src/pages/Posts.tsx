@@ -32,6 +32,7 @@ import CreatePostDialog from "@/components/posts/CreatePostDialog";
 import { toast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { useNavigate } from "react-router-dom";
 
 const CATEGORIES = [
   "Audition",
@@ -44,7 +45,6 @@ const CATEGORIES = [
   "Other"
 ];
 
-// Common locations for the filter
 const LOCATIONS = [
   "Mumbai",
   "Delhi",
@@ -66,6 +66,7 @@ const Posts = () => {
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const { user } = useAuth();
+  const navigate = useNavigate();
   
   const {
     posts,
@@ -103,6 +104,10 @@ const Posts = () => {
       }
       setPostToDelete(null);
     }
+  };
+
+  const handleViewDetails = (post) => {
+    navigate(`/posts/${post.id}`);
   };
 
   const filteredPosts = posts.filter(post => {
@@ -376,7 +381,7 @@ const Posts = () => {
                 applicationCount={applicationCounts[post.id] || 0}
                 onApply={handleApplyToPost}
                 onLike={handleLikePost}
-                onDelete={confirmDeletePost}
+                onViewDetails={handleViewDetails}
               />
             ))}
           </div>

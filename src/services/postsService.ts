@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -166,7 +167,7 @@ export const getApplicationsForPost = async (post_id: string) => {
     
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
-      .select("*")
+      .select("id, full_name, avatar_url, profession_type, location, email")
       .in("id", userIds);
     
     if (profilesError) {
@@ -280,13 +281,24 @@ export const getApplicantsByPostId = async (postId: string) => {
     
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
-      .select("*")
+      .select("id, full_name, avatar_url, profession_type, location, email")
       .in("id", userIds);
     
     if (profilesError) throw profilesError;
     
+    // Make sure we have profiles before we try to use them
+    const profileData = profiles || [];
+    
     const applicantsWithProfiles = applications.map(app => {
-      const profile = profiles?.find(p => p.id === app.user_id) || null;
+      const profile = profileData.find(p => p.id === app.user_id) || {
+        id: app.user_id,
+        full_name: "User",
+        avatar_url: "",
+        profession_type: "Unknown",
+        location: "",
+        email: ""
+      };
+      
       return {
         ...app,
         profile
@@ -297,5 +309,21 @@ export const getApplicantsByPostId = async (postId: string) => {
   } catch (error) {
     console.error("Error fetching applicants:", error);
     return [];
+  }
+};
+
+export const getUserProfileById = async (userId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    return null;
   }
 };

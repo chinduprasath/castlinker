@@ -43,10 +43,10 @@ export function LocationFilter({
   // Ensure we always have valid arrays
   const validSelectedLocations = Array.isArray(selectedLocations) ? selectedLocations : [];
   
-  // Ensure available locations is always an array and filter out empty/undefined values
+  // Ensure available locations is always an array and filter out null/undefined values
   const validAvailableLocations = Array.isArray(availableLocations) && availableLocations.length > 0 
-    ? availableLocations.filter(loc => loc && loc !== '')
-    : INDIA_LOCATIONS.filter(loc => loc && loc !== '');
+    ? availableLocations.filter(loc => loc !== null && loc !== undefined)
+    : INDIA_LOCATIONS.filter(loc => loc !== null && loc !== undefined);
 
   const toggleLocation = (location: string) => {
     if (!Array.isArray(validSelectedLocations)) {
@@ -86,7 +86,7 @@ export function LocationFilter({
               validAvailableLocations.map((location) => (
                 <CommandItem
                   key={location}
-                  value={location || 'unknown'} // Ensure value is never undefined or empty
+                  value={location} 
                   onSelect={() => toggleLocation(location)}
                   className="flex items-center space-x-2"
                 >

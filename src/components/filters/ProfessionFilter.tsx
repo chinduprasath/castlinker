@@ -44,9 +44,9 @@ export function ProfessionFilter({
     }
   };
 
-  // Make sure PROFESSION_OPTIONS is always an array and filter out any undefined or empty values
+  // Make sure PROFESSION_OPTIONS is always an array and filter out any undefined values
   const safeOptions = Array.isArray(PROFESSION_OPTIONS) 
-    ? PROFESSION_OPTIONS.filter(option => option && option !== undefined)
+    ? PROFESSION_OPTIONS.filter(option => option !== null && option !== undefined)
     : [];
 
   return (
