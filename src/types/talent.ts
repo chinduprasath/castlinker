@@ -1,71 +1,62 @@
 
+// If this file doesn't exist, we need to create it with the necessary types
 export type Profession = 
-  | 'Actor' 
-  | 'Director' 
-  | 'Producer' 
-  | 'Screenwriter' 
-  | 'Cinematographer' 
-  | 'Editor' 
-  | 'Sound Designer' 
-  | 'Composer' 
-  | 'Production Designer' 
-  | 'Costume Designer' 
-  | 'Makeup Artist' 
-  | 'VFX Artist' 
-  | 'Stunt Coordinator' 
-  | 'Casting Director' 
-  | 'Agent' 
-  | 'Production Company' 
-  | 'Art Director';
+  | "Actor" 
+  | "Director" 
+  | "Producer" 
+  | "Writer" 
+  | "Cinematographer" 
+  | "Editor" 
+  | "Sound Designer" 
+  | "Music Director" 
+  | "Costume Designer" 
+  | "Art Director" 
+  | "Makeup Artist"
+  | "VFX Artist"
+  | "Animator"
+  | "Assistant Director"
+  | "Production Manager"
+  | "Casting Director"
+  | "Photographer"
+  | "Dancer"
+  | "Singer"
+  | "Other";
 
 export const PROFESSION_OPTIONS: Profession[] = [
-  'Actor',
-  'Director',
-  'Producer',
-  'Screenwriter',
-  'Cinematographer',
-  'Editor',
-  'Sound Designer',
-  'Composer',
-  'Production Designer',
-  'Costume Designer',
-  'Makeup Artist',
-  'VFX Artist',
-  'Stunt Coordinator',
-  'Casting Director',
-  'Agent',
-  'Production Company',
-  'Art Director'
+  "Actor",
+  "Director",
+  "Producer",
+  "Writer",
+  "Cinematographer",
+  "Editor",
+  "Sound Designer",
+  "Music Director",
+  "Costume Designer",
+  "Art Director",
+  "Makeup Artist",
+  "VFX Artist",
+  "Animator",
+  "Assistant Director",
+  "Production Manager",
+  "Casting Director",
+  "Photographer",
+  "Dancer",
+  "Singer",
+  "Other"
 ];
 
 export type TalentProfile = {
   id: string;
-  userId: string;
-  name: string;
-  role: string;
-  location: string;
-  avatar: string;
-  rating: number;
-  reviews: number;
-  isVerified: boolean;
-  isPremium: boolean;
-  isAvailable: boolean;
+  user_id: string;
+  profession_type: Profession;
   skills: string[];
-  experience: number;
-  languages: string[];
+  experience_years: number;
   bio: string;
-  featuredIn: string[];
-  likesCount: number;
-  joinedDate?: string;
-};
-
-export type TalentFilters = {
-  searchTerm: string;
-  selectedRoles: Profession[];
-  selectedLocations: string[];
-  experienceRange: [number, number];
-  verifiedOnly: boolean;
-  availableOnly: boolean;
-  likesMinimum: number;
-  sortBy: 'rating' | 'experience' | 'reviews' | 'likes' | 'nameAsc' | 'nameDesc';
+  location: string;
+  available_for_hire: boolean;
+  portfolio_url?: string;
+  showreel_url?: string;
+  rating?: number;
+  created_at: string;
+  updated_at: string;
 };

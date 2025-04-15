@@ -44,6 +44,9 @@ export function ProfessionFilter({
     }
   };
 
+  // Make sure PROFESSION_OPTIONS is always an array
+  const safeOptions = Array.isArray(PROFESSION_OPTIONS) ? PROFESSION_OPTIONS : [];
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -64,7 +67,7 @@ export function ProfessionFilter({
           <CommandInput placeholder="Search professions..." />
           <CommandEmpty>No profession found.</CommandEmpty>
           <CommandGroup className="max-h-64 overflow-auto">
-            {PROFESSION_OPTIONS.map((profession) => (
+            {safeOptions.map((profession) => (
               <CommandItem
                 key={profession}
                 onSelect={() => toggleProfession(profession)}

@@ -97,11 +97,21 @@ export const usePosts = () => {
 
   // Filtered posts based on category and search term
   const filteredPosts = posts.filter(post => {
+    // Ensure we have proper values to filter on
+    if (!post) return false;
+
     const matchesCategory = filters.category === 'all' || post.category === filters.category;
-    const matchesSearch = !filters.searchTerm || 
-      post.title.toLowerCase().includes(filters.searchTerm.toLowerCase()) || 
-      post.description.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-      (post.tags && post.tags.some(tag => tag.toLowerCase().includes(filters.searchTerm.toLowerCase())));
+    const searchTerm = filters.searchTerm?.toLowerCase() || '';
+    
+    let matchesSearch = true;
+    if (searchTerm) {
+      matchesSearch = 
+        (post.title?.toLowerCase().includes(searchTerm)) || 
+        (post.description?.toLowerCase().includes(searchTerm)) ||
+        (Array.isArray(post.tags) && post.tags.some(tag => 
+          tag?.toLowerCase().includes(searchTerm)
+        ));
+    }
     
     return matchesCategory && matchesSearch;
   });

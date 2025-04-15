@@ -74,7 +74,7 @@ const PostDetail = () => {
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
 
-  // Filter states
+  // Initialize filter states with proper defaults
   const [professionFilter, setProfessionFilter] = useState<Profession[]>([]);
   const [locationFilter, setLocationFilter] = useState<string[]>([]);
   const [dateFilter, setDateFilter] = useState<DateRange | undefined>(undefined);
@@ -251,28 +251,35 @@ const PostDetail = () => {
   };
 
   const applyFilters = () => {
-    if (!applicants || applicants.length === 0) {
+    // Ensure applicants is always an array
+    const safeApplicants = Array.isArray(applicants) ? applicants : [];
+    
+    if (!safeApplicants.length) {
       setFilteredApplicants([]);
       return;
     }
     
-    let filtered = [...applicants];
+    let filtered = [...safeApplicants];
     
-    // Filter by profession
-    if (professionFilter && professionFilter.length > 0) {
+    // Filter by profession - ensure all arrays are valid
+    const safeProfessionFilter = Array.isArray(professionFilter) ? professionFilter : [];
+    if (safeProfessionFilter.length > 0) {
       filtered = filtered.filter(applicant => 
-        applicant.profile && 
+        applicant?.profile && 
         applicant.profile.profession_type && 
-        professionFilter.includes(applicant.profile.profession_type)
+        safeProfessionFilter.includes(applicant.profile.profession_type)
       );
     }
     
     // Filter by location
-    if (locationFilter && locationFilter.length > 0) {
+    const safeLocationFilter = Array.isArray(locationFilter) ? locationFilter : [];
+    if (safeLocationFilter.length > 0) {
       filtered = filtered.filter(applicant => 
-        applicant.profile && 
+        applicant?.profile && 
         applicant.profile.location && 
-        locationFilter.some(loc => applicant.profile.location.includes(loc))
+        safeLocationFilter.some(loc => 
+          applicant.profile.location.includes(loc)
+        )
       );
     }
     
@@ -282,7 +289,7 @@ const PostDetail = () => {
       const toDate = dateFilter.to || fromDate;
       
       filtered = filtered.filter(applicant => {
-        if (!applicant.applied_at) return false;
+        if (!applicant?.applied_at) return false;
         const appliedDate = new Date(applicant.applied_at);
         return appliedDate >= fromDate && appliedDate <= toDate;
       });
@@ -292,7 +299,7 @@ const PostDetail = () => {
     if (ratingFilter && ratingFilter !== "all") {
       const minRating = parseInt(ratingFilter);
       filtered = filtered.filter(applicant => 
-        applicant.profile && 
+        applicant?.profile && 
         applicant.profile.rating && 
         applicant.profile.rating >= minRating
       );
