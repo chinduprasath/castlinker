@@ -1,12 +1,13 @@
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { createPost } from "@/services/postsService";
+import { createPost, uploadPostMedia } from "@/services/postsService";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { format } from "date-fns";
 
 import {
   Dialog,
@@ -23,6 +24,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import {
   Select,
@@ -34,9 +36,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Loader2, X } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Loader2, X, Calendar as CalendarIcon, Upload, Image, Video } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 
 const CATEGORIES = [
   "Audition",
@@ -54,6 +59,12 @@ const formSchema = z.object({
   description: z.string().min(20, "Description must be at least 20 characters"),
   category: z.string().min(1, "Please select a category"),
   tags: z.array(z.string()).optional(),
+  event_date: z.date().optional().nullable(),
+  external_url: z.string().url("Please enter a valid URL").optional().nullable(),
+  place: z.string().optional(),
+  location: z.string().optional(),
+  pincode: z.string().optional(),
+  landmark: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -61,21 +72,45 @@ type FormValues = z.infer<typeof formSchema>;
 interface CreatePostDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  editPost?: any;
 }
 
-const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
+const CreatePostDialog = ({ open, onOpenChange, editPost }: CreatePostDialogProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tagInput, setTagInput] = useState("");
+  const [mediaFile, setMediaFile] = useState<File | null>(null);
+  const [mediaPreview, setMediaPreview] = useState<string | null>(null);
+  const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const isEditMode = !!editPost;
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
+    defaultValues: isEditMode ? {
+      title: editPost.title,
+      description: editPost.description,
+      category: editPost.category,
+      tags: editPost.tags || [],
+      event_date: editPost.event_date ? new Date(editPost.event_date) : null,
+      external_url: editPost.external_url || null,
+      place: editPost.place || '',
+      location: editPost.location || '',
+      pincode: editPost.pincode || '',
+      landmark: editPost.landmark || '',
+    } : {
       title: "",
       description: "",
       category: "",
       tags: [],
+      event_date: null,
+      external_url: null,
+      place: '',
+      location: '',
+      pincode: '',
+      landmark: '',
     },
   });
 
@@ -112,6 +147,36 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
     form.setValue("tags", currentTags.filter(tag => tag !== tagToRemove));
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setMediaFile(file);
+      
+      // Set media type based on file
+      if (file.type.startsWith('image/')) {
+        setMediaType('image');
+      } else if (file.type.startsWith('video/')) {
+        setMediaType('video');
+      }
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setMediaPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeMedia = () => {
+    setMediaFile(null);
+    setMediaPreview(null);
+    setMediaType(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const onSubmit = async (values: FormValues) => {
     if (!user) {
       toast({
@@ -136,6 +201,15 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
         console.error("Error fetching profile:", profileError);
       }
 
+      // Upload media if present
+      let mediaUrl: string | null = null;
+      if (mediaFile) {
+        mediaUrl = await uploadPostMedia(mediaFile, user.id);
+        if (!mediaUrl) {
+          throw new Error("Failed to upload media");
+        }
+      }
+
       const postData = {
         title: values.title,
         description: values.description,
@@ -144,26 +218,48 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
         creator_profession: profileData?.profession_type || null,
         category: values.category,
         tags: values.tags || [],
+        media_url: isEditMode && !mediaFile ? editPost.media_url : mediaUrl,
+        media_type: isEditMode && !mediaFile ? editPost.media_type : mediaType,
+        event_date: values.event_date ? values.event_date.toISOString() : null,
+        external_url: values.external_url || null,
+        place: values.place || null,
+        location: values.location || null,
+        pincode: values.pincode || null,
+        landmark: values.landmark || null,
       };
       
-      const createdPost = await createPost(postData);
+      let createdPost;
+      
+      if (isEditMode) {
+        createdPost = await updatePost(editPost.id, postData);
+        if (createdPost) {
+          toast({
+            title: "Post Updated",
+            description: "Your post has been successfully updated.",
+          });
+        }
+      } else {
+        createdPost = await createPost(postData);
+        if (createdPost) {
+          toast({
+            title: "Post Created",
+            description: "Your post has been successfully published.",
+          });
+        }
+      }
       
       if (createdPost) {
-        toast({
-          title: "Post Created",
-          description: "Your post has been successfully published.",
-        });
         onOpenChange(false);
         form.reset();
         navigate(`/posts/${createdPost.id}`);
       } else {
-        throw new Error("Failed to create post");
+        throw new Error(`Failed to ${isEditMode ? 'update' : 'create'} post`);
       }
     } catch (error) {
-      console.error("Error creating post:", error);
+      console.error(`Error ${isEditMode ? 'updating' : 'creating'} post:`, error);
       toast({
         title: "Error",
-        description: "Failed to create post. Please try again.",
+        description: `Failed to ${isEditMode ? 'update' : 'create'} post. Please try again.`,
         variant: "destructive"
       });
     } finally {
@@ -175,9 +271,12 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create New Post</DialogTitle>
+          <DialogTitle>{isEditMode ? "Edit Post" : "Create New Post"}</DialogTitle>
           <DialogDescription>
-            Share an opportunity with the community. Fill out the details below.
+            {isEditMode 
+              ? "Update your post details below."
+              : "Share an opportunity with the community. Fill out the details below."
+            }
           </DialogDescription>
         </DialogHeader>
 
@@ -243,6 +342,200 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
               )}
             />
 
+            {/* Media Upload */}
+            <div className="space-y-2">
+              <FormLabel>Media (Image or Video)</FormLabel>
+              <div className="flex gap-2 items-center">
+                <input
+                  type="file"
+                  accept="image/*,video/*"
+                  onChange={handleFileChange}
+                  className="hidden"
+                  ref={fileInputRef}
+                />
+                <Button 
+                  type="button" 
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  {mediaFile ? 'Change Media' : 'Upload Media'}
+                </Button>
+                
+                {mediaFile && (
+                  <Button 
+                    type="button"
+                    variant="outline"
+                    onClick={removeMedia}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Remove
+                  </Button>
+                )}
+              </div>
+
+              {(mediaPreview || (isEditMode && editPost.media_url)) && (
+                <div className="mt-4 border rounded-md p-2 max-w-[300px]">
+                  {mediaType === 'image' || (isEditMode && editPost.media_type === 'image') ? (
+                    <div className="relative">
+                      <Image className="h-6 w-6 absolute top-2 left-2 bg-black/50 p-1 rounded-md text-white" />
+                      <img 
+                        src={mediaPreview || editPost.media_url} 
+                        alt="Preview" 
+                        className="w-full h-auto rounded-md" 
+                      />
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <Video className="h-6 w-6 absolute top-2 left-2 bg-black/50 p-1 rounded-md text-white" />
+                      {mediaPreview ? (
+                        <video 
+                          src={mediaPreview} 
+                          controls 
+                          className="w-full h-auto rounded-md"
+                        />
+                      ) : (
+                        <video 
+                          src={editPost.media_url} 
+                          controls 
+                          className="w-full h-auto rounded-md"
+                        />
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Event Date */}
+            <FormField
+              control={form.control}
+              name="event_date"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Event/Deadline Date</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, "PPP")
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value || undefined}
+                        onSelect={field.onChange}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormDescription>
+                    Select a date for this opportunity (optional)
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* External URL */}
+            <FormField
+              control={form.control}
+              name="external_url"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>External URL (Optional)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="https://example.com" 
+                      {...field} 
+                      value={field.value || ''}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Add a relevant external link (e.g. registration form, YouTube link)
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Location Fields */}
+            <div className="space-y-4 border rounded-md p-4">
+              <h3 className="text-sm font-medium">Address Information (Optional)</h3>
+              
+              <FormField
+                control={form.control}
+                name="place"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Place Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Studio name, building, etc." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="location"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Location</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Area/locality" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="pincode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Pincode</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Postal/zip code" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <FormField
+                control={form.control}
+                name="landmark"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Landmark (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Nearby landmark" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <FormField
               control={form.control}
               name="tags"
@@ -295,7 +588,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
               </Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Publish Post
+                {isEditMode ? 'Update Post' : 'Publish Post'}
               </Button>
             </DialogFooter>
           </form>

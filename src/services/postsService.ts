@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -14,6 +13,14 @@ export type Post = {
   created_at: string;
   updated_at: string;
   like_count: number;
+  media_url?: string | null;
+  media_type?: 'image' | 'video' | null;
+  event_date?: string | null;
+  external_url?: string | null;
+  place?: string | null;
+  location?: string | null;
+  pincode?: string | null;
+  landmark?: string | null;
 };
 
 export type PostApplication = {
@@ -70,6 +77,38 @@ export const createPost = async (post: Omit<Post, "id" | "created_at" | "updated
   }
 };
 
+export const updatePost = async (id: string, post: Partial<Post>) => {
+  try {
+    const { data, error } = await supabase
+      .from("castlinker_posts")
+      .update(post)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as Post;
+  } catch (error) {
+    console.error("Error updating post:", error);
+    return null;
+  }
+};
+
+export const deletePost = async (id: string) => {
+  try {
+    const { error } = await supabase
+      .from("castlinker_posts")
+      .delete()
+      .eq("id", id);
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error("Error deleting post:", error);
+    return false;
+  }
+};
+
 export const applyToPost = async (post_id: string, user_id: string) => {
   try {
     const { data, error } = await supabase
@@ -119,7 +158,6 @@ export const getApplicationsForPost = async (post_id: string) => {
 
 export const togglePostLike = async (post_id: string, user_id: string) => {
   try {
-    // Check if already liked
     const { data: existingLike, error: checkError } = await supabase
       .from("post_likes")
       .select("*")
@@ -129,7 +167,6 @@ export const togglePostLike = async (post_id: string, user_id: string) => {
     if (checkError) throw checkError;
 
     if (existingLike && existingLike.length > 0) {
-      // Unlike the post
       const { error: deleteError } = await supabase
         .from("post_likes")
         .delete()
@@ -137,15 +174,14 @@ export const togglePostLike = async (post_id: string, user_id: string) => {
         .eq("user_id", user_id);
 
       if (deleteError) throw deleteError;
-      return false; // Not liked anymore
+      return false;
     } else {
-      // Like the post
       const { error: insertError } = await supabase
         .from("post_likes")
         .insert({ post_id, user_id });
 
       if (insertError) throw insertError;
-      return true; // Now liked
+      return true;
     }
   } catch (error) {
     console.error("Error toggling like:", error);
@@ -166,5 +202,68 @@ export const checkIfLiked = async (post_id: string, user_id: string) => {
   } catch (error) {
     console.error("Error checking like:", error);
     return false;
+  }
+};
+
+export const uploadPostMedia = async (file: File, userId: string) => {
+  try {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${userId}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+    const filePath = `${userId}/${fileName}`;
+    
+    const { data, error } = await supabase.storage
+      .from('post_media')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+    
+    if (error) throw error;
+    
+    const { data: { publicUrl } } = supabase.storage
+      .from('post_media')
+      .getPublicUrl(filePath);
+      
+    return publicUrl;
+  } catch (error) {
+    console.error("Error uploading file:", error);
+    return null;
+  }
+};
+
+export const getApplicantsByPostId = async (postId: string) => {
+  try {
+    const { data: applications, error: appsError } = await supabase
+      .from("post_applications")
+      .select("*")
+      .eq("post_id", postId);
+
+    if (appsError) throw appsError;
+    
+    if (!applications || applications.length === 0) {
+      return [];
+    }
+    
+    const userIds = applications.map(app => app.user_id);
+    
+    const { data: profiles, error: profilesError } = await supabase
+      .from("profiles")
+      .select("*")
+      .in("id", userIds);
+    
+    if (profilesError) throw profilesError;
+    
+    const applicantsWithProfiles = applications.map(app => {
+      const profile = profiles?.find(p => p.id === app.user_id) || null;
+      return {
+        ...app,
+        profile
+      };
+    });
+    
+    return applicantsWithProfiles;
+  } catch (error) {
+    console.error("Error fetching applicants:", error);
+    return [];
   }
 };

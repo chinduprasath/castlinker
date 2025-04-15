@@ -355,8 +355,16 @@ export type Database = {
           creator_name: string | null
           creator_profession: string | null
           description: string
+          event_date: string | null
+          external_url: string | null
           id: string
+          landmark: string | null
           like_count: number | null
+          location: string | null
+          media_type: string | null
+          media_url: string | null
+          pincode: string | null
+          place: string | null
           tags: string[] | null
           title: string
           updated_at: string
@@ -368,8 +376,16 @@ export type Database = {
           creator_name?: string | null
           creator_profession?: string | null
           description: string
+          event_date?: string | null
+          external_url?: string | null
           id?: string
+          landmark?: string | null
           like_count?: number | null
+          location?: string | null
+          media_type?: string | null
+          media_url?: string | null
+          pincode?: string | null
+          place?: string | null
           tags?: string[] | null
           title: string
           updated_at?: string
@@ -381,8 +397,16 @@ export type Database = {
           creator_name?: string | null
           creator_profession?: string | null
           description?: string
+          event_date?: string | null
+          external_url?: string | null
           id?: string
+          landmark?: string | null
           like_count?: number | null
+          location?: string | null
+          media_type?: string | null
+          media_url?: string | null
+          pincode?: string | null
+          place?: string | null
           tags?: string[] | null
           title?: string
           updated_at?: string

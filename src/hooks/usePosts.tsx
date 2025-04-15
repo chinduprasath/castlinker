@@ -1,7 +1,15 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { Post, fetchPosts, checkIfApplied, togglePostLike, checkIfLiked, getApplicationsForPost } from '@/services/postsService';
+import { 
+  Post, 
+  fetchPosts, 
+  checkIfApplied, 
+  togglePostLike, 
+  checkIfLiked, 
+  getApplicationsForPost,
+  deletePost
+} from '@/services/postsService';
 import { toast } from '@/hooks/use-toast';
 
 export const usePosts = () => {
@@ -91,7 +99,8 @@ export const usePosts = () => {
     const matchesCategory = filters.category === 'all' || post.category === filters.category;
     const matchesSearch = !filters.searchTerm || 
       post.title.toLowerCase().includes(filters.searchTerm.toLowerCase()) || 
-      post.description.toLowerCase().includes(filters.searchTerm.toLowerCase());
+      post.description.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+      (post.tags && post.tags.some(tag => tag.toLowerCase().includes(filters.searchTerm.toLowerCase())));
     
     return matchesCategory && matchesSearch;
   });
@@ -184,6 +193,25 @@ export const usePosts = () => {
     }
   };
 
+  // Delete a post
+  const handleDeletePost = async (postId: string) => {
+    if (!user) return false;
+    
+    try {
+      const success = await deletePost(postId);
+      
+      if (success) {
+        // Remove the post from local state
+        setPosts(prev => prev.filter(post => post.id !== postId));
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error("Error deleting post:", err);
+      return false;
+    }
+  };
+
   const updateFilters = (newFilters: Partial<typeof filters>) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
   };
@@ -201,6 +229,7 @@ export const usePosts = () => {
     applicationCounts,
     handleLikePost,
     handleApplyToPost,
+    handleDeletePost,
     filters,
     updateFilters,
     clearFilters

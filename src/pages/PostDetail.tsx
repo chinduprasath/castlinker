@@ -9,6 +9,8 @@ import {
   checkIfLiked,
   togglePostLike,
   getApplicationsForPost,
+  getApplicantsByPostId,
+  deletePost,
   Post,
   PostApplication
 } from "@/services/postsService";
@@ -18,17 +20,61 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format } from "date-fns";
-import { Heart, ArrowLeft, Users, Clock, Calendar, Tag } from "lucide-react";
+import { 
+  Heart, 
+  ArrowLeft, 
+  Users, 
+  Clock, 
+  Calendar, 
+  Tag, 
+  Share2, 
+  MapPin, 
+  Link2,
+  ExternalLink,
+  Edit,
+  Trash2,
+  Search,
+  Star,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import CreatePostDialog from "@/components/posts/CreatePostDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { DatePickerWithRange } from "@/components/ui/date-range-picker";
+import { DateRange } from "react-day-picker";
 
 interface ApplicationUser {
   id: string;
   full_name: string;
   avatar_url: string;
   profession_type: string;
+  location: string;
+  rating: number;
 }
+
+interface ApplicantWithProfile extends PostApplication {
+  profile: ApplicationUser | null;
+}
+
+const PROFESSION_TYPES = ["All", "Actor", "Writer", "Director", "Music", "Cinematographer", "Other"];
 
 const PostDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -41,8 +87,20 @@ const PostDetail = () => {
   const [isLiked, setIsLiked] = useState(false);
   const [applicationCount, setApplicationCount] = useState(0);
   const [applications, setApplications] = useState<PostApplication[]>([]);
-  const [applicantDetails, setApplicantDetails] = useState<Record<string, ApplicationUser>>({});
+  const [applicants, setApplicants] = useState<ApplicantWithProfile[]>([]);
+  const [filteredApplicants, setFilteredApplicants] = useState<ApplicantWithProfile[]>([]);
   const [isCreator, setIsCreator] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  // Applicant filters
+  const [professionFilter, setProfessionFilter] = useState("All");
+  const [locationFilter, setLocationFilter] = useState("");
+  const [ratingFilter, setRatingFilter] = useState("");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+
+  const isAdmin = user?.email?.includes("admin");
+  const canModify = isCreator || isAdmin;
 
   // Fetch post details
   useEffect(() => {
@@ -108,24 +166,11 @@ const PostDetail = () => {
         setApplications(apps);
         setApplicationCount(apps.length);
 
-        if (isCreator || (user?.email?.includes("admin"))) {
+        if (isCreator || isAdmin) {
           // Fetch details of applicants if current user is post creator or admin
-          const userIds = apps.map(app => app.user_id);
-          
-          if (userIds.length > 0) {
-            const { data, error } = await supabase
-              .from("profiles")
-              .select("id, full_name, avatar_url, profession_type")
-              .in("id", userIds);
-
-            if (!error && data) {
-              const userMap: Record<string, ApplicationUser> = {};
-              data.forEach(user => {
-                userMap[user.id] = user;
-              });
-              setApplicantDetails(userMap);
-            }
-          }
+          const applicantsWithProfiles = await getApplicantsByPostId(id);
+          setApplicants(applicantsWithProfiles);
+          setFilteredApplicants(applicantsWithProfiles);
         }
       } catch (err) {
         console.error("Error loading applications:", err);
@@ -133,7 +178,50 @@ const PostDetail = () => {
     };
 
     loadApplications();
-  }, [id, isCreator, user?.email]);
+  }, [id, isCreator, isAdmin, user?.email]);
+
+  // Filter applicants when filter changes
+  useEffect(() => {
+    if (!applicants.length) return;
+
+    let filtered = [...applicants];
+
+    // Filter by profession
+    if (professionFilter !== "All") {
+      filtered = filtered.filter(
+        app => app.profile?.profession_type === professionFilter
+      );
+    }
+
+    // Filter by location
+    if (locationFilter) {
+      const searchTerm = locationFilter.toLowerCase();
+      filtered = filtered.filter(
+        app => app.profile?.location?.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    // Filter by rating
+    if (ratingFilter) {
+      const minRating = parseInt(ratingFilter);
+      filtered = filtered.filter(
+        app => (app.profile?.rating || 0) >= minRating
+      );
+    }
+
+    // Filter by date range
+    if (dateRange?.from && dateRange?.to) {
+      filtered = filtered.filter(app => {
+        const appliedDate = new Date(app.applied_at);
+        return (
+          appliedDate >= dateRange.from! && 
+          appliedDate <= (dateRange.to || dateRange.from)!
+        );
+      });
+    }
+
+    setFilteredApplicants(filtered);
+  }, [applicants, professionFilter, locationFilter, ratingFilter, dateRange]);
 
   const handleApply = async () => {
     if (!user) {
@@ -200,6 +288,67 @@ const PostDetail = () => {
     }
   };
 
+  const handleShare = () => {
+    const postUrl = window.location.href;
+    
+    // Try to use the native share API if available
+    if (navigator.share) {
+      navigator.share({
+        title: post?.title || "Post",
+        text: post?.description?.substring(0, 100) + (post?.description.length > 100 ? '...' : ''),
+        url: postUrl,
+      })
+      .catch(() => {
+        copyToClipboard(postUrl);
+      });
+    } else {
+      // Fallback to clipboard
+      copyToClipboard(postUrl);
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+      .then(() => {
+        toast({
+          title: "Link copied",
+          description: "Post link has been copied to clipboard",
+        });
+      })
+      .catch(err => {
+        console.error('Failed to copy:', err);
+        toast({
+          title: "Failed to copy",
+          description: "Could not copy the link to clipboard",
+          variant: "destructive"
+        });
+      });
+  };
+
+  const handleDeletePost = async () => {
+    if (!id || !canModify) return;
+
+    try {
+      const deleted = await deletePost(id);
+      
+      if (deleted) {
+        toast({
+          title: "Post deleted",
+          description: "The post has been successfully deleted.",
+        });
+        navigate('/posts');
+      } else {
+        throw new Error("Failed to delete post");
+      }
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to delete post. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="container max-w-4xl py-12 flex justify-center items-center">
@@ -225,6 +374,8 @@ const PostDetail = () => {
   }
 
   const formattedDate = format(new Date(post.created_at), "MMM dd, yyyy");
+  const eventDate = post.event_date ? new Date(post.event_date) : null;
+  const hasLocation = post.place || post.location || post.pincode;
 
   return (
     <div className="container max-w-4xl py-8">
@@ -238,6 +389,25 @@ const PostDetail = () => {
           <ArrowLeft className="h-4 w-4" />
           Back to Posts
         </Button>
+        
+        {/* Media preview if exists */}
+        {post.media_url && (
+          <div className="mb-6 rounded-lg overflow-hidden">
+            {post.media_type === 'image' ? (
+              <img 
+                src={post.media_url} 
+                alt={post.title} 
+                className="w-full max-h-[400px] object-cover" 
+              />
+            ) : post.media_type === 'video' ? (
+              <video
+                src={post.media_url}
+                controls
+                className="w-full max-h-[400px] object-contain bg-black"
+              />
+            ) : null}
+          </div>
+        )}
         
         <div className="flex justify-between items-start">
           <div>
@@ -253,29 +423,103 @@ const PostDetail = () => {
             </div>
           </div>
           
-          <Button 
-            variant={isLiked ? "outline" : "ghost"} 
-            className={cn(
-              "flex items-center gap-2",
-              isLiked && "text-red-500 border-red-500 hover:text-red-500 hover:border-red-500"
+          <div className="flex items-center gap-2">
+            <Button 
+              variant={isLiked ? "outline" : "ghost"} 
+              className={cn(
+                "flex items-center gap-2",
+                isLiked && "text-red-500 border-red-500 hover:text-red-500 hover:border-red-500"
+              )}
+              onClick={handleLike}
+            >
+              <Heart className={cn("h-4 w-4", isLiked && "fill-red-500")} />
+              <span>{post.like_count}</span>
+            </Button>
+
+            <Button
+              variant="ghost"
+              onClick={handleShare}
+              className="flex items-center gap-2"
+            >
+              <Share2 className="h-4 w-4" />
+              <span className="hidden sm:inline">Share</span>
+            </Button>
+
+            {canModify && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowEditDialog(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Edit className="h-4 w-4" />
+                  <span className="hidden sm:inline">Edit</span>
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-destructive hover:text-destructive flex items-center gap-2"
+                  onClick={() => setShowDeleteDialog(true)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span className="hidden sm:inline">Delete</span>
+                </Button>
+              </>
             )}
-            onClick={handleLike}
-          >
-            <Heart className={cn("h-4 w-4", isLiked && "fill-red-500")} />
-            <span>{post.like_count}</span>
-          </Button>
+          </div>
         </div>
         
         <div className="flex flex-wrap gap-3 mt-4">
           <div className="flex items-center text-sm text-muted-foreground">
             <Calendar className="h-4 w-4 mr-1" />
-            <span>{formattedDate}</span>
+            <span>Posted on {formattedDate}</span>
           </div>
           <div className="flex items-center text-sm text-muted-foreground">
             <Users className="h-4 w-4 mr-1" />
             <span>{applicationCount} applied</span>
           </div>
         </div>
+
+        {/* Event date if exists */}
+        {eventDate && (
+          <div className="flex items-center text-sm text-muted-foreground mt-2">
+            <Calendar className="h-4 w-4 mr-1" />
+            <span>Event date: {format(eventDate, 'MMM dd, yyyy')}</span>
+          </div>
+        )}
+        
+        {/* Location if exists */}
+        {hasLocation && (
+          <div className="flex items-center text-sm text-muted-foreground mt-2">
+            <MapPin className="h-4 w-4 mr-1" />
+            <span>
+              {[
+                post.place, 
+                post.location, 
+                post.pincode, 
+                post.landmark
+              ].filter(Boolean).join(', ')}
+            </span>
+          </div>
+        )}
+        
+        {/* External URL if exists */}
+        {post.external_url && (
+          <div className="flex items-center text-sm mt-2">
+            <Link2 className="h-4 w-4 mr-1 text-muted-foreground" />
+            <a 
+              href={post.external_url} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-primary hover:underline flex items-center"
+            >
+              {post.external_url.replace(/^https?:\/\//, '')}
+              <ExternalLink className="h-3 w-3 ml-1" />
+            </a>
+          </div>
+        )}
       </div>
 
       <Separator className="my-6" />
@@ -300,73 +544,214 @@ const PostDetail = () => {
         </div>
       )}
 
-      <div className="mt-8">
-        <Button 
-          size="lg"
-          disabled={isApplied}
-          onClick={handleApply}
-          className={isApplied ? "bg-green-600 hover:bg-green-700" : ""}
-        >
-          {isApplied ? "Application Submitted" : "Apply Now"}
-        </Button>
-      </div>
-      
-      {/* Show applicants section for post creator or admin */}
-      {(isCreator || user?.email?.includes("admin")) && applications.length > 0 && (
-        <div className="mt-12">
-          <h2 className="text-2xl font-bold mb-4">Applicants</h2>
-          <div className="grid gap-4">
-            {applications.map(application => {
-              const applicant = applicantDetails[application.user_id];
-              if (!applicant) return null;
-              
-              return (
-                <Card key={application.id} className="border-brand/10">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-4">
-                      <Avatar>
-                        <AvatarImage src={applicant.avatar_url} />
-                        <AvatarFallback>
-                          {applicant.full_name?.substring(0, 2) || "U"}
-                        </AvatarFallback>
-                      </Avatar>
-                      
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <p className="font-medium">{applicant.full_name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {applicant.profession_type || "Film Professional"}
-                            </p>
-                          </div>
-                          
-                          <div className="flex items-center text-xs text-muted-foreground">
-                            <Clock className="h-3 w-3 mr-1" />
-                            {format(new Date(application.applied_at), "MMM dd, yyyy")}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="mt-2 flex justify-end">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        asChild
-                        className="text-xs"
-                      >
-                        <Link to={`/profile/${applicant.id}`}>
-                          View Profile
-                        </Link>
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+      {!isCreator && (
+        <div className="mt-8">
+          <Button 
+            size="lg"
+            disabled={isApplied}
+            onClick={handleApply}
+            className={isApplied ? "bg-green-600 hover:bg-green-700" : ""}
+          >
+            {isApplied ? "Application Submitted" : "Apply Now"}
+          </Button>
         </div>
       )}
+      
+      {/* Applicants section for post creator or admin */}
+      {(isCreator || isAdmin) && (
+        <div className="mt-12">
+          <h2 className="text-2xl font-bold mb-4">Applicants ({filteredApplicants.length})</h2>
+          
+          {/* Applicant Filters */}
+          <div className="bg-card p-4 rounded-lg mb-6 border">
+            <h3 className="text-lg font-medium mb-4">Filter Applicants</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <label className="text-sm font-medium block mb-2">Profession Type</label>
+                <Select 
+                  value={professionFilter} 
+                  onValueChange={setProfessionFilter}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Professions" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PROFESSION_TYPES.map(type => (
+                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium block mb-2">Location</label>
+                <Input
+                  placeholder="Search by location"
+                  value={locationFilter}
+                  onChange={e => setLocationFilter(e.target.value)}
+                />
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium block mb-2">Minimum Rating</label>
+                <Select 
+                  value={ratingFilter} 
+                  onValueChange={setRatingFilter}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Any rating" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Any rating</SelectItem>
+                    <SelectItem value="3">3+ stars</SelectItem>
+                    <SelectItem value="4">4+ stars</SelectItem>
+                    <SelectItem value="5">5 stars</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium block mb-2">Application Date</label>
+                <DatePickerWithRange
+                  date={dateRange}
+                  setDate={setDateRange}
+                />
+              </div>
+            </div>
+            
+            <div className="mt-4 flex justify-end">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setProfessionFilter("All");
+                  setLocationFilter("");
+                  setRatingFilter("");
+                  setDateRange(undefined);
+                }}
+                className="flex items-center gap-2"
+              >
+                <X className="h-4 w-4" />
+                Clear Filters
+              </Button>
+            </div>
+          </div>
+          
+          {filteredApplicants.length > 0 ? (
+            <div className="grid gap-4">
+              {filteredApplicants.map(application => {
+                const { profile } = application;
+                if (!profile) return null;
+                
+                return (
+                  <Card key={application.id} className="border-brand/10">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-4">
+                        <Avatar>
+                          <AvatarImage src={profile.avatar_url} />
+                          <AvatarFallback>
+                            {profile.full_name?.substring(0, 2) || "U"}
+                          </AvatarFallback>
+                        </Avatar>
+                        
+                        <div className="flex-1">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="font-medium">{profile.full_name}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {profile.profession_type || "Film Professional"}
+                              </p>
+                            </div>
+                            
+                            <div className="flex flex-col items-end gap-1">
+                              <div className="flex items-center text-xs text-muted-foreground">
+                                <Clock className="h-3 w-3 mr-1" />
+                                {format(new Date(application.applied_at), "MMM dd, yyyy")}
+                              </div>
+                              
+                              {profile.rating > 0 && (
+                                <div className="flex items-center">
+                                  <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
+                                  <span className="text-xs ml-1">{profile.rating.toFixed(1)}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {profile.location && (
+                            <div className="flex items-center text-xs text-muted-foreground mt-1">
+                              <MapPin className="h-3 w-3 mr-1" />
+                              <span>{profile.location}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="mt-2 flex justify-end">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          asChild
+                          className="text-xs"
+                        >
+                          <Link to={`/profile/${profile.id}`}>
+                            View Profile
+                          </Link>
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-10 bg-muted/30 rounded-lg">
+              <Users className="h-12 w-12 mx-auto text-muted-foreground opacity-40" />
+              <p className="mt-2 text-muted-foreground">No applicants found matching your filters</p>
+              {applicationCount > 0 && (
+                <Button 
+                  variant="link"
+                  onClick={() => {
+                    setProfessionFilter("All");
+                    setLocationFilter("");
+                    setRatingFilter("");
+                    setDateRange(undefined);
+                  }}
+                >
+                  Clear filters to view all applicants
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Post</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this post? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeletePost}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      {/* Edit dialog */}
+      <CreatePostDialog 
+        open={showEditDialog} 
+        onOpenChange={setShowEditDialog}
+        editPost={post}
+      />
     </div>
   );
 };
