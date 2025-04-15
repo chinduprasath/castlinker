@@ -16,7 +16,8 @@ import {
   Bell,
   BarChart2,
   FileText,
-  Shield
+  Shield,
+  FileTextIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -66,6 +67,12 @@ const AdminSidebar = ({ collapsed, toggleSidebar }: AdminSidebarProps) => {
       icon: Briefcase,
       href: "/admin/jobs",
       permission: "job_view",
+    },
+    {
+      title: "Post Management",
+      icon: FileTextIcon,
+      href: "/admin/posts",
+      permission: "content_view",
     },
     {
       title: "Event Management",

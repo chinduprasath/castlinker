@@ -347,6 +347,48 @@ export type Database = {
         }
         Relationships: []
       }
+      castlinker_posts: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string
+          creator_name: string | null
+          creator_profession: string | null
+          description: string
+          id: string
+          like_count: number | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          created_by: string
+          creator_name?: string | null
+          creator_profession?: string | null
+          description: string
+          id?: string
+          like_count?: number | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string
+          creator_name?: string | null
+          creator_profession?: string | null
+          description?: string
+          id?: string
+          like_count?: number | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       castlinker_x1yc7_portfolio_items: {
         Row: {
           created_at: string
@@ -1046,6 +1088,64 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      post_applications: {
+        Row: {
+          applied_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          applied_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          applied_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_applications_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "castlinker_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_likes: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "castlinker_posts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {

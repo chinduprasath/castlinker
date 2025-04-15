@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -18,6 +17,8 @@ import Pricing from '@/pages/Pricing';
 import Contact from '@/pages/Contact';
 import Dashboard from '@/pages/Dashboard';
 import Jobs from '@/pages/Jobs';
+import Posts from '@/pages/Posts';
+import PostDetail from '@/pages/PostDetail';
 import Profile from '@/pages/Profile';
 import Settings from '@/pages/Settings';
 import TalentDirectory from '@/pages/TalentDirectory';
@@ -41,6 +42,7 @@ import AdminLogin from '@/pages/AdminLogin';
 import AdminDashboard from '@/pages/admin/AdminDashboard';
 import UserManagement from '@/pages/admin/UserManagement';
 import JobManagement from '@/pages/admin/JobManagement';
+import PostManagement from '@/pages/admin/PostManagement';
 import EventManagement from '@/pages/admin/EventManagement';
 import ContentModeration from '@/pages/admin/ContentModeration';
 import Analytics from '@/pages/admin/Analytics';
@@ -152,6 +154,20 @@ const App = () => {
               <PrivateRoute>
                 <AppLayout>
                   <Jobs />
+                </AppLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/posts" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <Posts />
+                </AppLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/posts/:id" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <PostDetail />
                 </AppLayout>
               </PrivateRoute>
             } />
@@ -276,6 +292,15 @@ const App = () => {
                 <AdminRouteGuard>
                   <AdminLayout>
                     <JobManagement />
+                  </AdminLayout>
+                </AdminRouteGuard>
+              </PrivateRoute>
+            } />
+            <Route path="/admin/posts" element={
+              <PrivateRoute>
+                <AdminRouteGuard>
+                  <AdminLayout>
+                    <PostManagement />
                   </AdminLayout>
                 </AdminRouteGuard>
               </PrivateRoute>
