@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Heart, Users, Eye, Share2, Edit, Trash2, MapPin, CalendarIcon, Link2 } from 'lucide-react';
+import { Heart, Users, Eye, Share2, Edit, Trash2, MapPin, CalendarIcon, Link2, Image, Film } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Post } from '@/services/postsService';
 import { cn } from '@/lib/utils';
@@ -110,9 +110,9 @@ const PostCard = ({
   
   return (
     <>
-      <Card className="w-full hover:shadow-md transition-shadow duration-200">
+      <Card className="w-full h-full hover:shadow-md transition-shadow duration-200 flex flex-col">
         {/* Media Preview at the top if exists */}
-        {post.media_url && (
+        {post.media_url ? (
           <div className="w-full relative rounded-t-lg overflow-hidden">
             {post.media_type === 'image' ? (
               <img 
@@ -131,9 +131,30 @@ const PostCard = ({
               </div>
             ) : null}
           </div>
+        ) : (
+          <div className="w-full h-48 bg-muted flex items-center justify-center rounded-t-lg">
+            <div className="text-center text-muted-foreground">
+              {post.media_type === 'image' ? (
+                <>
+                  <Image className="h-10 w-10 mx-auto mb-2 opacity-40" />
+                  <p>No image provided</p>
+                </>
+              ) : post.media_type === 'video' ? (
+                <>
+                  <Film className="h-10 w-10 mx-auto mb-2 opacity-40" />
+                  <p>No video provided</p>
+                </>
+              ) : (
+                <>
+                  <Image className="h-10 w-10 mx-auto mb-2 opacity-40" />
+                  <p>No media provided</p>
+                </>
+              )}
+            </div>
+          </div>
         )}
         
-        <CardHeader className={cn("pb-2", post.media_url && "pt-3")}>
+        <CardHeader className={cn("pb-2")}>
           <div className="flex justify-between items-start">
             <div>
               <h3 className="text-xl font-semibold">{post.title}</h3>
@@ -148,7 +169,7 @@ const PostCard = ({
           </div>
         </CardHeader>
         
-        <CardContent className="pb-2 space-y-3">
+        <CardContent className="pb-2 space-y-3 flex-1">
           <p className="text-sm text-foreground/80">
             {truncatedDescription}
             {post.description.length > MAX_DESCRIPTION_LENGTH && (
@@ -216,7 +237,7 @@ const PostCard = ({
           </div>
         </CardContent>
         
-        <CardFooter className="pt-2 flex items-center justify-between">
+        <CardFooter className="pt-2 flex items-center justify-between mt-auto">
           <div className="flex items-center gap-2">
             <Button 
               variant="outline" 

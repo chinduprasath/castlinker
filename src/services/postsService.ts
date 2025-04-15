@@ -28,6 +28,14 @@ export type PostApplication = {
   post_id: string;
   user_id: string;
   applied_at: string;
+  profile?: {
+    id?: string;
+    full_name?: string;
+    avatar_url?: string;
+    profession_type?: string;
+    location?: string;
+    email?: string;
+  };
 };
 
 export const fetchPosts = async () => {
@@ -143,13 +151,37 @@ export const checkIfApplied = async (post_id: string, user_id: string) => {
 
 export const getApplicationsForPost = async (post_id: string) => {
   try {
-    const { data, error } = await supabase
+    const { data: applications, error: appsError } = await supabase
       .from("post_applications")
       .select("*")
       .eq("post_id", post_id);
 
-    if (error) throw error;
-    return data as PostApplication[];
+    if (appsError) throw appsError;
+    
+    if (!applications || applications.length === 0) {
+      return [];
+    }
+    
+    const userIds = applications.map(app => app.user_id);
+    
+    const { data: profiles, error: profilesError } = await supabase
+      .from("profiles")
+      .select("*")
+      .in("id", userIds);
+    
+    if (profilesError) {
+      console.error("Error fetching profiles:", profilesError);
+    }
+    
+    const applicantsWithProfiles = applications.map(app => {
+      const profile = profiles?.find(p => p.id === app.user_id) || null;
+      return {
+        ...app,
+        profile
+      };
+    });
+    
+    return applicantsWithProfiles as PostApplication[];
   } catch (error) {
     console.error("Error fetching applications:", error);
     return [];
