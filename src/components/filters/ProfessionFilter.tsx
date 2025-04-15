@@ -44,8 +44,10 @@ export function ProfessionFilter({
     }
   };
 
-  // Make sure PROFESSION_OPTIONS is always an array
-  const safeOptions = Array.isArray(PROFESSION_OPTIONS) ? PROFESSION_OPTIONS : [];
+  // Make sure PROFESSION_OPTIONS is always an array and filter out any undefined or empty values
+  const safeOptions = Array.isArray(PROFESSION_OPTIONS) 
+    ? PROFESSION_OPTIONS.filter(option => option && option !== '')
+    : [];
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -67,28 +69,34 @@ export function ProfessionFilter({
           <CommandInput placeholder="Search professions..." />
           <CommandEmpty>No profession found.</CommandEmpty>
           <CommandGroup className="max-h-64 overflow-auto">
-            {safeOptions.map((profession) => (
-              <CommandItem
-                key={profession}
-                value={profession || 'unknown'} // Ensure value is never undefined or empty
-                onSelect={() => toggleProfession(profession)}
-                className="flex items-center space-x-2"
-              >
-                <div
-                  className={cn(
-                    "h-4 w-4 border rounded flex items-center justify-center",
-                    validSelectedProfessions.includes(profession)
-                      ? "bg-primary border-primary"
-                      : "border-input"
-                  )}
+            {safeOptions.length > 0 ? (
+              safeOptions.map((profession) => (
+                <CommandItem
+                  key={profession}
+                  value={profession || 'unknown'} // Ensure value is never undefined or empty
+                  onSelect={() => toggleProfession(profession)}
+                  className="flex items-center space-x-2"
                 >
-                  {validSelectedProfessions.includes(profession) && (
-                    <Check className="h-3 w-3 text-primary-foreground" />
-                  )}
-                </div>
-                <span>{profession}</span>
-              </CommandItem>
-            ))}
+                  <div
+                    className={cn(
+                      "h-4 w-4 border rounded flex items-center justify-center",
+                      validSelectedProfessions.includes(profession)
+                        ? "bg-primary border-primary"
+                        : "border-input"
+                    )}
+                  >
+                    {validSelectedProfessions.includes(profession) && (
+                      <Check className="h-3 w-3 text-primary-foreground" />
+                    )}
+                  </div>
+                  <span>{profession}</span>
+                </CommandItem>
+              ))
+            ) : (
+              <div className="px-2 py-4 text-center text-sm text-muted-foreground">
+                No professions available
+              </div>
+            )}
           </CommandGroup>
         </Command>
       </PopoverContent>

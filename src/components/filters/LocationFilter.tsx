@@ -42,9 +42,11 @@ export function LocationFilter({
   const [open, setOpen] = useState(false);
   // Ensure we always have valid arrays
   const validSelectedLocations = Array.isArray(selectedLocations) ? selectedLocations : [];
+  
+  // Ensure available locations is always an array and filter out empty/undefined values
   const validAvailableLocations = Array.isArray(availableLocations) && availableLocations.length > 0 
-    ? availableLocations 
-    : INDIA_LOCATIONS;
+    ? availableLocations.filter(loc => loc && loc !== '')
+    : INDIA_LOCATIONS.filter(loc => loc && loc !== '');
 
   const toggleLocation = (location: string) => {
     if (!Array.isArray(validSelectedLocations)) {
@@ -80,28 +82,34 @@ export function LocationFilter({
           <CommandInput placeholder="Search locations..." />
           <CommandEmpty>No location found.</CommandEmpty>
           <CommandGroup className="max-h-64 overflow-auto">
-            {validAvailableLocations.map((location) => (
-              <CommandItem
-                key={location}
-                value={location || 'unknown'} // Ensure value is never undefined or empty
-                onSelect={() => toggleLocation(location)}
-                className="flex items-center space-x-2"
-              >
-                <div
-                  className={cn(
-                    "h-4 w-4 border rounded flex items-center justify-center",
-                    validSelectedLocations.includes(location)
-                      ? "bg-primary border-primary"
-                      : "border-input"
-                  )}
+            {validAvailableLocations.length > 0 ? (
+              validAvailableLocations.map((location) => (
+                <CommandItem
+                  key={location}
+                  value={location || 'unknown'} // Ensure value is never undefined or empty
+                  onSelect={() => toggleLocation(location)}
+                  className="flex items-center space-x-2"
                 >
-                  {validSelectedLocations.includes(location) && (
-                    <Check className="h-3 w-3 text-primary-foreground" />
-                  )}
-                </div>
-                <span>{location}</span>
-              </CommandItem>
-            ))}
+                  <div
+                    className={cn(
+                      "h-4 w-4 border rounded flex items-center justify-center",
+                      validSelectedLocations.includes(location)
+                        ? "bg-primary border-primary"
+                        : "border-input"
+                    )}
+                  >
+                    {validSelectedLocations.includes(location) && (
+                      <Check className="h-3 w-3 text-primary-foreground" />
+                    )}
+                  </div>
+                  <span>{location}</span>
+                </CommandItem>
+              ))
+            ) : (
+              <div className="px-2 py-4 text-center text-sm text-muted-foreground">
+                No locations available
+              </div>
+            )}
           </CommandGroup>
         </Command>
       </PopoverContent>

@@ -88,7 +88,7 @@ const PostDetail = () => {
   }, [id]);
 
   useEffect(() => {
-    if (!applicants) return;
+    if (!applicants || !Array.isArray(applicants)) return;
     applyFilters();
   }, [professionFilter, locationFilter, dateFilter, ratingFilter, applicants]);
 
@@ -635,7 +635,7 @@ const PostDetail = () => {
                         
                         <div className="space-y-2">
                           <label className="text-sm font-medium">Rating</label>
-                          <Select value={ratingFilter} onValueChange={setRatingFilter}>
+                          <Select value={ratingFilter || "all"} onValueChange={setRatingFilter}>
                             <SelectTrigger>
                               <SelectValue placeholder="Select Rating" />
                             </SelectTrigger>
