@@ -59,4 +59,30 @@ export type TalentProfile = {
   rating?: number;
   created_at: string;
   updated_at: string;
+  
+  // Additional properties needed by the UI components
+  name?: string;
+  role?: Profession;
+  avatar?: string;
+  reviews?: number;
+  isVerified?: boolean;
+  isPremium?: boolean;
+  isAvailable?: boolean;
+  experience?: number;
+  languages?: string[];
+  featuredIn?: string[];
+  likesCount?: number;
+  userId?: string;
+  joinedDate?: string;
+};
+
+export type TalentFilters = {
+  searchTerm: string;
+  selectedRoles: Profession[];
+  selectedLocations: string[];
+  experienceRange: [number, number];
+  verifiedOnly: boolean;
+  availableOnly: boolean;
+  likesMinimum: number;
+  sortBy: 'rating' | 'experience' | 'reviews' | 'likes' | 'nameAsc' | 'nameDesc';
 };

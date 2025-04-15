@@ -38,9 +38,9 @@ export function ConnectDialog({ talent, isOpen, onClose, onConnect }: ConnectDia
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Connect with {talent?.name}</DialogTitle>
+          <DialogTitle>Connect with {talent?.name || 'Talent'}</DialogTitle>
           <DialogDescription>
-            Send a connection request to collaborate with this {talent?.role?.toLowerCase()}
+            Send a connection request to collaborate with this {talent?.role?.toLowerCase() || 'professional'}
           </DialogDescription>
         </DialogHeader>
         

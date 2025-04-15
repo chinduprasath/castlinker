@@ -29,6 +29,9 @@ export function ProfileDialog({ talent, isOpen, onClose, onMessage, onConnect }:
     }
   };
 
+  const displayName = talent?.name || 'Talent';
+  const fallbackInitial = displayName.charAt(0);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-lg overflow-auto max-h-[90vh]">
@@ -43,13 +46,13 @@ export function ProfileDialog({ talent, isOpen, onClose, onMessage, onConnect }:
           {/* Header */}
           <div className="flex items-center gap-4">
             <Avatar className="h-20 w-20 border-2 border-primary/10">
-              <AvatarImage src={talent.avatar} alt={talent.name} />
-              <AvatarFallback>{talent.name.charAt(0)}</AvatarFallback>
+              <AvatarImage src={talent.avatar} alt={talent.name || 'Talent'} />
+              <AvatarFallback>{fallbackInitial}</AvatarFallback>
             </Avatar>
             
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <h3 className="text-xl font-semibold">{talent.name}</h3>
+                <h3 className="text-xl font-semibold">{displayName}</h3>
                 {talent.isVerified && (
                   <Badge variant="outline" className="border-blue-400 text-blue-500">
                     <Check className="h-3 w-3 mr-1" />
@@ -59,13 +62,13 @@ export function ProfileDialog({ talent, isOpen, onClose, onMessage, onConnect }:
               </div>
               
               <p className="text-muted-foreground">
-                {talent.role}
+                {talent.role || talent.profession_type}
               </p>
               
               <div className="flex items-center gap-1 text-amber-500">
                 <Star className="h-4 w-4 fill-current" />
-                <span className="font-medium">{talent.rating}</span>
-                <span className="text-muted-foreground text-sm">({talent.reviews} reviews)</span>
+                <span className="font-medium">{talent.rating || 0}</span>
+                <span className="text-muted-foreground text-sm">({talent.reviews || 0} reviews)</span>
               </div>
             </div>
           </div>
@@ -79,17 +82,17 @@ export function ProfileDialog({ talent, isOpen, onClose, onMessage, onConnect }:
             
             <div className="flex flex-col items-center justify-center p-3 bg-primary/5 rounded-lg">
               <Calendar className="h-5 w-5 text-primary/70 mb-1" />
-              <span className="text-xs text-center">{talent.experience} Years Exp.</span>
+              <span className="text-xs text-center">{talent.experience || talent.experience_years || 0} Years Exp.</span>
             </div>
             
             <div className="flex flex-col items-center justify-center p-3 bg-primary/5 rounded-lg">
               <Languages className="h-5 w-5 text-primary/70 mb-1" />
-              <span className="text-xs text-center">{talent.languages.join(', ')}</span>
+              <span className="text-xs text-center">{talent.languages ? talent.languages.join(', ') : 'English'}</span>
             </div>
             
             <div className="flex flex-col items-center justify-center p-3 bg-primary/5 rounded-lg">
               <Star className="h-5 w-5 text-primary/70 mb-1" />
-              <span className="text-xs text-center">{talent.likesCount} Likes</span>
+              <span className="text-xs text-center">{talent.likesCount || 0} Likes</span>
             </div>
           </div>
           
@@ -115,7 +118,7 @@ export function ProfileDialog({ talent, isOpen, onClose, onMessage, onConnect }:
           <div className="space-y-2">
             <h4 className="text-sm font-medium">Featured In</h4>
             <div className="space-y-1">
-              {talent.featuredIn.map((work, index) => (
+              {(talent.featuredIn || []).map((work, index) => (
                 <div 
                   key={index} 
                   className="flex items-center gap-2 text-sm p-2 hover:bg-primary/5 rounded-lg transition-colors"

@@ -43,9 +43,9 @@ export function MessageDialog({ talent, isOpen, onClose, onSendMessage }: Messag
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Message {talent?.name}</DialogTitle>
+          <DialogTitle>Message {talent?.name || 'Talent'}</DialogTitle>
           <DialogDescription>
-            Send a direct message to this {talent?.role?.toLowerCase()}
+            Send a direct message to this {talent?.role?.toLowerCase() || 'professional'}
           </DialogDescription>
         </DialogHeader>
         
