@@ -46,7 +46,7 @@ export function ProfessionFilter({
 
   // Make sure PROFESSION_OPTIONS is always an array and filter out any undefined or empty values
   const safeOptions = Array.isArray(PROFESSION_OPTIONS) 
-    ? PROFESSION_OPTIONS.filter(option => option && option !== '')
+    ? PROFESSION_OPTIONS.filter(option => option && option !== undefined)
     : [];
 
   return (
@@ -73,7 +73,7 @@ export function ProfessionFilter({
               safeOptions.map((profession) => (
                 <CommandItem
                   key={profession}
-                  value={profession || 'unknown'} // Ensure value is never undefined or empty
+                  value={profession}
                   onSelect={() => toggleProfession(profession)}
                   className="flex items-center space-x-2"
                 >
