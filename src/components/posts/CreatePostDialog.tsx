@@ -1,7 +1,6 @@
-
 import { useState, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { createPost, uploadPostMedia } from "@/services/postsService";
+import { createPost, uploadPostMedia, updatePost } from "@/services/postsService";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";

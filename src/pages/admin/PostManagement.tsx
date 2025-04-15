@@ -61,11 +61,18 @@ const PostManagement = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setPosts(data || []);
+      
+      // Cast data to ensure media_type is properly typed
+      const typedPosts = (data || []).map(post => ({
+        ...post,
+        media_type: post.media_type as 'image' | 'video' | null
+      }));
+      
+      setPosts(typedPosts);
 
       // Get application counts for all posts
       const counts: Record<string, number> = {};
-      for (const post of data || []) {
+      for (const post of typedPosts) {
         const { count, error: countError } = await supabase
           .from("post_applications")
           .select("*", { count: "exact", head: true })

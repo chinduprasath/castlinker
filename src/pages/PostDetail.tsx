@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -35,6 +34,7 @@ import {
   Trash2,
   Search,
   Star,
+  X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
@@ -93,7 +93,6 @@ const PostDetail = () => {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  // Applicant filters
   const [professionFilter, setProfessionFilter] = useState("All");
   const [locationFilter, setLocationFilter] = useState("");
   const [ratingFilter, setRatingFilter] = useState("");
@@ -102,7 +101,6 @@ const PostDetail = () => {
   const isAdmin = user?.email?.includes("admin");
   const canModify = isCreator || isAdmin;
 
-  // Fetch post details
   useEffect(() => {
     const loadPost = async () => {
       setLoading(true);
@@ -135,7 +133,6 @@ const PostDetail = () => {
     loadPost();
   }, [id, navigate, user?.id]);
 
-  // Check if user has applied and liked
   useEffect(() => {
     const checkUserInteractions = async () => {
       if (!id || !user || !post) return;
@@ -156,7 +153,6 @@ const PostDetail = () => {
     checkUserInteractions();
   }, [id, user, post]);
 
-  // Get applications
   useEffect(() => {
     const loadApplications = async () => {
       if (!id) return;
@@ -167,7 +163,6 @@ const PostDetail = () => {
         setApplicationCount(apps.length);
 
         if (isCreator || isAdmin) {
-          // Fetch details of applicants if current user is post creator or admin
           const applicantsWithProfiles = await getApplicantsByPostId(id);
           setApplicants(applicantsWithProfiles);
           setFilteredApplicants(applicantsWithProfiles);
@@ -180,20 +175,17 @@ const PostDetail = () => {
     loadApplications();
   }, [id, isCreator, isAdmin, user?.email]);
 
-  // Filter applicants when filter changes
   useEffect(() => {
     if (!applicants.length) return;
 
     let filtered = [...applicants];
 
-    // Filter by profession
     if (professionFilter !== "All") {
       filtered = filtered.filter(
         app => app.profile?.profession_type === professionFilter
       );
     }
 
-    // Filter by location
     if (locationFilter) {
       const searchTerm = locationFilter.toLowerCase();
       filtered = filtered.filter(
@@ -201,7 +193,6 @@ const PostDetail = () => {
       );
     }
 
-    // Filter by rating
     if (ratingFilter) {
       const minRating = parseInt(ratingFilter);
       filtered = filtered.filter(
@@ -209,7 +200,6 @@ const PostDetail = () => {
       );
     }
 
-    // Filter by date range
     if (dateRange?.from && dateRange?.to) {
       filtered = filtered.filter(app => {
         const appliedDate = new Date(app.applied_at);
@@ -291,7 +281,6 @@ const PostDetail = () => {
   const handleShare = () => {
     const postUrl = window.location.href;
     
-    // Try to use the native share API if available
     if (navigator.share) {
       navigator.share({
         title: post?.title || "Post",
@@ -302,7 +291,6 @@ const PostDetail = () => {
         copyToClipboard(postUrl);
       });
     } else {
-      // Fallback to clipboard
       copyToClipboard(postUrl);
     }
   };
@@ -390,7 +378,6 @@ const PostDetail = () => {
           Back to Posts
         </Button>
         
-        {/* Media preview if exists */}
         {post.media_url && (
           <div className="mb-6 rounded-lg overflow-hidden">
             {post.media_type === 'image' ? (
@@ -482,7 +469,6 @@ const PostDetail = () => {
           </div>
         </div>
 
-        {/* Event date if exists */}
         {eventDate && (
           <div className="flex items-center text-sm text-muted-foreground mt-2">
             <Calendar className="h-4 w-4 mr-1" />
@@ -490,7 +476,6 @@ const PostDetail = () => {
           </div>
         )}
         
-        {/* Location if exists */}
         {hasLocation && (
           <div className="flex items-center text-sm text-muted-foreground mt-2">
             <MapPin className="h-4 w-4 mr-1" />
@@ -505,7 +490,6 @@ const PostDetail = () => {
           </div>
         )}
         
-        {/* External URL if exists */}
         {post.external_url && (
           <div className="flex items-center text-sm mt-2">
             <Link2 className="h-4 w-4 mr-1 text-muted-foreground" />
@@ -557,12 +541,10 @@ const PostDetail = () => {
         </div>
       )}
       
-      {/* Applicants section for post creator or admin */}
       {(isCreator || isAdmin) && (
         <div className="mt-12">
           <h2 className="text-2xl font-bold mb-4">Applicants ({filteredApplicants.length})</h2>
           
-          {/* Applicant Filters */}
           <div className="bg-card p-4 rounded-lg mb-6 border">
             <h3 className="text-lg font-medium mb-4">Filter Applicants</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -725,7 +707,6 @@ const PostDetail = () => {
         </div>
       )}
 
-      {/* Delete confirmation dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -746,7 +727,6 @@ const PostDetail = () => {
         </AlertDialogContent>
       </AlertDialog>
       
-      {/* Edit dialog */}
       <CreatePostDialog 
         open={showEditDialog} 
         onOpenChange={setShowEditDialog}
