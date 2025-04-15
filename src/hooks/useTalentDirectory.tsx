@@ -1,7 +1,9 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useDebounce } from './useDebounce';
 import { Profession, PROFESSION_OPTIONS, TalentProfile, TalentFilters } from '@/types/talent';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Default filters configuration
 const DEFAULT_FILTERS: TalentFilters = {
@@ -16,6 +18,7 @@ const DEFAULT_FILTERS: TalentFilters = {
 };
 
 export const useTalentDirectory = () => {
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [talents, setTalents] = useState<TalentProfile[]>([]);
   const [filteredTalents, setFilteredTalents] = useState<TalentProfile[]>([]);
@@ -75,7 +78,13 @@ export const useTalentDirectory = () => {
           // Extract unique locations
           const uniqueLocations = Array.from(new Set(talentData.map(talent => talent.location)));
           setLocations(uniqueLocations);
-          setupDummyInteractions(talentData);
+          
+          // Load liked profiles from database
+          if (user) {
+            fetchLikedProfiles(user.id);
+          } else {
+            setupDummyInteractions(talentData);
+          }
         } else {
           console.log('No profiles found, fetching users or using fallback data');
           await fetchUsers();
@@ -90,7 +99,62 @@ export const useTalentDirectory = () => {
     };
     
     fetchTalents();
-  }, []);
+  }, [user]);
+  
+  // Fetch likes from database when user is available
+  const fetchLikedProfiles = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('talent_likes')
+        .select('talent_id')
+        .eq('liker_id', userId);
+        
+      if (error) {
+        console.error('Error fetching liked profiles:', error);
+        return;
+      }
+      
+      if (data && data.length > 0) {
+        // Map the talent_ids to profile ids
+        const likedIds = data.map(like => like.talent_id);
+        console.log('Fetched liked profiles:', likedIds);
+        setLikedProfiles(likedIds);
+      } else {
+        console.log('No liked profiles found');
+        // Set up some dummy liked profiles for better UI testing
+        if (talents.length > 0) {
+          setLikedProfiles([talents[0].id]);
+        }
+      }
+      
+      // Also fetch connection requests
+      fetchConnections(userId);
+      
+    } catch (error) {
+      console.error('Error setting up liked profiles:', error);
+    }
+  };
+  
+  // Fetch connection requests
+  const fetchConnections = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('talent_connections')
+        .select('*')
+        .or(`requester_id.eq.${userId},recipient_id.eq.${userId}`);
+        
+      if (error) {
+        console.error('Error fetching connections:', error);
+        return;
+      }
+      
+      if (data) {
+        setConnectionRequests(data);
+      }
+    } catch (error) {
+      console.error('Error fetching connections:', error);
+    }
+  };
   
   // Fetch users from auth or talent_profiles if available
   const fetchUsers = async () => {
@@ -129,7 +193,13 @@ export const useTalentDirectory = () => {
         // Extract unique locations
         const uniqueLocations = Array.from(new Set(talentData.map(talent => talent.location)));
         setLocations(uniqueLocations);
-        setupDummyInteractions(talentData);
+        
+        // Load liked profiles if user is available
+        if (user) {
+          fetchLikedProfiles(user.id);
+        } else {
+          setupDummyInteractions(talentData);
+        }
         return;
       }
       
@@ -310,6 +380,22 @@ export const useTalentDirectory = () => {
         ? prev.filter(id => id !== profileId) 
         : [...prev, profileId]
     );
+    
+    // Update talent likesCount
+    if (user) {
+      setTalents(prev => 
+        prev.map(talent => {
+          if (talent.id === profileId) {
+            const wasLiked = likedProfiles.includes(profileId);
+            return {
+              ...talent,
+              likesCount: wasLiked ? Math.max(0, talent.likesCount - 1) : talent.likesCount + 1
+            };
+          }
+          return talent;
+        })
+      );
+    }
   };
 
   const toggleWishlist = (profileId: string) => {

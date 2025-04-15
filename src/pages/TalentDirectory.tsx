@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,8 +46,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { ProfessionFilter } from "@/components/filters/ProfessionFilter";
 import { PROFESSION_OPTIONS, Profession } from "@/hooks/useTalentDirectory";
 import { LocationFilter, INDIA_LOCATIONS } from "@/components/filters/LocationFilter";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 const TalentDirectory = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const {
     profiles,
@@ -82,13 +86,64 @@ const TalentDirectory = () => {
   };
   
   const handleViewProfile = (profile: TalentProfile) => {
-    setSelectedProfile(profile);
-    setProfileDialogOpen(true);
+    // Instead of opening the dialog, redirect to the user's profile page
+    navigate(`/profile/${profile.userId}`);
   };
   
   const handleConnectClick = (profile: TalentProfile) => {
     setSelectedProfile(profile);
     setConnectDialogOpen(true);
+  };
+  
+  const handleLikeProfile = async (profile: TalentProfile) => {
+    if (!user) {
+      toast.error("Please sign in to like profiles");
+      return;
+    }
+    
+    // Toggle like locally first for better UX
+    toggleLike(profile.id);
+    
+    try {
+      // If the profile was just liked (now in likedProfiles)
+      const isLiked = likedProfiles.includes(profile.id);
+      
+      if (isLiked) {
+        // Add to database
+        const { error } = await supabase
+          .from('talent_likes')
+          .insert({
+            liker_id: user.id,
+            talent_id: profile.userId
+          });
+          
+        if (error) {
+          throw error;
+        }
+        
+        toast.success(`You liked ${profile.name}'s profile`);
+      } else {
+        // Remove from database
+        const { error } = await supabase
+          .from('talent_likes')
+          .delete()
+          .match({
+            liker_id: user.id,
+            talent_id: profile.userId
+          });
+          
+        if (error) {
+          throw error;
+        }
+        
+        toast.info(`You unliked ${profile.name}'s profile`);
+      }
+    } catch (error) {
+      console.error('Error toggling like:', error);
+      // Revert local state in case of error
+      toggleLike(profile.id);
+      toast.error("Could not update like status. Please try again.");
+    }
   };
   
   const toggleRole = (role: Profession) => {
@@ -462,7 +517,7 @@ const TalentDirectory = () => {
                   <div className="flex flex-col items-end gap-1">
                     <div className="flex items-center">
                       <Star className="h-4 w-4 text-gold mr-1 fill-gold" />
-                      <span className="text-sm font-medium">{profile.rating}</span>
+                      <span className="text-sm font-medium">{profile.rating.toFixed(1)}</span>
                     </div>
                     <div className="flex items-center">
                       <Heart className="h-3.5 w-3.5 text-rose-400 mr-1" />
@@ -512,7 +567,7 @@ const TalentDirectory = () => {
                     className={`px-3 border-gold/20 ${
                       likedProfiles.includes(profile.id) ? 'bg-rose-950/30 text-rose-400' : 'hover:bg-rose-950/20 hover:text-rose-400'
                     }`}
-                    onClick={() => toggleLike(profile.id)}
+                    onClick={() => handleLikeProfile(profile)}
                   >
                     <Heart 
                       className={`h-4 w-4 mr-1 ${likedProfiles.includes(profile.id) ? 'fill-rose-400' : ''}`} 
