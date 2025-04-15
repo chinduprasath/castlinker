@@ -33,7 +33,8 @@ export const usePosts = () => {
       setLoading(true);
       try {
         const data = await fetchPosts();
-        setPosts(data);
+        // Ensure we're setting an array even if the API returns null/undefined
+        setPosts(data || []);
       } catch (err) {
         setError('Failed to load posts');
         console.error(err);
@@ -48,12 +49,14 @@ export const usePosts = () => {
   // Check which posts the current user has applied to
   useEffect(() => {
     const checkApplicationStatus = async () => {
-      if (!user) return;
+      if (!user || !posts.length) return;
       
       const statusMap: Record<string, boolean> = {};
       
       for (const post of posts) {
-        statusMap[post.id] = await checkIfApplied(post.id, user.id);
+        if (post && post.id) {
+          statusMap[post.id] = await checkIfApplied(post.id, user.id);
+        }
       }
       
       setAppliedPosts(statusMap);
@@ -65,12 +68,14 @@ export const usePosts = () => {
   // Check which posts the current user has liked
   useEffect(() => {
     const checkLikeStatus = async () => {
-      if (!user) return;
+      if (!user || !posts.length) return;
       
       const likeMap: Record<string, boolean> = {};
       
       for (const post of posts) {
-        likeMap[post.id] = await checkIfLiked(post.id, user.id);
+        if (post && post.id) {
+          likeMap[post.id] = await checkIfLiked(post.id, user.id);
+        }
       }
       
       setLikedPosts(likeMap);
@@ -82,11 +87,15 @@ export const usePosts = () => {
   // Get application counts for all posts
   useEffect(() => {
     const loadApplicationCounts = async () => {
+      if (!posts.length) return;
+      
       const countsMap: Record<string, number> = {};
       
       for (const post of posts) {
-        const applications = await getApplicationsForPost(post.id);
-        countsMap[post.id] = applications.length;
+        if (post && post.id) {
+          const applications = await getApplicationsForPost(post.id);
+          countsMap[post.id] = applications?.length || 0;
+        }
       }
       
       setApplicationCounts(countsMap);
