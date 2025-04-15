@@ -12,7 +12,7 @@ export const usePosts = () => {
   const [likedPosts, setLikedPosts] = useState<Record<string, boolean>>({});
   const [applicationCounts, setApplicationCounts] = useState<Record<string, number>>({});
   const [filters, setFilters] = useState({
-    category: '',
+    category: 'all',
     searchTerm: ''
   });
   
@@ -88,7 +88,7 @@ export const usePosts = () => {
 
   // Filtered posts based on category and search term
   const filteredPosts = posts.filter(post => {
-    const matchesCategory = !filters.category || post.category === filters.category;
+    const matchesCategory = filters.category === 'all' || post.category === filters.category;
     const matchesSearch = !filters.searchTerm || 
       post.title.toLowerCase().includes(filters.searchTerm.toLowerCase()) || 
       post.description.toLowerCase().includes(filters.searchTerm.toLowerCase());
@@ -189,7 +189,7 @@ export const usePosts = () => {
   };
 
   const clearFilters = () => {
-    setFilters({ category: '', searchTerm: '' });
+    setFilters({ category: 'all', searchTerm: '' });
   };
 
   return {
