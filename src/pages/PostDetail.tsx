@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -79,7 +78,7 @@ const PostDetail = () => {
   const [professionFilter, setProfessionFilter] = useState<Profession[]>([]);
   const [locationFilter, setLocationFilter] = useState<string[]>([]);
   const [dateFilter, setDateFilter] = useState<DateRange | undefined>(undefined);
-  const [ratingFilter, setRatingFilter] = useState<string | null>("all");
+  const [ratingFilter, setRatingFilter] = useState<string>("all");
   
   const [filteredApplicants, setFilteredApplicants] = useState<any[]>([]);
 
@@ -121,8 +120,8 @@ const PostDetail = () => {
       // If user is creator or admin, fetch applicants
       if (user && (postData.created_by === user.id || isAdmin)) {
         const applicantData = await getApplicantsByPostId(id!);
-        setApplicants(applicantData);
-        setFilteredApplicants(applicantData);
+        setApplicants(applicantData || []);
+        setFilteredApplicants(applicantData || []);
       }
     } catch (error) {
       console.error("Error fetching post:", error);
@@ -260,14 +259,16 @@ const PostDetail = () => {
     let filtered = [...applicants];
     
     // Filter by profession
-    if (professionFilter.length > 0) {
+    if (professionFilter && professionFilter.length > 0) {
       filtered = filtered.filter(applicant => 
-        applicant.profile && professionFilter.includes(applicant.profile.profession_type)
+        applicant.profile && 
+        applicant.profile.profession_type && 
+        professionFilter.includes(applicant.profile.profession_type)
       );
     }
     
     // Filter by location
-    if (locationFilter.length > 0) {
+    if (locationFilter && locationFilter.length > 0) {
       filtered = filtered.filter(applicant => 
         applicant.profile && 
         applicant.profile.location && 
@@ -281,6 +282,7 @@ const PostDetail = () => {
       const toDate = dateFilter.to || fromDate;
       
       filtered = filtered.filter(applicant => {
+        if (!applicant.applied_at) return false;
         const appliedDate = new Date(applicant.applied_at);
         return appliedDate >= fromDate && appliedDate <= toDate;
       });
@@ -391,7 +393,6 @@ const PostDetail = () => {
             </div>
           </div>
           
-          {/* Media Section */}
           {post.media_url && (
             <div className="mb-6 rounded-md overflow-hidden bg-muted">
               {post.media_type === 'image' ? (
@@ -410,12 +411,10 @@ const PostDetail = () => {
             </div>
           )}
           
-          {/* Post Content */}
           <div className="mb-6 prose dark:prose-invert max-w-none">
             <p className="whitespace-pre-line">{post.description}</p>
           </div>
           
-          {/* Post Details */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <Card className="bg-muted/50">
               <CardContent className="p-4 space-y-3">
@@ -487,7 +486,6 @@ const PostDetail = () => {
           )}
         </div>
         
-        {/* Action Footer */}
         <CardFooter className="bg-muted/30 p-4 flex flex-col sm:flex-row gap-4 justify-between">
           <div className="flex items-center gap-4">
             <Button
@@ -517,7 +515,6 @@ const PostDetail = () => {
         </CardFooter>
       </div>
 
-      {/* Applicants Section for Post Creator or Admin */}
       {canManagePost && (
         <div className="mt-8">
           <Tabs defaultValue="applicants" className="w-full">
@@ -588,7 +585,7 @@ const PostDetail = () => {
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Profession Type</label>
                       <ProfessionFilter 
-                        selectedProfessions={professionFilter} 
+                        selectedProfessions={professionFilter || []}
                         onProfessionChange={setProfessionFilter} 
                       />
                     </div>
@@ -596,7 +593,7 @@ const PostDetail = () => {
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Location</label>
                       <LocationFilter 
-                        selectedLocations={locationFilter} 
+                        selectedLocations={locationFilter || []}
                         onLocationChange={setLocationFilter} 
                       />
                     </div>
@@ -611,7 +608,7 @@ const PostDetail = () => {
                     
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Rating</label>
-                      <Select value={ratingFilter !== null ? ratingFilter : "all"} onValueChange={setRatingFilter}>
+                      <Select value={ratingFilter} onValueChange={setRatingFilter}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select Rating" />
                         </SelectTrigger>
@@ -635,7 +632,6 @@ const PostDetail = () => {
         </div>
       )}
 
-      {/* Delete Confirmation Dialog */}
       <Dialog open={showConfirmDelete} onOpenChange={setShowConfirmDelete}>
         <DialogContent>
           <DialogHeader>
@@ -655,7 +651,6 @@ const PostDetail = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Post Dialog */}
       {showEditDialog && (
         <CreatePostDialog 
           open={showEditDialog} 

@@ -8,7 +8,8 @@ import {
   togglePostLike, 
   checkIfLiked, 
   getApplicationsForPost,
-  deletePost
+  deletePost,
+  applyToPost
 } from '@/services/postsService';
 import { toast } from '@/hooks/use-toast';
 
@@ -236,6 +237,5 @@ export const usePosts = () => {
   };
 };
 
-import { applyToPost } from '@/services/postsService';
 export { applyToPost };
 export default usePosts;
