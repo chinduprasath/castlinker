@@ -58,8 +58,8 @@ const SuperAdminSignin = () => {
       }
       
       // Verify the user has an admin role
-      const adminRoles: AdminTeamRole[] = ['super_admin', 'moderator', 'content_manager', 'recruiter'];
-      if (!adminUser || !adminRoles.includes(adminUser.role as AdminTeamRole)) {
+      const adminRoles: string[] = ['super_admin', 'moderator', 'content_manager', 'recruiter'];
+      if (!adminUser || !adminRoles.includes(adminUser.role)) {
         throw new Error("You don't have admin access privileges");
       }
       

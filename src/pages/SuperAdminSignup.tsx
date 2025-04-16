@@ -53,13 +53,18 @@ const SuperAdminSignup = () => {
       // Create the user account
       await signup(data.email, data.password, data.name, data.role);
       
+      // Map admin team role to database-compatible role for users_management table
+      // For this solution, we're treating "director" as the default database role
+      // for admin team members as a workaround for the type constraints
+      const dbRole: string = "director";  // Using 'director' as the stand-in role for all admin team members
+      
       // Create entry in users_management table for admin team member
       const { error: managementError } = await supabase
         .from('users_management')
         .insert({
           name: data.name,
           email: data.email,
-          role: data.role as UserManagementRole,
+          role: dbRole, // Use the database-compatible role
           status: 'active',
           verified: true
         });
