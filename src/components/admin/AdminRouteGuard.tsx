@@ -11,14 +11,16 @@ interface AdminRouteGuardProps {
   children: React.ReactNode;
   requiredModule?: AdminModule;
   requiredAction?: 'view' | 'create' | 'edit' | 'delete';
+  requiredPermission?: string; // For legacy compatibility
 }
 
 const AdminRouteGuard = ({ 
   children, 
   requiredModule = 'team',
-  requiredAction = 'view' 
+  requiredAction = 'view',
+  requiredPermission
 }: AdminRouteGuardProps) => {
-  const { isAdmin, adminUser, hasPermission, loading } = useAdminAuth();
+  const { isAdmin, adminUser, hasPermission, can, loading } = useAdminAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [authChecking, setAuthChecking] = useState(true);
@@ -67,9 +69,11 @@ const AdminRouteGuard = ({
     adminUserRole: adminUser?.role,
     requiredModule: moduleToCheck,
     requiredAction,
+    requiredPermission,
     loading,
     authChecking,
-    hasModulePermission: !loading && !authChecking ? hasPermission(moduleToCheck, requiredAction) : 'checking'
+    hasModulePermission: !loading && !authChecking ? hasPermission(moduleToCheck, requiredAction) : 'checking',
+    legacyPermission: requiredPermission ? (!loading && !authChecking ? can(requiredPermission) : 'checking') : 'not required'
   });
   
   // Show loading state while checking admin status
@@ -100,6 +104,21 @@ const AdminRouteGuard = ({
             Admin Sign In
           </Button>
         </div>
+      </div>
+    );
+  }
+  
+  // For backward compatibility, check legacy permissions first
+  if (requiredPermission && !can(requiredPermission)) {
+    console.log(`Legacy Permission denied: User lacks "${requiredPermission}" permission`);
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background">
+        <AlertCircle className="h-12 w-12 text-orange-500 mb-4" />
+        <h1 className="text-2xl font-bold mb-2">Permission Denied</h1>
+        <p className="text-muted-foreground mb-4">
+          You don't have the required permissions for this section.
+        </p>
+        <Button onClick={() => navigate("/admin/dashboard")}>Return to Admin Dashboard</Button>
       </div>
     );
   }

@@ -276,7 +276,7 @@ const App = () => {
               path="/admin/team" 
               element={
                 <PrivateRoute>
-                  <AdminRouteGuard requiredPermission="user_view">
+                  <AdminRouteGuard requiredModule="team" requiredAction="view">
                     <AdminLayout>
                       <TeamManagement />
                     </AdminLayout>
@@ -286,7 +286,7 @@ const App = () => {
             />
             <Route path="/admin/users" element={
               <PrivateRoute>
-                <AdminRouteGuard requiredPermission="user_view">
+                <AdminRouteGuard requiredModule="users" requiredAction="view">
                   <AdminLayout>
                     <UserManagement />
                   </AdminLayout>
@@ -295,7 +295,7 @@ const App = () => {
             } />
             <Route path="/admin/jobs" element={
               <PrivateRoute>
-                <AdminRouteGuard>
+                <AdminRouteGuard requiredModule="jobs" requiredAction="view">
                   <AdminLayout>
                     <JobManagement />
                   </AdminLayout>
@@ -304,7 +304,7 @@ const App = () => {
             } />
             <Route path="/admin/posts" element={
               <PrivateRoute>
-                <AdminRouteGuard>
+                <AdminRouteGuard requiredModule="posts" requiredAction="view">
                   <AdminLayout>
                     <PostManagement />
                   </AdminLayout>
@@ -313,7 +313,7 @@ const App = () => {
             } />
             <Route path="/admin/events" element={
               <PrivateRoute>
-                <AdminRouteGuard>
+                <AdminRouteGuard requiredModule="events" requiredAction="view">
                   <AdminLayout>
                     <EventManagement />
                   </AdminLayout>
@@ -322,7 +322,7 @@ const App = () => {
             } />
             <Route path="/admin/content" element={
               <PrivateRoute>
-                <AdminRouteGuard>
+                <AdminRouteGuard requiredModule="content" requiredAction="view">
                   <AdminLayout>
                     <ContentModeration />
                   </AdminLayout>

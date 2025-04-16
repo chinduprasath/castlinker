@@ -1,6 +1,6 @@
 
 import { useAuth } from '@/contexts/AuthContext';
-import { hasPermission } from '@/lib/adminPermissions';
+import { hasPermission as legacyHasPermission } from '@/lib/adminPermissions';
 import { useEffect, useState } from "react";
 import { AdminTeamRole } from '@/types/adminTypes';
 import { supabase } from "@/integrations/supabase/client";
@@ -63,45 +63,78 @@ export const useAdminAuth = () => {
             
             // Check specifically for admin role, fallback to legacy role check
             if (adminData.admin_role_id) {
-              // Get role and permissions from new RBAC system
-              const { data: roleData, error: roleError } = await supabaseAdmin
-                .from('admin_roles')
-                .select('*')
-                .eq('id', adminData.admin_role_id)
-                .single();
+              try {
+                // Get role and permissions from new RBAC system
+                const { data: roleData, error: roleError } = await supabaseAdmin
+                  .from('admin_roles')
+                  .select('*')
+                  .eq('id', adminData.admin_role_id)
+                  .single();
+                  
+                if (roleError || !roleData) {
+                  console.error('Error fetching admin role:', roleError);
+                } else {
+                  setAdminRole({
+                    id: roleData.id,
+                    name: roleData.name,
+                    description: roleData.description,
+                    is_system: roleData.is_system,
+                    created_at: roleData.created_at,
+                    updated_at: roleData.updated_at
+                  });
+                  console.log('Admin role found:', roleData);
+                }
                 
-              if (roleError || !roleData) {
-                console.error('Error fetching admin role:', roleError);
-              } else {
-                setAdminRole(roleData);
-                console.log('Admin role found:', roleData);
-              }
-              
-              // Get permissions for the role
-              const { data: permissionsData, error: permError } = await supabaseAdmin
-                .from('admin_permissions')
-                .select('*')
-                .eq('role_id', adminData.admin_role_id);
-                
-              if (permError || !permissionsData) {
-                console.error('Error fetching permissions:', permError);
+                // Get permissions for the role
+                const { data: permissionsData, error: permError } = await supabaseAdmin
+                  .from('admin_permissions')
+                  .select('*')
+                  .eq('role_id', adminData.admin_role_id);
+                  
+                if (permError || !permissionsData) {
+                  console.error('Error fetching permissions:', permError);
+                  setAdminUser({
+                    id: adminData.id,
+                    role: 'super_admin',
+                    role_id: adminData.admin_role_id,
+                    name: adminData.name,
+                    permissions: []
+                  });
+                } else {
+                  // Map permissions to the correct type
+                  const typedPermissions: AdminPermission[] = permissionsData.map(p => ({
+                    id: p.id,
+                    role_id: p.role_id,
+                    module: p.module as AdminModule,
+                    can_create: p.can_create,
+                    can_edit: p.can_edit,
+                    can_delete: p.can_delete,
+                    can_view: p.can_view,
+                    created_at: p.created_at,
+                    updated_at: p.updated_at
+                  }));
+                  
+                  setAdminUser({
+                    id: adminData.id,
+                    role: 'super_admin', // Legacy role
+                    role_id: adminData.admin_role_id,
+                    name: adminData.name,
+                    permissions: typedPermissions
+                  });
+                }
+                setIsAdmin(true);
+              } catch (err) {
+                console.error('Error fetching RBAC data:', err);
+                // Fallback to legacy super_admin role
                 setAdminUser({
                   id: adminData.id,
                   role: 'super_admin',
-                  role_id: adminData.admin_role_id,
+                  role_id: null,
                   name: adminData.name,
-                  permissions: []
+                  permissions: []  // Empty permissions for legacy
                 });
-              } else {
-                setAdminUser({
-                  id: adminData.id,
-                  role: 'super_admin', // Legacy role
-                  role_id: adminData.admin_role_id,
-                  name: adminData.name,
-                  permissions: permissionsData
-                });
+                setIsAdmin(true);
               }
-              setIsAdmin(true);
             } else {
               // Ensure we handle the role as a string to avoid type issues
               const role = String(adminData.role).toLowerCase().trim();
@@ -159,7 +192,7 @@ export const useAdminAuth = () => {
       // If this is a module-specific permission like 'users.view'
       if (permission.includes('.')) {
         const [module, action] = permission.split('.');
-        const modulePerm = adminUser.permissions.find(p => p.module === module);
+        const modulePerm = adminUser.permissions.find(p => p.module === module as AdminModule);
         
         if (modulePerm) {
           switch(action) {
@@ -178,7 +211,7 @@ export const useAdminAuth = () => {
     if (adminUser.role === 'super_admin') return true;
     
     // Legacy permission check
-    const hasPermissionResult = hasPermission(adminUser.role, permission);
+    const hasPermissionResult = legacyHasPermission(adminUser.role, permission);
     console.log(`Checking permission "${permission}" for role "${adminUser.role}": ${hasPermissionResult}`);
     return hasPermissionResult;
   };

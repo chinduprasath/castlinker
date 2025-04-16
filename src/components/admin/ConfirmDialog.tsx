@@ -1,51 +1,57 @@
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter
-} from "@/components/ui/dialog";
+import React from "react";
+import { AlertTriangle } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
-interface ConfirmDialogProps {
+export interface ConfirmDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
   title: string;
   description: string;
-  confirmButtonText?: string;
-  confirmButtonVariant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
+  confirmText?: string;
+  cancelText?: string;
+  isSubmitting?: boolean; // Added this prop
 }
 
-const ConfirmDialog = ({ 
-  isOpen, 
-  onClose, 
-  onConfirm, 
-  title, 
+const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  title,
   description,
-  confirmButtonText = "Confirm",
-  confirmButtonVariant = "destructive"
-}: ConfirmDialogProps) => {
+  confirmText = "Confirm",
+  cancelText = "Cancel",
+  isSubmitting = false // Default value
+}) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="bg-card-gradient backdrop-blur-sm border-gold/10">
+        <DialogHeader className="flex flex-col items-center">
+          <div className="bg-yellow-100 dark:bg-yellow-900/30 p-3 rounded-full">
+            <AlertTriangle className="h-6 w-6 text-yellow-600 dark:text-yellow-500" />
+          </div>
+          <DialogTitle className="mt-4">{title}</DialogTitle>
+          <DialogDescription className="text-center">
             {description}
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter className="sm:justify-between">
-          <Button variant="outline" onClick={onClose}>
-            Cancel
+        <DialogFooter className="flex flex-row justify-center sm:justify-end gap-2">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={isSubmitting}
+          >
+            {cancelText}
           </Button>
           <Button 
-            variant={confirmButtonVariant}
+            variant="destructive"
             onClick={onConfirm}
+            disabled={isSubmitting}
+            className="gap-1"
           >
-            {confirmButtonText}
+            {isSubmitting ? "Processing..." : confirmText}
           </Button>
         </DialogFooter>
       </DialogContent>
