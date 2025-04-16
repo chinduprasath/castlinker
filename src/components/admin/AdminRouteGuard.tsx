@@ -10,9 +10,20 @@ interface AdminRouteGuardProps {
 }
 
 const AdminRouteGuard = ({ children, requiredPermission }: AdminRouteGuardProps) => {
-  const { isAdmin, adminUser, can } = useAdminAuth();
+  const { isAdmin, adminUser, can, loading } = useAdminAuth();
   
-  console.log('AdminRouteGuard check:', { isAdmin, adminUser, requiredPermission });
+  console.log('AdminRouteGuard check:', { isAdmin, adminUser, requiredPermission, loading });
+  
+  // Show loading state while checking admin status
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background">
+        <Shield className="h-12 w-12 text-amber-500 animate-pulse mb-4" />
+        <h1 className="text-2xl font-bold mb-2">Verifying Access...</h1>
+        <p className="text-muted-foreground">Please wait while we verify your admin credentials.</p>
+      </div>
+    );
+  }
   
   // Check if user is an admin
   if (!isAdmin) {

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -44,7 +43,9 @@ const SuperAdminSignin = () => {
     
     try {
       // Standard login
-      await login(data.email, data.password, data.rememberMe);
+      const authResponse = await login(data.email, data.password, data.rememberMe);
+      
+      console.log("Login successful, checking admin status...");
       
       // Check if user is an admin team member
       const { data: adminUser, error: adminError } = await supabase
@@ -54,6 +55,7 @@ const SuperAdminSignin = () => {
         .single();
       
       if (adminError) {
+        console.error("Admin check error:", adminError);
         throw new Error("Authentication failed. Please check your credentials.");
       }
       
@@ -62,6 +64,7 @@ const SuperAdminSignin = () => {
       
       // Convert the database role to a string to avoid type issues
       const userRole = String(adminUser.role);
+      console.log("Found user role:", userRole);
       
       if (!adminUser || !adminRoles.includes(userRole)) {
         throw new Error("You don't have admin access privileges");
@@ -71,10 +74,11 @@ const SuperAdminSignin = () => {
       const roleDisplay = userRole === 'super_admin' ? 'Super Admin' : 'Admin';
       toast.success(`Welcome back, ${roleDisplay}`);
       
-      // Add a small delay to ensure navigation happens after state updates and toast appears
+      // Add a slightly longer delay to ensure navigation happens after state updates and toast appears
       setTimeout(() => {
+        console.log("Navigating to admin dashboard...");
         navigate("/admin/dashboard");
-      }, 100);
+      }, 500);
     } catch (error: any) {
       console.error("Login error:", error);
       setError(error.message || "Authentication failed");
