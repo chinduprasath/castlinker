@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -66,8 +67,14 @@ const SuperAdminSignin = () => {
         throw new Error("You don't have admin access privileges");
       }
       
-      toast.success(`Welcome back, ${userRole === 'super_admin' ? 'Super Admin' : 'Admin'}`);
-      navigate("/admin/dashboard");
+      // Show success message
+      const roleDisplay = userRole === 'super_admin' ? 'Super Admin' : 'Admin';
+      toast.success(`Welcome back, ${roleDisplay}`);
+      
+      // Add a small delay to ensure navigation happens after state updates and toast appears
+      setTimeout(() => {
+        navigate("/admin/dashboard");
+      }, 100);
     } catch (error: any) {
       console.error("Login error:", error);
       setError(error.message || "Authentication failed");

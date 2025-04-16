@@ -12,6 +12,8 @@ interface AdminRouteGuardProps {
 const AdminRouteGuard = ({ children, requiredPermission }: AdminRouteGuardProps) => {
   const { isAdmin, adminUser, can } = useAdminAuth();
   
+  console.log('AdminRouteGuard check:', { isAdmin, adminUser, requiredPermission });
+  
   // Check if user is an admin
   if (!isAdmin) {
     return (
