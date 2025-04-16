@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { AdminTeamRole } from '@/types/adminTypes';
 
 interface AdminUser {
-  role: AdminTeamRole;
+  role: string; // Use string instead of AdminTeamRole to match TeamMember
 }
 
 export const useAdminAuth = () => {
@@ -18,7 +18,7 @@ export const useAdminAuth = () => {
     // For this demo, we're considering emails containing "admin" as admin accounts
     // and assigning a role based on the email
     if (user && user.email.includes("admin")) {
-      let role: AdminTeamRole = 'moderator'; // default role
+      let role: string = 'moderator'; // default role
       
       if (user.email.includes("super")) {
         role = 'super_admin';
