@@ -30,7 +30,10 @@ export const useAdminAuth = () => {
           
           if (!error && adminData) {
             console.log('Admin user found:', adminData);
+            // Ensure we handle the role as a string to avoid type issues
             const role = String(adminData.role);
+            
+            // Map string role to AdminTeamRole enum
             const adminRole: AdminTeamRole = 
               role === 'super_admin' ? 'super_admin' : 
               role === 'moderator' ? 'moderator' : 
