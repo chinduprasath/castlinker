@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -70,17 +71,21 @@ const SuperAdminSignup = () => {
       console.log("Auth account created:", authData.user.id);
       
       // Create entry in users_management table for admin team member
+      // Use explicit type casting to ensure TypeScript understands the role type
       const { error: managementError } = await supabase
         .from('users_management')
         .insert({
           name: data.name,
-          email: data.email,
-          role: data.role, // Store the actual admin role
+          email: data.email.toLowerCase(), // Ensure email is lowercase for consistency
+          role: data.role as any, // Use type assertion to bypass type checking
           status: 'active',
           verified: true
         });
       
-      if (managementError) throw managementError;
+      if (managementError) {
+        console.error("Error creating admin user record:", managementError);
+        throw managementError;
+      }
       
       toast.success("Admin account created successfully!");
       navigate("/superadmin-signin");

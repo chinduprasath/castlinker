@@ -6,7 +6,7 @@ import { AdminTeamRole } from '@/types/adminTypes';
 import { supabase } from "@/integrations/supabase/client";
 
 interface AdminUser {
-  role: AdminTeamRole; // Use AdminTeamRole for admin users
+  role: AdminTeamRole;
 }
 
 export const useAdminAuth = () => {
@@ -38,7 +38,7 @@ export const useAdminAuth = () => {
           const { data: adminData, error } = await supabase
             .from('users_management')
             .select('role')
-            .eq('email', user.email)
+            .eq('email', user.email.toLowerCase()) // Ensure we use lowercase for comparison
             .maybeSingle();
           
           if (error) {
@@ -61,11 +61,7 @@ export const useAdminAuth = () => {
             
             if (adminRoles.includes(role)) {
               // Map string role to AdminTeamRole enum
-              const adminRole: AdminTeamRole = 
-                role === 'super_admin' ? 'super_admin' : 
-                role === 'moderator' ? 'moderator' : 
-                role === 'content_manager' ? 'content_manager' : 
-                role === 'recruiter' ? 'recruiter' : 'moderator';
+              const adminRole = role as AdminTeamRole;
               
               console.log('Mapped to AdminTeamRole:', adminRole);
               setAdminUser({ role: adminRole });
