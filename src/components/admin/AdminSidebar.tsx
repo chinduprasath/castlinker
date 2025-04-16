@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -181,7 +180,6 @@ const AdminSidebar = ({ collapsed, toggleSidebar }: AdminSidebarProps) => {
         </nav>
       </div>
 
-      {/* Mobile toggle button (bottom) */}
       <div className="border-t p-2 md:hidden">
         <Button
           variant="outline"

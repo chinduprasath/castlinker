@@ -1,3 +1,4 @@
+
 import { Navigate, useNavigate, useLocation } from "react-router-dom";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Shield, AlertCircle } from "lucide-react";
