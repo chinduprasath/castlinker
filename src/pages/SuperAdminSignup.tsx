@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Shield } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AdminTeamRole } from "@/types/adminTypes";
+import { AdminTeamRole, UserManagementRole } from "@/types/adminTypes";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -59,7 +59,7 @@ const SuperAdminSignup = () => {
         .insert({
           name: data.name,
           email: data.email,
-          role: data.role,
+          role: data.role as UserManagementRole,
           status: 'active',
           verified: true
         });

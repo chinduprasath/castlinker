@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Shield } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { AdminTeamRole } from "@/types/adminTypes";
 
 const formSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -57,7 +58,8 @@ const SuperAdminSignin = () => {
       }
       
       // Verify the user has an admin role
-      if (!adminUser || !['super_admin', 'moderator', 'content_manager', 'recruiter'].includes(adminUser.role)) {
+      const adminRoles: AdminTeamRole[] = ['super_admin', 'moderator', 'content_manager', 'recruiter'];
+      if (!adminUser || !adminRoles.includes(adminUser.role as AdminTeamRole)) {
         throw new Error("You don't have admin access privileges");
       }
       
