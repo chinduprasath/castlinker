@@ -21,32 +21,62 @@ export const useAdminAuth = () => {
       
       if (user && user.email) {
         console.log('useAdminAuth: Checking admin status for', user.email);
+        
         try {
+          // First check if user is authenticated with Supabase
+          const { data: sessionData } = await supabase.auth.getSession();
+          
+          if (!sessionData.session) {
+            console.log('No active Supabase session found');
+            setAdminUser(null);
+            setIsAdmin(false);
+            setLoading(false);
+            return;
+          }
+          
           // Get actual admin role from database
           const { data: adminData, error } = await supabase
             .from('users_management')
             .select('role')
             .eq('email', user.email)
-            .single();
+            .maybeSingle();
           
-          if (!error && adminData) {
+          if (error) {
+            console.error('Error fetching admin data:', error);
+            setAdminUser(null);
+            setIsAdmin(false);
+            setLoading(false);
+            return;
+          }
+          
+          if (adminData) {
             console.log('Admin user found:', adminData);
+            
             // Ensure we handle the role as a string to avoid type issues
             const role = String(adminData.role);
             console.log('Role as string:', role);
             
-            // Map string role to AdminTeamRole enum
-            const adminRole: AdminTeamRole = 
-              role === 'super_admin' ? 'super_admin' : 
-              role === 'moderator' ? 'moderator' : 
-              role === 'content_manager' ? 'content_manager' : 
-              role === 'recruiter' ? 'recruiter' : 'moderator';
+            // List of valid admin roles
+            const adminRoles = ['super_admin', 'moderator', 'content_manager', 'recruiter'];
             
-            console.log('Mapped to AdminTeamRole:', adminRole);
-            setAdminUser({ role: adminRole });
-            setIsAdmin(true);
+            if (adminRoles.includes(role)) {
+              // Map string role to AdminTeamRole enum
+              const adminRole: AdminTeamRole = 
+                role === 'super_admin' ? 'super_admin' : 
+                role === 'moderator' ? 'moderator' : 
+                role === 'content_manager' ? 'content_manager' : 
+                role === 'recruiter' ? 'recruiter' : 'moderator';
+              
+              console.log('Mapped to AdminTeamRole:', adminRole);
+              setAdminUser({ role: adminRole });
+              setIsAdmin(true);
+            } else {
+              console.log('Role not recognized as admin role:', role);
+              setAdminUser(null);
+              setIsAdmin(false);
+            }
           } else {
-            console.log('Not an admin user:', error);
+            console.log('Not an admin user: No admin data found');
             setAdminUser(null);
             setIsAdmin(false);
           }

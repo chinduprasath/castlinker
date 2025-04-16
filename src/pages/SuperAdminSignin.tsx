@@ -1,7 +1,5 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,7 +11,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Shield } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { AdminTeamRole } from "@/types/adminTypes";
 
 const formSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -24,7 +21,6 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const SuperAdminSignin = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isLoading, setIsLoading] = useState(false);
@@ -32,38 +28,32 @@ const SuperAdminSignin = () => {
   
   // Check if user is already logged in and is an admin
   useEffect(() => {
-    const checkAdminStatus = async () => {
+    const checkSession = async () => {
       try {
-        if (user?.email) {
-          console.log("User already logged in, checking admin status...");
+        const { data: sessionData } = await supabase.auth.getSession();
+        
+        if (sessionData.session) {
+          console.log("User already has a session, checking admin status...");
+          
           const { data: adminData, error: adminError } = await supabase
             .from('users_management')
             .select('role')
-            .eq('email', user.email)
+            .eq('email', sessionData.session.user.email)
             .single();
           
           if (!adminError && adminData) {
-            // Convert the role to string for comparison
-            const role = String(adminData.role);
-            console.log("Found existing user role:", role);
-            
-            // List of admin roles
-            const adminRoles = ['super_admin', 'moderator', 'content_manager', 'recruiter'];
-            
-            if (adminRoles.includes(role)) {
-              console.log("Already logged in as admin, redirecting...");
-              navigate('/admin/dashboard');
-              return;
-            }
+            console.log("Found existing admin user:", adminData);
+            toast.success("Already logged in as admin");
+            navigate('/admin/dashboard');
           }
         }
       } catch (err) {
-        console.error("Error checking existing admin session:", err);
+        console.error("Error checking existing session:", err);
       }
     };
     
-    checkAdminStatus();
-  }, [user, navigate]);
+    checkSession();
+  }, [navigate]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -80,7 +70,7 @@ const SuperAdminSignin = () => {
     console.log("Attempting sign in with:", data.email);
     
     try {
-      // First attempt to sign in with Supabase
+      // Step 1: Sign in with Supabase Auth
       const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password
@@ -88,42 +78,49 @@ const SuperAdminSignin = () => {
       
       if (signInError) {
         console.error("Sign in error:", signInError);
-        throw signInError;
+        throw new Error(signInError.message);
+      }
+      
+      if (!authData.session || !authData.user) {
+        throw new Error("No session created");
       }
       
       console.log("Basic authentication successful, checking admin status...");
       
-      // Check if user is an admin team member
+      // Step 2: Check if user is in the users_management table
       const { data: adminUser, error: adminError } = await supabase
         .from('users_management')
-        .select('role')
+        .select('role, name')
         .eq('email', data.email)
-        .single();
+        .maybeSingle();
       
       if (adminError) {
         console.error("Admin check error:", adminError);
-        throw new Error("Authentication failed. Please check your credentials.");
+        // If there's an error checking admin status, still log the user out
+        await supabase.auth.signOut();
+        throw new Error("Error verifying admin privileges");
       }
       
-      console.log("Admin check result:", adminUser);
-      
-      // List of admin roles we want to allow
-      const adminRoles = ['super_admin', 'moderator', 'content_manager', 'recruiter'];
-      
-      // Convert the database role to a string to avoid type issues
-      const userRole = String(adminUser.role);
-      console.log("Found user role:", userRole);
-      
-      if (!adminUser || !adminRoles.includes(userRole)) {
-        // Logout if not an admin
-        console.error("Not an admin user, signing out");
+      if (!adminUser) {
+        console.error("User not found in users_management table");
         await supabase.auth.signOut();
         throw new Error("You don't have admin access privileges");
       }
       
-      // Show success message
-      const roleDisplay = userRole === 'super_admin' ? 'Super Admin' : 'Admin';
-      toast.success(`Welcome back, ${roleDisplay}`);
+      console.log("Admin check result:", adminUser);
+      
+      // Get the role value and convert to string to avoid type issues
+      const userRole = String(adminUser.role);
+      console.log("User role (as string):", userRole);
+      
+      // List of admin roles we want to allow
+      const adminRoles = ['super_admin', 'moderator', 'content_manager', 'recruiter'];
+      
+      if (!adminRoles.includes(userRole)) {
+        console.error("Not an admin role:", userRole);
+        await supabase.auth.signOut();
+        throw new Error("You don't have admin access privileges");
+      }
       
       // Save remember me preference
       if (data.rememberMe) {
@@ -132,27 +129,28 @@ const SuperAdminSignin = () => {
         localStorage.removeItem('rememberLogin');
       }
       
+      // Show success message
+      const displayName = adminUser.name || "Admin";
+      const roleDisplay = userRole.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+      
+      toast.success(`Welcome back, ${displayName} (${roleDisplay})`);
       console.log("Admin authentication successful, navigating to dashboard");
       
-      // Give a small delay to ensure toast is visible
-      setTimeout(() => {
-        navigate("/admin/dashboard");
-      }, 100);
+      // Navigate to admin dashboard
+      navigate("/admin/dashboard");
       
     } catch (error: any) {
       console.error("Login error:", error);
-      setError(error.message || "Authentication failed");
+      setError(error.message || "Authentication failed. Please check your credentials.");
       
-      // If login succeeded but admin check failed, log out
-      if (error.message === "You don't have admin access privileges") {
-        // Logout and stay on the current page
-        await supabase.auth.signOut();
-      }
+      // Ensure user is logged out if there was an error
+      await supabase.auth.signOut();
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Rest of the render method remains the same
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-cinematic">
       <div className="w-full max-w-md p-8 space-y-8 bg-background/80 backdrop-blur-sm rounded-lg shadow-lg border border-gold/20">

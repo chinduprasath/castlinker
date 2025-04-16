@@ -10,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Shield } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AdminTeamRole, UserManagementRole, AdminUserRole } from "@/types/adminTypes";
+import { AdminTeamRole } from "@/types/adminTypes";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -49,12 +49,25 @@ const SuperAdminSignup = () => {
     setError(null);
     
     try {
-      // Create the user account
-      await signup(data.email, data.password, data.name, data.role);
+      // First, create the user in Supabase Auth
+      const { data: authData, error: signupError } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          data: {
+            name: data.name,
+            role: data.role
+          }
+        }
+      });
       
-      // Cast the admin role to a database-compatible role
-      // We're using "director" as a placeholder in the database since it's one of the valid AdminUserRole types
-      const dbRole: AdminUserRole = "director";
+      if (signupError) throw signupError;
+      
+      if (!authData.user) {
+        throw new Error("Failed to create user account");
+      }
+      
+      console.log("Auth account created:", authData.user.id);
       
       // Create entry in users_management table for admin team member
       const { error: managementError } = await supabase
@@ -62,14 +75,14 @@ const SuperAdminSignup = () => {
         .insert({
           name: data.name,
           email: data.email,
-          role: dbRole, // Use the database-compatible role
+          role: data.role, // Store the actual admin role
           status: 'active',
           verified: true
         });
       
       if (managementError) throw managementError;
       
-      toast.success("Super Admin account created successfully!");
+      toast.success("Admin account created successfully!");
       navigate("/superadmin-signin");
     } catch (err: any) {
       console.error("Signup error:", err);
