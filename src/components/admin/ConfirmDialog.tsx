@@ -12,7 +12,7 @@ export interface ConfirmDialogProps {
   description: string;
   confirmText?: string;
   cancelText?: string;
-  isSubmitting?: boolean; // Added this prop
+  isSubmitting?: boolean;
 }
 
 const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
@@ -23,7 +23,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   description,
   confirmText = "Confirm",
   cancelText = "Cancel",
-  isSubmitting = false // Default value
+  isSubmitting = false
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

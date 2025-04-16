@@ -1,6 +1,4 @@
 
-import { AdminTeamRole } from "./adminTypes";
-
 export type AdminModule = 'posts' | 'users' | 'jobs' | 'events' | 'content' | 'team';
 
 export interface AdminRoleWithPermissions {

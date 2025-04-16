@@ -45,7 +45,7 @@ export const useAdminAuth = () => {
           // Get actual admin role from database using admin client
           const { data: adminData, error } = await supabaseAdmin
             .from('users_management')
-            .select('id, role, name, admin_role_id')
+            .select('id, role, name')
             .eq('email', user.email.toLowerCase())
             .single();
           
@@ -61,102 +61,93 @@ export const useAdminAuth = () => {
           if (adminData) {
             console.log('Admin user found:', adminData);
             
-            // Check specifically for admin role, fallback to legacy role check
-            if (adminData.admin_role_id) {
+            // Since admin_role_id is not yet implemented in the database, we'll use the legacy role system
+            // Ensure we handle the role as a string to avoid type issues
+            const role = String(adminData.role).toLowerCase().trim();
+            console.log('Role as string:', role);
+            
+            // Check specifically for super_admin role
+            if (role === 'super_admin') {
+              console.log('User is a super_admin');
+              
               try {
-                // Get role and permissions from new RBAC system
-                const { data: roleData, error: roleError } = await supabaseAdmin
+                // Try to get the SuperAdmin role from the new roles table
+                const { data: superAdminRoleData } = await supabaseAdmin
                   .from('admin_roles')
                   .select('*')
-                  .eq('id', adminData.admin_role_id)
-                  .single();
-                  
-                if (roleError || !roleData) {
-                  console.error('Error fetching admin role:', roleError);
-                } else {
-                  setAdminRole({
-                    id: roleData.id,
-                    name: roleData.name,
-                    description: roleData.description,
-                    is_system: roleData.is_system,
-                    created_at: roleData.created_at,
-                    updated_at: roleData.updated_at
-                  });
-                  console.log('Admin role found:', roleData);
-                }
+                  .eq('name', 'SuperAdmin')
+                  .single() as any;
                 
-                // Get permissions for the role
-                const { data: permissionsData, error: permError } = await supabaseAdmin
-                  .from('admin_permissions')
-                  .select('*')
-                  .eq('role_id', adminData.admin_role_id);
+                if (superAdminRoleData) {
+                  // Map to AdminRole type
+                  const superAdminRole: AdminRole = {
+                    id: superAdminRoleData.id,
+                    name: superAdminRoleData.name,
+                    description: superAdminRoleData.description,
+                    is_system: superAdminRoleData.is_system,
+                    created_at: superAdminRoleData.created_at,
+                    updated_at: superAdminRoleData.updated_at
+                  };
                   
-                if (permError || !permissionsData) {
-                  console.error('Error fetching permissions:', permError);
+                  setAdminRole(superAdminRole);
+                  
+                  // Get all permissions for SuperAdmin
+                  const { data: permissionsData } = await supabaseAdmin
+                    .from('admin_permissions')
+                    .select('*')
+                    .eq('role_id', superAdminRole.id) as any;
+                  
+                  // Create typed permissions array
+                  const typedPermissions: AdminPermission[] = permissionsData ? 
+                    permissionsData.map((p: any) => ({
+                      id: p.id,
+                      role_id: p.role_id,
+                      module: p.module as AdminModule,
+                      can_create: p.can_create,
+                      can_edit: p.can_edit,
+                      can_delete: p.can_delete,
+                      can_view: p.can_view,
+                      created_at: p.created_at,
+                      updated_at: p.updated_at
+                    })) : [];
+                  
                   setAdminUser({
                     id: adminData.id,
                     role: 'super_admin',
-                    role_id: adminData.admin_role_id,
-                    name: adminData.name,
-                    permissions: []
-                  });
-                } else {
-                  // Map permissions to the correct type
-                  const typedPermissions: AdminPermission[] = permissionsData.map(p => ({
-                    id: p.id,
-                    role_id: p.role_id,
-                    module: p.module as AdminModule,
-                    can_create: p.can_create,
-                    can_edit: p.can_edit,
-                    can_delete: p.can_delete,
-                    can_view: p.can_view,
-                    created_at: p.created_at,
-                    updated_at: p.updated_at
-                  }));
-                  
-                  setAdminUser({
-                    id: adminData.id,
-                    role: 'super_admin', // Legacy role
-                    role_id: adminData.admin_role_id,
+                    role_id: superAdminRole.id,
                     name: adminData.name,
                     permissions: typedPermissions
                   });
+                } else {
+                  // Fallback to default SuperAdmin permissions
+                  setAdminUser({
+                    id: adminData.id,
+                    role: 'super_admin',
+                    role_id: null,
+                    name: adminData.name,
+                    permissions: [] // Legacy super_admin has all permissions
+                  });
                 }
+                
                 setIsAdmin(true);
               } catch (err) {
-                console.error('Error fetching RBAC data:', err);
+                console.error('Error fetching SuperAdmin role:', err);
+                
                 // Fallback to legacy super_admin role
                 setAdminUser({
                   id: adminData.id,
                   role: 'super_admin',
                   role_id: null,
                   name: adminData.name,
-                  permissions: []  // Empty permissions for legacy
+                  permissions: [] // Empty permissions for legacy
                 });
                 setIsAdmin(true);
               }
             } else {
-              // Ensure we handle the role as a string to avoid type issues
-              const role = String(adminData.role).toLowerCase().trim();
-              console.log('Role as string:', role);
-              
-              // Check specifically for super_admin role
-              if (role === 'super_admin') {
-                console.log('User is a super_admin');
-                setAdminUser({ 
-                  id: adminData.id,
-                  role: 'super_admin',
-                  role_id: null,
-                  name: adminData.name,
-                  permissions: []  // Legacy super_admin has all permissions
-                });
-                setIsAdmin(true);
-              } else {
-                console.log('User is not a super_admin:', role);
-                setAdminUser(null);
-                setAdminRole(null);
-                setIsAdmin(false);
-              }
+              console.log('User is not a super_admin:', role);
+              setAdminUser(null);
+              setAdminRole(null);
+              setIsAdmin(false);
             }
           } else {
             console.log('Not an admin user: No admin data found');

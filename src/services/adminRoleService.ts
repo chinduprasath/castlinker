@@ -4,10 +4,11 @@ import { AdminPermission, AdminRole, AdminRoleWithPermissions } from "@/types/rb
 
 export const fetchRoles = async (): Promise<AdminRole[]> => {
   try {
+    // We need to cast since we're directly accessing tables not in the types
     const { data, error } = await supabase
       .from('admin_roles')
       .select('*')
-      .order('name');
+      .order('name') as any;
       
     if (error) {
       console.error('Error fetching roles:', error);
@@ -36,7 +37,7 @@ export const fetchRoleWithPermissions = async (roleId: string): Promise<AdminRol
       .from('admin_roles')
       .select('*')
       .eq('id', roleId)
-      .single();
+      .single() as any;
       
     if (roleError) {
       console.error('Error fetching role:', roleError);
@@ -47,7 +48,7 @@ export const fetchRoleWithPermissions = async (roleId: string): Promise<AdminRol
     const { data: permissions, error: permError } = await supabase
       .from('admin_permissions')
       .select('*')
-      .eq('role_id', roleId);
+      .eq('role_id', roleId) as any;
       
     if (permError) {
       console.error('Error fetching permissions:', permError);
@@ -88,7 +89,7 @@ export const createRole = async (role: Partial<AdminRole>): Promise<AdminRole> =
       .from('admin_roles')
       .insert([role])
       .select()
-      .single();
+      .single() as any;
       
     if (error) {
       console.error('Error creating role:', error);
@@ -109,7 +110,7 @@ export const updateRole = async (id: string, role: Partial<AdminRole>): Promise<
       .update(role)
       .eq('id', id)
       .select()
-      .single();
+      .single() as any;
       
     if (error) {
       console.error('Error updating role:', error);
@@ -128,7 +129,7 @@ export const deleteRole = async (id: string): Promise<void> => {
     const { error } = await supabase
       .from('admin_roles')
       .delete()
-      .eq('id', id);
+      .eq('id', id) as any;
       
     if (error) {
       console.error('Error deleting role:', error);
@@ -153,7 +154,7 @@ export const updatePermission = async (roleId: string, module: string, permissio
       .select('*')
       .eq('role_id', roleId)
       .eq('module', module)
-      .single();
+      .single() as any;
       
     if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "No rows returned" error
       console.error('Error checking permission:', checkError);
@@ -167,7 +168,7 @@ export const updatePermission = async (roleId: string, module: string, permissio
         .update(permissions)
         .eq('id', existingPerm.id)
         .select()
-        .single();
+        .single() as any;
         
       if (error) {
         console.error('Error updating permission:', error);
@@ -185,7 +186,7 @@ export const updatePermission = async (roleId: string, module: string, permissio
           ...permissions
         }])
         .select()
-        .single();
+        .single() as any;
         
       if (error) {
         console.error('Error creating permission:', error);

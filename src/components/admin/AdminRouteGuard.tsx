@@ -1,4 +1,3 @@
-
 import { Navigate, useNavigate, useLocation } from "react-router-dom";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Shield, AlertCircle } from "lucide-react";
@@ -26,7 +25,6 @@ const AdminRouteGuard = ({
   const [authChecking, setAuthChecking] = useState(true);
   
   useEffect(() => {
-    // Verify Supabase session first
     const checkSession = async () => {
       try {
         const { data: sessionData } = await supabase.auth.getSession();
@@ -49,7 +47,6 @@ const AdminRouteGuard = ({
     checkSession();
   }, [navigate]);
   
-  // Determine current module based on path
   const getCurrentModule = (): AdminModule => {
     const path = location.pathname;
     if (path.includes('/users')) return 'users';
@@ -61,7 +58,6 @@ const AdminRouteGuard = ({
     return 'team'; // Default to team for dashboard, etc.
   };
   
-  // Use the detected module if none provided
   const moduleToCheck = requiredModule || getCurrentModule();
   
   console.log('AdminRouteGuard check:', { 
@@ -76,7 +72,6 @@ const AdminRouteGuard = ({
     legacyPermission: requiredPermission ? (!loading && !authChecking ? can(requiredPermission) : 'checking') : 'not required'
   });
   
-  // Show loading state while checking admin status
   if (loading || authChecking) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background">
@@ -87,7 +82,6 @@ const AdminRouteGuard = ({
     );
   }
   
-  // Check if user is an admin
   if (!isAdmin || !adminUser) {
     console.log("Access denied: User is not an admin");
     return (
@@ -108,7 +102,6 @@ const AdminRouteGuard = ({
     );
   }
   
-  // For backward compatibility, check legacy permissions first
   if (requiredPermission && !can(requiredPermission)) {
     console.log(`Legacy Permission denied: User lacks "${requiredPermission}" permission`);
     return (
@@ -123,7 +116,6 @@ const AdminRouteGuard = ({
     );
   }
   
-  // Check module-specific permission
   if (!hasPermission(moduleToCheck, requiredAction)) {
     console.log(`Permission denied: User lacks "${requiredAction}" permission on "${moduleToCheck}" module`);
     return (
@@ -139,7 +131,6 @@ const AdminRouteGuard = ({
   }
   
   console.log("Admin access granted");
-  // User has access, render the children
   return <>{children}</>;
 };
 
