@@ -1,5 +1,6 @@
 
 
+
 export interface User {
   id: string;
   name: string;
@@ -34,12 +35,15 @@ export type AdminUserRole = 'actor' | 'director' | 'producer' | 'writer' | 'cine
 // Define admin team roles (for admin team members)
 export type AdminTeamRole = 'super_admin' | 'moderator' | 'content_manager' | 'recruiter';
 
+// Define all possible role types for user_management table
+export type UserManagementRole = AdminUserRole | AdminTeamRole;
+
 // This interface matches the database structure
 export interface TeamMember {
   id: string;
   name: string;
   email: string;
-  role: AdminTeamRole | AdminUserRole; // Allow both role types to match database
+  role: UserManagementRole; // Use the union type of both role types
   joined_date: string;
   avatar_url?: string;
 }

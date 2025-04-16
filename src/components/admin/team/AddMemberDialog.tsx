@@ -6,13 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { AdminTeamRole } from "@/types/adminTypes";
+import { UserManagementRole } from "@/types/adminTypes";
 import { roles, permissions } from "@/lib/adminPermissions";
 
 interface NewMemberData {
   name: string;
   email: string;
-  role: string;
+  role: UserManagementRole;
   permissions: string[];
 }
 
@@ -93,7 +93,7 @@ const AddMemberDialog = ({ isOpen, onClose, onSubmit }: AddMemberDialogProps) =>
             <Label>Role</Label>
             <Select 
               value={newMemberData.role}
-              onValueChange={(value: string) => setNewMemberData({...newMemberData, role: value})}
+              onValueChange={(value: string) => setNewMemberData({...newMemberData, role: value as UserManagementRole})}
             >
               <SelectTrigger className="bg-background/50 border-gold/10">
                 <SelectValue placeholder="Select role" />

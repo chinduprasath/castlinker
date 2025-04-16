@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { toast } from "sonner";
 import RoleEditor from "@/components/admin/RoleEditor";
-import { AdminTeamRole, AdminUserRole, TeamMember } from "@/types/adminTypes";
+import { UserManagementRole, TeamMember } from "@/types/adminTypes";
 import TeamMemberList from "@/components/admin/team/TeamMemberList";
 import AddMemberDialog from "@/components/admin/team/AddMemberDialog";
 import RoleDialog from "@/components/admin/team/RoleDialog";
@@ -50,8 +50,8 @@ const TeamManagement = () => {
 
   const handleAddMember = async (newMemberData: any) => {
     try {
-      // Cast the role appropriately for the database
-      const role = newMemberData.role as string;
+      // Use type assertion to cast the role to UserManagementRole
+      const role = newMemberData.role as UserManagementRole;
       
       const { data, error } = await supabase
         .from('users_management')
@@ -81,8 +81,8 @@ const TeamManagement = () => {
     if (!currentMember) return;
     
     try {
-      // Cast the role appropriately for the database
-      const role = selectedRole as string;
+      // Use type assertion to cast the role to UserManagementRole
+      const role = selectedRole as UserManagementRole;
       
       const { error } = await supabase
         .from('users_management')
@@ -92,7 +92,7 @@ const TeamManagement = () => {
       if (error) throw error;
       
       setTeamMembers(prev => prev.map(member => 
-        member.id === currentMember.id ? { ...member, role: selectedRole } : member
+        member.id === currentMember.id ? { ...member, role: role } : member
       ));
       setShowRoleDialog(false);
       toast.success(`${currentMember.name}'s role updated to ${selectedRole}`);
