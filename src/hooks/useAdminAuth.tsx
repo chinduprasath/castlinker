@@ -73,10 +73,10 @@ export const useAdminAuth = () => {
                 // Try to get the SuperAdmin role from the new roles table
                 // Use type assertion for tables not in Supabase types
                 const { data: superAdminRoleData } = await (supabaseAdmin
-                  .from('admin_roles') as any)
+                  .from('admin_roles' as any)
                   .select('*')
                   .eq('name', 'SuperAdmin')
-                  .single();
+                  .single() as any);
                 
                 if (superAdminRoleData) {
                   // Map to AdminRole type
@@ -94,9 +94,9 @@ export const useAdminAuth = () => {
                   // Get all permissions for SuperAdmin
                   // Use type assertion for tables not in Supabase types
                   const { data: permissionsData } = await (supabaseAdmin
-                    .from('admin_permissions') as any)
+                    .from('admin_permissions' as any)
                     .select('*')
-                    .eq('role_id', superAdminRole.id);
+                    .eq('role_id', superAdminRole.id) as any);
                   
                   // Create typed permissions array
                   const typedPermissions: AdminPermission[] = permissionsData ? 

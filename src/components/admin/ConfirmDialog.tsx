@@ -13,8 +13,8 @@ export interface ConfirmDialogProps {
   confirmText?: string;
   cancelText?: string;
   isSubmitting?: boolean;
-  confirmButtonText?: string;  // Added for backward compatibility
-  confirmButtonVariant?: string; // Added for backward compatibility
+  confirmButtonText?: string;  // For backward compatibility
+  confirmButtonVariant?: string; // For styling variants like "destructive"
 }
 
 const ConfirmDialog: React.FC<ConfirmDialogProps> = ({

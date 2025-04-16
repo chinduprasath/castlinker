@@ -55,6 +55,7 @@ const EventManagement = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleCreateEvent = async (data: any) => {
     setIsSubmitting(true);
