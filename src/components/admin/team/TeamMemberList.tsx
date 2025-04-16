@@ -1,131 +1,299 @@
 
 import { useState } from "react";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search } from "lucide-react";
-import { AdminTeamRole, TeamMember } from "@/types/adminTypes";
-import { roles } from "@/lib/adminPermissions";
+import { toast } from "sonner";
+import { formatDistanceToNow } from "date-fns";
+import { MoreHorizontal, Shield, Trash2, UserCog } from "lucide-react";
+import { AdminTeamMember, AdminRole } from "@/types/rbacTypes";
+import { fetchRoles, fetchRoleWithPermissions } from "@/services/adminRoleService";
+import { updateTeamMemberRole, deleteTeamMember } from "@/services/teamMemberService";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import ConfirmDialog from "../ConfirmDialog";
+import { useEffect } from "react";
 
 interface TeamMemberListProps {
-  teamMembers: TeamMember[];
+  teamMembers: AdminTeamMember[];
   loading: boolean;
   canEditRoles: boolean;
-  onEditRole: (member: TeamMember) => void;
+  onEditRole?: (member: AdminTeamMember) => void;
+  onRefresh?: () => void;
 }
 
 const TeamMemberList = ({ 
   teamMembers, 
   loading, 
-  canEditRoles, 
-  onEditRole 
+  canEditRoles,
+  onEditRole,
+  onRefresh
 }: TeamMemberListProps) => {
-  const [searchTerm, setSearchTerm] = useState("");
+  const [roles, setRoles] = useState<AdminRole[]>([]);
+  const [rolesLoading, setRolesLoading] = useState(false);
+  const [showChangeRoleDialog, setShowChangeRoleDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<AdminTeamMember | null>(null);
+  const [selectedRoleId, setSelectedRoleId] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const filteredMembers = teamMembers.filter(member => 
-    member.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    member.role.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  useEffect(() => {
+    const loadRoles = async () => {
+      try {
+        setRolesLoading(true);
+        const data = await fetchRoles();
+        setRoles(data);
+      } catch (err) {
+        console.error('Error loading roles:', err);
+      } finally {
+        setRolesLoading(false);
+      }
+    };
+    
+    loadRoles();
+  }, []);
 
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case 'super_admin':
-        return "bg-red-500/10 text-red-500 border-red-500/30";
-      case 'content_manager':
-        return "bg-blue-500/10 text-blue-500 border-blue-500/30";
-      case 'recruiter':
-        return "bg-green-500/10 text-green-500 border-green-500/30";
-      case 'moderator':
-        return "bg-orange-500/10 text-orange-500 border-orange-500/30";
-      default:
-        return "bg-gray-500/10 text-gray-500 border-gray-500/30";
+  const handleOpenRoleDialog = (member: AdminTeamMember) => {
+    setSelectedMember(member);
+    setSelectedRoleId(member.role?.id || "");
+    setShowChangeRoleDialog(true);
+  };
+  
+  const handleOpenDeleteDialog = (member: AdminTeamMember) => {
+    setSelectedMember(member);
+    setShowDeleteDialog(true);
+  };
+  
+  const handleChangeRole = async () => {
+    if (!selectedMember || !selectedRoleId) return;
+    
+    try {
+      setIsSubmitting(true);
+      await updateTeamMemberRole(selectedMember.id, selectedRoleId);
+      toast.success(`${selectedMember.name}'s role has been updated`);
+      setShowChangeRoleDialog(false);
+      
+      // Refresh the list
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      console.error('Error updating role:', err);
+      toast.error("Failed to update role");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+  const handleDeleteMember = async () => {
+    if (!selectedMember) return;
+    
+    try {
+      setIsSubmitting(true);
+      await deleteTeamMember(selectedMember.id);
+      toast.success(`${selectedMember.name} has been removed from the team`);
+      setShowDeleteDialog(false);
+      
+      // Refresh the list
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      console.error('Error deleting team member:', err);
+      toast.error("Failed to delete team member");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+  // Format relative date
+  const formatRelativeDate = (dateString: string) => {
+    try {
+      return formatDistanceToNow(new Date(dateString), { addSuffix: true });
+    } catch {
+      return "Unknown";
     }
   };
 
-  const renderRoleBadge = (role: string) => {
-    const roleInfo = roles.find(r => r.id === role) || { name: role, permissions: [] };
+  if (loading) {
     return (
-      <Badge className={getRoleColor(role)}>
-        {roleInfo.name}
-        <span className="ml-1 text-xs opacity-70">({roleInfo.permissions.length})</span>
-      </Badge>
+      <div className="flex justify-center items-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gold"></div>
+      </div>
     );
-  };
-
+  }
+  
+  if (teamMembers.length === 0) {
+    return (
+      <div className="text-center py-12 text-muted-foreground">
+        <Shield className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+        <h3 className="text-lg font-medium">No Team Members Found</h3>
+        <p className="mt-1">Add team members to help manage your platform</p>
+      </div>
+    );
+  }
+  
   return (
     <>
-      <div className="flex justify-between items-center mt-4">
-        <div className="relative w-full max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder="Search team members..."
-            className="pl-10 bg-background/50 border-gold/10"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-      </div>
-      <div className="rounded-md border border-gold/10 overflow-hidden mt-4">
+      <div className="rounded-md border border-gold/10 overflow-hidden">
         <Table>
           <TableHeader className="bg-card">
             <TableRow>
               <TableHead>Team Member</TableHead>
               <TableHead>Role</TableHead>
-              <TableHead>Joined Date</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="hidden md:table-cell">Email</TableHead>
+              <TableHead className="hidden lg:table-cell">Joined</TableHead>
+              <TableHead className="w-[60px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center py-6">
-                  Loading team members...
-                </TableCell>
-              </TableRow>
-            ) : filteredMembers.length > 0 ? (
-              filteredMembers.map(member => (
-                <TableRow key={member.id}>
-                  <TableCell>
-                    <div className="flex items-center space-x-3">
-                      <Avatar className="h-8 w-8 border border-gold/10">
-                        <AvatarImage src={member.avatar_url || "/placeholder.svg"} alt={member.name} />
-                        <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium">{member.name}</p>
-                        <p className="text-xs text-muted-foreground">{member.email}</p>
-                      </div>
+            {teamMembers.map((member) => (
+              <TableRow key={member.id}>
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-9 w-9 border border-gold/10">
+                      <AvatarImage 
+                        src={member.avatar_url} 
+                        alt={member.name} 
+                      />
+                      <AvatarFallback>{member.name?.[0]?.toUpperCase() || '?'}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <div className="font-medium">{member.name}</div>
+                      <div className="text-sm text-muted-foreground md:hidden">{member.email}</div>
                     </div>
-                  </TableCell>
-                  <TableCell>{renderRoleBadge(member.role)}</TableCell>
-                  <TableCell>{new Date(member.joined_date).toLocaleDateString()}</TableCell>
-                  <TableCell className="text-right">
-                    {canEditRoles && (
-                      <Button 
-                        variant="ghost" 
-                        className="h-8 w-8 p-0 text-muted-foreground hover:text-gold"
-                        onClick={() => onEditRole(member)}
-                      >
-                        <span className="sr-only">Edit role</span>
-                        Edit
-                      </Button>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center py-6 text-muted-foreground">
-                  No team members found.
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Badge 
+                    variant="outline" 
+                    className={member.role_name === "SuperAdmin" ? "bg-gold/10 text-gold" : undefined}
+                  >
+                    {member.role_name}
+                  </Badge>
+                </TableCell>
+                <TableCell className="hidden md:table-cell">
+                  {member.email}
+                </TableCell>
+                <TableCell className="hidden lg:table-cell">
+                  {formatRelativeDate(member.joined_date)}
+                </TableCell>
+                <TableCell>
+                  {canEditRoles && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Open menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => handleOpenRoleDialog(member)}>
+                          <UserCog className="h-4 w-4 mr-2" /> Change Role
+                        </DropdownMenuItem>
+                        {/* Only allow deletion of non-SuperAdmin users */}
+                        {member.role_name !== "SuperAdmin" && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              className="text-red-500"
+                              onClick={() => handleOpenDeleteDialog(member)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" /> Remove
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </TableCell>
               </TableRow>
-            )}
+            ))}
           </TableBody>
         </Table>
       </div>
+      
+      {/* Change Role Dialog */}
+      <Dialog open={showChangeRoleDialog} onOpenChange={setShowChangeRoleDialog}>
+        <DialogContent className="bg-card-gradient backdrop-blur-sm border-gold/10 sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Change Role</DialogTitle>
+            <DialogDescription>
+              Change role and permissions for {selectedMember?.name}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <div className="space-y-4">
+              <div>
+                <div className="text-sm font-medium mb-2">Current Role</div>
+                <Badge variant="outline" className="text-sm">
+                  {selectedMember?.role_name}
+                </Badge>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">New Role</label>
+                <Select
+                  value={selectedRoleId}
+                  onValueChange={setSelectedRoleId}
+                  disabled={rolesLoading || isSubmitting}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roles.map((role) => (
+                      <SelectItem key={role.id} value={role.id}>
+                        {role.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex justify-end space-x-2 pt-2">
+                <Button 
+                  variant="outline"
+                  onClick={() => setShowChangeRoleDialog(false)}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleChangeRole}
+                  disabled={!selectedRoleId || isSubmitting}
+                >
+                  {isSubmitting ? "Saving..." : "Change Role"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showDeleteDialog}
+        onClose={() => setShowDeleteDialog(false)}
+        onConfirm={handleDeleteMember}
+        title="Remove Team Member"
+        description={`Are you sure you want to remove ${selectedMember?.name} from the team? This action cannot be undone.`}
+        isSubmitting={isSubmitting}
+      />
     </>
   );
 };

@@ -1,18 +1,26 @@
-import { Navigate, useNavigate } from "react-router-dom";
+
+import { Navigate, useNavigate, useLocation } from "react-router-dom";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
-import { Shield } from "lucide-react";
+import { Shield, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { AdminModule } from "@/types/rbacTypes";
 
 interface AdminRouteGuardProps {
   children: React.ReactNode;
-  requiredPermission?: string;
+  requiredModule?: AdminModule;
+  requiredAction?: 'view' | 'create' | 'edit' | 'delete';
 }
 
-const AdminRouteGuard = ({ children, requiredPermission }: AdminRouteGuardProps) => {
-  const { isAdmin, adminUser, can, loading } = useAdminAuth();
+const AdminRouteGuard = ({ 
+  children, 
+  requiredModule = 'team',
+  requiredAction = 'view' 
+}: AdminRouteGuardProps) => {
+  const { isAdmin, adminUser, hasPermission, loading } = useAdminAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [authChecking, setAuthChecking] = useState(true);
   
   useEffect(() => {
@@ -39,13 +47,29 @@ const AdminRouteGuard = ({ children, requiredPermission }: AdminRouteGuardProps)
     checkSession();
   }, [navigate]);
   
+  // Determine current module based on path
+  const getCurrentModule = (): AdminModule => {
+    const path = location.pathname;
+    if (path.includes('/users')) return 'users';
+    if (path.includes('/jobs')) return 'jobs';
+    if (path.includes('/posts')) return 'posts';
+    if (path.includes('/events')) return 'events';
+    if (path.includes('/content')) return 'content';
+    if (path.includes('/team')) return 'team';
+    return 'team'; // Default to team for dashboard, etc.
+  };
+  
+  // Use the detected module if none provided
+  const moduleToCheck = requiredModule || getCurrentModule();
+  
   console.log('AdminRouteGuard check:', { 
     isAdmin, 
     adminUserRole: adminUser?.role,
-    requiredPermission,
+    requiredModule: moduleToCheck,
+    requiredAction,
     loading,
     authChecking,
-    hasPermission: requiredPermission ? can(requiredPermission) : 'not required'
+    hasModulePermission: !loading && !authChecking ? hasPermission(moduleToCheck, requiredAction) : 'checking'
   });
   
   // Show loading state while checking admin status
@@ -80,17 +104,15 @@ const AdminRouteGuard = ({ children, requiredPermission }: AdminRouteGuardProps)
     );
   }
   
-  // If a specific permission is required, check for it
-  if (requiredPermission && !can(requiredPermission)) {
-    console.log(`Permission denied: User lacks "${requiredPermission}" permission`);
+  // Check module-specific permission
+  if (!hasPermission(moduleToCheck, requiredAction)) {
+    console.log(`Permission denied: User lacks "${requiredAction}" permission on "${moduleToCheck}" module`);
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background">
-        <Shield className="h-12 w-12 text-orange-500 mb-4" />
+        <AlertCircle className="h-12 w-12 text-orange-500 mb-4" />
         <h1 className="text-2xl font-bold mb-2">Permission Denied</h1>
         <p className="text-muted-foreground mb-4">
-          {adminUser.role === 'super_admin' 
-            ? "This feature is currently under maintenance."
-            : "You don't have the required permissions for this section."}
+          You don't have the required permissions for this section.
         </p>
         <Button onClick={() => navigate("/admin/dashboard")}>Return to Admin Dashboard</Button>
       </div>

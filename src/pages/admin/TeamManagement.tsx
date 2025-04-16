@@ -2,78 +2,40 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { UserPlus, Plus } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { UserPlus, Plus, Search, Shield } from "lucide-react";
 import { toast } from "sonner";
-import RoleEditor from "@/components/admin/RoleEditor";
-import { TeamMember, AdminTeamRole, AdminUserRole } from "@/types/adminTypes";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { AdminTeamMember } from "@/types/rbacTypes";
+import { fetchTeamMembers, updateTeamMemberRole } from "@/services/teamMemberService";
 import TeamMemberList from "@/components/admin/team/TeamMemberList";
-import AddMemberDialog from "@/components/admin/team/AddMemberDialog";
-import RoleDialog from "@/components/admin/team/RoleDialog";
-
-// Helper function to convert AdminTeamRole to a database-compatible role
-const convertToDBRole = (role: AdminTeamRole): AdminUserRole => {
-  // Map admin team roles to database roles
-  // For this example, we'll map all admin roles to 'director' for simplicity
-  // In a real application, you might want to map these differently
-  return 'director';
-};
-
-// Helper function to convert database roles back to AdminTeamRole
-const convertFromDBRole = (dbRole: string): AdminTeamRole => {
-  // Check if the database role is already a valid AdminTeamRole
-  if (dbRole === 'super_admin' || dbRole === 'moderator' || 
-      dbRole === 'content_manager' || dbRole === 'recruiter') {
-    return dbRole as AdminTeamRole;
-  }
-  // Default fallback role
-  return 'moderator';
-};
+import RoleManager from "@/components/admin/team/RoleManager";
+import AddTeamMemberForm from "@/components/admin/team/AddTeamMemberForm";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 
 const TeamManagement = () => {
-  const { adminUser, can } = useAdminAuth();
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const { adminUser, hasPermission } = useAdminAuth();
+  const [teamMembers, setTeamMembers] = useState<AdminTeamMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
   
   // Dialog states
   const [showAddMemberDialog, setShowAddMemberDialog] = useState(false);
-  const [showRoleDialog, setShowRoleDialog] = useState(false);
-  const [showRoleEditorDialog, setShowRoleEditorDialog] = useState(false);
-  const [currentMember, setCurrentMember] = useState<TeamMember | null>(null);
-
+  const [showRoleManagerDialog, setShowRoleManagerDialog] = useState(false);
+  const [currentMember, setCurrentMember] = useState<AdminTeamMember | null>(null);
+  
   // Fetch team members on component mount
   useEffect(() => {
-    fetchTeamMembers();
+    fetchMembers();
   }, []);
   
-  const fetchTeamMembers = async () => {
+  const fetchMembers = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('users_management')
-        .select('*')
-        .order('name');
-      
-      if (error) throw error;
-      
-      // Process the data to convert DB roles to AdminTeamRoles
-      const processedData = (data as any[] || [])
-        .filter(user => {
-          // Filter to only include what we consider admin team roles
-          const role = user.role as string;
-          return ['super_admin', 'moderator', 'content_manager', 'recruiter'].includes(role) ||
-                 // Include records we can convert to admin roles
-                 (role && ['actor', 'director', 'producer', 'writer', 'cinematographer', 'agency'].includes(role));
-        })
-        .map(user => ({
-          ...user,
-          // Convert the role from database to our application's AdminTeamRole
-          role: convertFromDBRole(user.role as string)
-        })) as TeamMember[];
-      
-      setTeamMembers(processedData);
+      const data = await fetchTeamMembers();
+      setTeamMembers(data);
     } catch (error) {
       console.error("Error fetching team members:", error);
       toast.error("Failed to load team members");
@@ -81,147 +43,154 @@ const TeamManagement = () => {
       setLoading(false);
     }
   };
-
-  const handleAddMember = async (newMemberData: any) => {
-    try {
-      // Convert AdminTeamRole to a database-compatible role
-      const dbRole = convertToDBRole(newMemberData.role as AdminTeamRole);
-      
-      const { data, error } = await supabase
-        .from('users_management')
-        .insert({
-          name: newMemberData.name,
-          email: newMemberData.email,
-          role: dbRole, // Use the converted role that DB accepts
-          verified: true,
-          status: 'active'
-        })
-        .select();
-      
-      if (error) throw error;
-      
-      if (data) {
-        // Convert roles back for our application
-        const newTeamMembers = (data as any[]).map(user => ({
-          ...user,
-          role: convertFromDBRole(user.role as string)
-        })) as TeamMember[];
-        
-        setTeamMembers(prev => [...prev, ...newTeamMembers]);
-        setShowAddMemberDialog(false);
-        toast.success("Team member added successfully!");
-      }
-    } catch (error) {
-      console.error("Error adding team member:", error);
-      toast.error("Failed to add team member");
-    }
-  };
-
-  const handleUpdateRole = async (selectedRole: AdminTeamRole) => {
-    if (!currentMember) return;
-    
-    try {
-      // Convert AdminTeamRole to a database-compatible role
-      const dbRole = convertToDBRole(selectedRole);
-      
-      const { error } = await supabase
-        .from('users_management')
-        .update({ role: dbRole }) // Use the converted role
-        .eq('id', currentMember.id);
-      
-      if (error) throw error;
-      
-      setTeamMembers(prev => prev.map(member => 
-        member.id === currentMember.id ? { ...member, role: selectedRole } : member
-      ));
-      setShowRoleDialog(false);
-      toast.success(`${currentMember.name}'s role updated to ${selectedRole}`);
-    } catch (error) {
-      console.error("Error updating role:", error);
-      toast.error("Failed to update role");
-    }
-  };
-
-  const handleEditRole = (member: TeamMember) => {
+  
+  const handleEditRole = (member: AdminTeamMember) => {
     setCurrentMember(member);
-    setShowRoleDialog(true);
+    setShowRoleManagerDialog(true);
   };
-
-  const canEditRoles = adminUser?.role === 'super_admin';
+  
+  const handleAddMember = () => {
+    setShowAddMemberDialog(true);
+  };
+  
+  const onAddMemberSuccess = () => {
+    setShowAddMemberDialog(false);
+    fetchMembers();
+  };
+  
+  const filteredMembers = teamMembers.filter(member => 
+    member.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    member.role_name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  
+  // Check permissions
+  const canCreateTeamMembers = hasPermission('team', 'create');
+  const canEditTeamMembers = hasPermission('team', 'edit');
+  const canManageRoles = hasPermission('team', 'edit') && hasPermission('team', 'create');
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold gold-gradient-text">Team Management</h1>
-        {canEditRoles && (
+        
+        {canCreateTeamMembers && (
           <Button 
             className="bg-gold text-black hover:bg-gold/90"
-            onClick={() => setShowAddMemberDialog(true)}
+            onClick={handleAddMember}
           >
             <UserPlus className="h-5 w-5 mr-2" /> Add Team Member
           </Button>
         )}
       </div>
 
-      <Card className="bg-card-gradient backdrop-blur-sm border-gold/10">
-        <CardHeader className="space-y-1">
-          <CardTitle>Team Members</CardTitle>
-          <CardDescription>Manage your admin team and their permissions</CardDescription>
-          <div className="flex justify-between items-center mt-4">
-            <div className="w-full max-w-sm">
-              {/* Search is now in TeamMemberList component */}
-            </div>
-            {canEditRoles && (
-              <Button 
-                variant="outline" 
-                onClick={() => setShowRoleEditorDialog(true)}
-                className="ml-2"
-              >
-                Edit Roles & Permissions
-              </Button>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
-          <TeamMemberList 
-            teamMembers={teamMembers}
-            loading={loading}
-            canEditRoles={canEditRoles}
-            onEditRole={handleEditRole}
-          />
-          
-          {/* Add a fixed action button for mobile */}
-          {canEditRoles && (
-            <Button 
-              className="fixed bottom-6 right-6 rounded-full h-14 w-14 shadow-lg bg-gold text-black hover:bg-gold/90 md:hidden"
-              onClick={() => setShowAddMemberDialog(true)}
-            >
-              <Plus className="h-6 w-6" />
-              <span className="sr-only">Add Team Member</span>
-            </Button>
+      <Tabs defaultValue="members" className="w-full">
+        <TabsList className="w-full md:w-auto">
+          <TabsTrigger value="members">Team Members</TabsTrigger>
+          {canManageRoles && (
+            <TabsTrigger value="roles">Roles & Permissions</TabsTrigger>
           )}
-        </CardContent>
-      </Card>
+        </TabsList>
+        
+        <TabsContent value="members" className="pt-4">
+          <Card className="bg-card-gradient backdrop-blur-sm border-gold/10">
+            <CardHeader className="space-y-1">
+              <CardTitle>Team Members</CardTitle>
+              <CardDescription>Manage your administrative team members and their roles</CardDescription>
+              
+              <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 mt-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    placeholder="Search by name, email or role..."
+                    className="pl-10 bg-background/50 border-gold/10"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                
+                {canManageRoles && (
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowRoleManagerDialog(true)}
+                    className="whitespace-nowrap"
+                  >
+                    <Shield className="h-4 w-4 mr-2" />
+                    Manage Roles
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              <TeamMemberList 
+                teamMembers={filteredMembers}
+                loading={loading}
+                canEditRoles={canEditTeamMembers}
+                onEditRole={handleEditRole}
+                onRefresh={fetchMembers}
+              />
+              
+              {/* Add a fixed action button for mobile */}
+              {canCreateTeamMembers && (
+                <Button 
+                  className="fixed bottom-6 right-6 rounded-full h-14 w-14 shadow-lg bg-gold text-black hover:bg-gold/90 md:hidden"
+                  onClick={handleAddMember}
+                >
+                  <Plus className="h-6 w-6" />
+                  <span className="sr-only">Add Team Member</span>
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        {canManageRoles && (
+          <TabsContent value="roles" className="pt-4">
+            <Card className="bg-card-gradient backdrop-blur-sm border-gold/10">
+              <CardHeader>
+                <CardTitle>Roles & Permissions</CardTitle>
+                <CardDescription>
+                  Define roles and assign permissions to control access to different modules
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <RoleManager />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
+      </Tabs>
 
       {/* Add Team Member Dialog */}
-      <AddMemberDialog 
-        isOpen={showAddMemberDialog} 
-        onClose={() => setShowAddMemberDialog(false)}
-        onSubmit={handleAddMember}
-      />
-
-      {/* Change Role Dialog */}
-      <RoleDialog 
-        isOpen={showRoleDialog}
-        onClose={() => setShowRoleDialog(false)}
-        member={currentMember}
-        onUpdateRole={handleUpdateRole}
-      />
-
-      {/* Role Editor Dialog */}
-      <Dialog open={showRoleEditorDialog} onOpenChange={setShowRoleEditorDialog}>
-        <DialogContent className="bg-card-gradient backdrop-blur-sm border-gold/10 sm:max-w-[800px] max-h-[90vh] overflow-auto">
-          <RoleEditor />
+      <Dialog open={showAddMemberDialog} onOpenChange={setShowAddMemberDialog}>
+        <DialogContent className="bg-card-gradient backdrop-blur-sm border-gold/10 sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Add Team Member</DialogTitle>
+            <DialogDescription>
+              Create a new team member account with role-based permissions
+            </DialogDescription>
+          </DialogHeader>
+          
+          <AddTeamMemberForm 
+            onSuccess={onAddMemberSuccess}
+            onCancel={() => setShowAddMemberDialog(false)}
+          />
+        </DialogContent>
+      </Dialog>
+      
+      {/* Role Manager Dialog */}
+      <Dialog open={showRoleManagerDialog} onOpenChange={setShowRoleManagerDialog} modal={true}>
+        <DialogContent className="bg-card-gradient backdrop-blur-sm border-gold/10 sm:max-w-[900px] max-h-[80vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>Manage Roles & Permissions</DialogTitle>
+            <DialogDescription>
+              Create and configure roles with specific permissions for your team members
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <RoleManager />
+          </div>
         </DialogContent>
       </Dialog>
     </div>

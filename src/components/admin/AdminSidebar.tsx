@@ -20,6 +20,7 @@ import {
   FileTextIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AdminModule } from "@/types/rbacTypes";
 
 interface AdminSidebarProps {
   collapsed: boolean;
@@ -30,12 +31,13 @@ interface NavItem {
   title: string;
   icon: React.ElementType;
   href: string;
-  permission?: string;
+  module: AdminModule;
+  action?: 'view' | 'create' | 'edit' | 'delete';
 }
 
 const AdminSidebar = ({ collapsed, toggleSidebar }: AdminSidebarProps) => {
   const { user } = useAuth();
-  const { can } = useAdminAuth();
+  const { hasPermission } = useAdminAuth();
   const location = useLocation();
   const [mounted, setMounted] = useState(false);
   
@@ -49,59 +51,71 @@ const AdminSidebar = ({ collapsed, toggleSidebar }: AdminSidebarProps) => {
       title: "Dashboard",
       icon: LayoutDashboard,
       href: "/admin/dashboard",
+      module: 'team', // Dashboard is accessible to anyone with team view access
+      action: 'view'
     },
     {
       title: "User Management",
       icon: Users,
       href: "/admin/users",
-      permission: "user_view",
+      module: 'users',
+      action: 'view'
     },
     {
       title: "Team Management",
       icon: Shield,
       href: "/admin/team",
-      permission: "user_view",
+      module: 'team',
+      action: 'view'
     },
     {
       title: "Job Management",
       icon: Briefcase,
       href: "/admin/jobs",
-      permission: "job_view",
+      module: 'jobs',
+      action: 'view'
     },
     {
       title: "Post Management",
       icon: FileTextIcon,
       href: "/admin/posts",
-      permission: "content_view",
+      module: 'posts',
+      action: 'view'
     },
     {
       title: "Event Management",
       icon: Calendar,
       href: "/admin/events",
-      permission: "event_view",
+      module: 'events',
+      action: 'view'
     },
     {
       title: "Content Moderation",
       icon: FileText,
       href: "/admin/content",
-      permission: "content_view",
+      module: 'content',
+      action: 'view'
     },
     {
       title: "Analytics",
       icon: BarChart2,
       href: "/admin/analytics",
-      permission: "setting_view",
+      module: 'content', // Analytics is part of content module for permission purposes
+      action: 'view'
     },
     {
       title: "Notifications",
       icon: Bell,
       href: "/admin/notifications",
+      module: 'team', // Notifications are accessible to anyone with team access
+      action: 'view'
     },
     {
       title: "Settings",
       icon: Settings,
       href: "/admin/settings",
-      permission: "setting_view",
+      module: 'team',
+      action: 'view'
     },
   ];
 
@@ -111,7 +125,7 @@ const AdminSidebar = ({ collapsed, toggleSidebar }: AdminSidebarProps) => {
 
   // Filter items based on permissions
   const filteredNavItems = navItems.filter(
-    (item) => !item.permission || can(item.permission)
+    (item) => hasPermission(item.module, item.action || 'view')
   );
 
   if (!mounted) return null;
