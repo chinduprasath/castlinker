@@ -100,7 +100,7 @@ const AddMemberDialog = ({ isOpen, onClose, onSubmit }: AddMemberDialogProps) =>
               </SelectTrigger>
               <SelectContent>
                 {roles.map(role => (
-                  <SelectItem key={role.id} value={role.id}>
+                  <SelectItem key={role.id} value={role.id as AdminTeamRole}>
                     {role.name}
                   </SelectItem>
                 ))}

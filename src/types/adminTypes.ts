@@ -1,3 +1,4 @@
+
 export interface User {
   id: string;
   name: string;
@@ -26,8 +27,10 @@ export interface UserFilters {
   statusFilter: string;
 }
 
-// Define admin team roles separately from user roles
+// Define admin user roles (for regular users managed by admins)
 export type AdminUserRole = 'actor' | 'director' | 'producer' | 'writer' | 'cinematographer' | 'agency';
+
+// Define admin team roles (for admin team members)
 export type AdminTeamRole = 'super_admin' | 'moderator' | 'content_manager' | 'recruiter';
 
 export interface TeamMember {
