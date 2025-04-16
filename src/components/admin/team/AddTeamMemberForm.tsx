@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +20,15 @@ interface AddTeamMemberFormProps {
   availableRoles: AdminRole[];
 }
 
+const DEFAULT_ROLES = [
+  { id: "super_admin", name: "Super Admin" },
+  { id: "admin", name: "Admin" },
+  { id: "manager", name: "Manager" },
+  { id: "editor", name: "Editor" },
+  { id: "reviewer", name: "Reviewer" },
+  { id: "hr", name: "HR" },
+];
+
 const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({ 
   onSuccess, 
   onCancel,
@@ -31,11 +40,38 @@ const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({
   const [roleId, setRoleId] = useState("");
   const [generatePassword, setGeneratePassword] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [displayRoles, setDisplayRoles] = useState<AdminRole[]>([]);
   
-  // Set default role to the first non-SuperAdmin role if available
-  React.useEffect(() => {
-    if (availableRoles.length > 0) {
-      const defaultRole = availableRoles.find(r => r.name !== 'SuperAdmin') || availableRoles[0];
+  // Merge database roles with default roles if needed
+  useEffect(() => {
+    // Start with the available roles from the database
+    let roles = [...availableRoles];
+    
+    // If there are no roles or fewer than the default set, use the default roles
+    if (roles.length < DEFAULT_ROLES.length) {
+      // Create a map of existing role names to avoid duplicates
+      const existingRoleNames = new Set(roles.map(r => r.name.toLowerCase()));
+      
+      // Add default roles that don't exist in the database
+      DEFAULT_ROLES.forEach(defaultRole => {
+        if (!existingRoleNames.has(defaultRole.name.toLowerCase())) {
+          roles.push({
+            id: defaultRole.id,
+            name: defaultRole.name,
+            description: null,
+            is_system: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+        }
+      });
+    }
+    
+    setDisplayRoles(roles);
+    
+    // Set default role to the first non-SuperAdmin role if available
+    if (roles.length > 0) {
+      const defaultRole = roles.find(r => r.name.toLowerCase() !== 'super admin') || roles[0];
       if (defaultRole) {
         setRoleId(defaultRole.id);
       }
@@ -106,13 +142,13 @@ const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({
         <Select
           value={roleId}
           onValueChange={setRoleId}
-          disabled={availableRoles.length === 0}
+          disabled={displayRoles.length === 0}
         >
           <SelectTrigger id="role" className="w-full">
             <SelectValue placeholder="Select a role" />
           </SelectTrigger>
           <SelectContent>
-            {availableRoles.map((role) => (
+            {displayRoles.map((role) => (
               <SelectItem key={role.id} value={role.id}>
                 {role.name}
               </SelectItem>
