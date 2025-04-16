@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { 
   Card, 
@@ -39,7 +40,6 @@ import {
   Globe,
   FileText,
   Database,
-  Key,
   RefreshCw,
   HelpCircle
 } from "lucide-react";
@@ -103,7 +103,7 @@ const AdminSettings = () => {
       <p className="text-muted-foreground">Configure system-wide settings and preferences.</p>
 
       <Tabs defaultValue="general" className="w-full">
-        <TabsList className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 mb-4">
+        <TabsList className="grid grid-cols-2 sm:grid-cols-4 mb-4">
           <TabsTrigger value="general" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
             <span>General</span>
@@ -119,10 +119,6 @@ const AdminSettings = () => {
           <TabsTrigger value="permissions" className="flex items-center gap-2">
             <Lock className="h-4 w-4" />
             <span>Permissions</span>
-          </TabsTrigger>
-          <TabsTrigger value="api" className="flex items-center gap-2">
-            <Key className="h-4 w-4" />
-            <span>API Keys</span>
           </TabsTrigger>
         </TabsList>
 
@@ -627,159 +623,6 @@ const AdminSettings = () => {
               <Button className="gap-2">
                 <Save className="h-4 w-4" />
                 Save Changes
-              </Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-
-        {/* API Keys Tab */}
-        <TabsContent value="api">
-          <Card>
-            <CardHeader>
-              <CardTitle>API Configuration</CardTitle>
-              <CardDescription>Manage API keys and access tokens</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-medium">Active API Keys</h3>
-                  <Button size="sm">
-                    <Key className="h-4 w-4 mr-2" />
-                    Generate New Key
-                  </Button>
-                </div>
-                
-                <div className="space-y-4">
-                  <Card>
-                    <CardContent className="pt-6">
-                      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                        <div className="space-y-1">
-                          <div className="flex items-center">
-                            <h4 className="font-medium">Main API Key</h4>
-                            <Badge className="ml-2 bg-green-500 hover:bg-green-600">Active</Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground">Created on May 10, 2024</p>
-                          <div className="flex items-center gap-1 text-sm font-mono bg-muted p-2 rounded mt-2">
-                            <span className="text-xs">sk_live_•••••••••••••••••••••••••••••••••</span>
-                            <Button variant="ghost" size="icon" className="h-6 w-6">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <rect width="8" height="4" x="8" y="2" rx="1" ry="1" />
-                                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
-                              </svg>
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm">Revoke</Button>
-                          <Button variant="outline" size="sm">Regenerate</Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardContent className="pt-6">
-                      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                        <div className="space-y-1">
-                          <div className="flex items-center">
-                            <h4 className="font-medium">Webhook Integration</h4>
-                            <Badge className="ml-2 bg-green-500 hover:bg-green-600">Active</Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground">Created on April 28, 2024</p>
-                          <div className="flex items-center gap-1 text-sm font-mono bg-muted p-2 rounded mt-2">
-                            <span className="text-xs">sk_live_•••••••••••••••••••••••••••••••••</span>
-                            <Button variant="ghost" size="icon" className="h-6 w-6">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <rect width="8" height="4" x="8" y="2" rx="1" ry="1" />
-                                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
-                              </svg>
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm">Revoke</Button>
-                          <Button variant="outline" size="sm">Regenerate</Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-                
-                <Separator />
-                
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">API Settings</h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="flex flex-row items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <label className="text-base font-medium">Rate Limiting</label>
-                        <p className="text-sm text-muted-foreground">
-                          Restrict API calls per minute
-                        </p>
-                      </div>
-                      <Switch checked={true} />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Requests per Minute</label>
-                      <Input type="number" defaultValue="60" min="10" max="1000" />
-                      <p className="text-xs text-muted-foreground">
-                        Maximum API requests allowed per minute
-                      </p>
-                    </div>
-                    
-                    <div className="flex flex-row items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <label className="text-base font-medium">API Access Logs</label>
-                        <p className="text-sm text-muted-foreground">
-                          Store detailed API access logs
-                        </p>
-                      </div>
-                      <Switch checked={true} />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Log Retention (days)</label>
-                      <Input type="number" defaultValue="30" min="1" max="365" />
-                      <p className="text-xs text-muted-foreground">
-                        Number of days to keep API logs
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <label className="text-base font-medium">CORS Settings</label>
-                      <p className="text-sm text-muted-foreground">
-                        Allowed domains for cross-origin requests
-                      </p>
-                    </div>
-                    <Button variant="outline" size="sm">
-                      <Globe className="h-4 w-4 mr-2" />
-                      Configure
-                    </Button>
-                  </div>
-                  
-                  <div className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <label className="text-base font-medium">Webhook Endpoints</label>
-                      <p className="text-sm text-muted-foreground">
-                        Configure endpoints for event notifications
-                      </p>
-                    </div>
-                    <Button variant="outline" size="sm">
-                      <Globe className="h-4 w-4 mr-2" />
-                      Configure
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-end">
-              <Button className="gap-2">
-                <Save className="h-4 w-4" />
-                Save API Settings
               </Button>
             </CardFooter>
           </Card>
