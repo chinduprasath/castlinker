@@ -1,22 +1,21 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Edit, UserPlus, Shield, Search } from "lucide-react";
+import { UserPlus, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { roles, permissions } from "@/lib/adminPermissions";
 import { toast } from "sonner";
-import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import RoleEditor from "@/components/admin/RoleEditor";
 import { AdminUserRole, AdminTeamRole } from "@/types/adminTypes";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface TeamMember {
   id: string;
@@ -43,7 +42,8 @@ const TeamManagement = () => {
   const [newMemberData, setNewMemberData] = useState({
     name: "",
     email: "",
-    role: "moderator" as AdminTeamRole
+    role: "moderator" as AdminTeamRole,
+    permissions: [] as string[]
   });
 
   // Fetch team members on component mount
@@ -91,7 +91,13 @@ const TeamManagement = () => {
         setTeamMembers(prev => [...prev, ...(data as unknown as TeamMember[])]);
         setShowAddMemberDialog(false);
         toast.success("Team member added successfully!");
-        setNewMemberData({ name: "", email: "", role: "moderator" });
+        // Reset form
+        setNewMemberData({ 
+          name: "", 
+          email: "", 
+          role: "moderator", 
+          permissions: [] 
+        });
       }
     } catch (error) {
       console.error("Error adding team member:", error);
@@ -121,6 +127,20 @@ const TeamManagement = () => {
       console.error("Error updating role:", error);
       toast.error("Failed to update role");
     }
+  };
+
+  const handlePermissionToggle = (permissionId: string) => {
+    setNewMemberData(prev => {
+      const currentPermissions = prev.permissions;
+      const isCurrentlySelected = currentPermissions.includes(permissionId);
+      
+      return {
+        ...prev,
+        permissions: isCurrentlySelected
+          ? currentPermissions.filter(p => p !== permissionId)
+          : [...currentPermissions, permissionId]
+      };
+    });
   };
 
   const filteredMembers = teamMembers.filter(member => 
@@ -190,7 +210,7 @@ const TeamManagement = () => {
                 onClick={() => setShowRoleEditorDialog(true)}
                 className="ml-2"
               >
-                <Shield className="h-4 w-4 mr-2" />
+                {/* <Shield className="h-4 w-4 mr-2" /> */}
                 Edit Roles & Permissions
               </Button>
             )}
@@ -242,7 +262,7 @@ const TeamManagement = () => {
                             }}
                           >
                             <span className="sr-only">Edit role</span>
-                            <Edit className="h-4 w-4" />
+                            {/* <Edit className="h-4 w-4" /> */}
                           </Button>
                         )}
                       </TableCell>
@@ -261,41 +281,45 @@ const TeamManagement = () => {
         </CardContent>
       </Card>
 
+      {/* Add Team Member Dialog */}
       <Dialog open={showAddMemberDialog} onOpenChange={setShowAddMemberDialog}>
-        <DialogContent className="bg-card-gradient backdrop-blur-sm border-gold/10 sm:max-w-[525px]">
+        <DialogContent className="bg-card-gradient backdrop-blur-sm border-gold/10 sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add Team Member</DialogTitle>
             <DialogDescription>
-              Add a new member to your admin team
+              Create a new team member with specific roles and permissions
             </DialogDescription>
           </DialogHeader>
+          
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="name">Full Name</Label>
               <Input 
                 id="name" 
-                placeholder="Enter name" 
+                placeholder="Enter full name" 
                 value={newMemberData.name}
                 onChange={(e) => setNewMemberData({...newMemberData, name: e.target.value})}
                 className="bg-background/50 border-gold/10"
               />
             </div>
+            
             <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Email Address</Label>
               <Input 
                 id="email" 
-                type="email" 
+                type="email"
                 placeholder="Enter email address" 
                 value={newMemberData.email}
                 onChange={(e) => setNewMemberData({...newMemberData, email: e.target.value})}
                 className="bg-background/50 border-gold/10"
               />
             </div>
+            
             <div className="grid gap-2">
-              <Label htmlFor="role">Role</Label>
+              <Label>Role</Label>
               <Select 
                 value={newMemberData.role}
-                onValueChange={(value: string) => setNewMemberData({...newMemberData, role: value as AdminTeamRole})}
+                onValueChange={(value: AdminTeamRole) => setNewMemberData({...newMemberData, role: value})}
               >
                 <SelectTrigger className="bg-background/50 border-gold/10">
                   <SelectValue placeholder="Select role" />
@@ -308,14 +332,41 @@ const TeamManagement = () => {
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground mt-1">
-                {roles.find(role => role.id === newMemberData.role)?.description || ""}
-              </p>
+            </div>
+            
+            <div className="grid gap-2 mt-4">
+              <Label>Specific Permissions</Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {permissions.map(permission => (
+                  <div 
+                    key={permission.id} 
+                    className="flex items-center space-x-2"
+                  >
+                    <Checkbox
+                      id={permission.id}
+                      checked={newMemberData.permissions.includes(permission.id)}
+                      onCheckedChange={() => handlePermissionToggle(permission.id)}
+                    />
+                    <Label htmlFor={permission.id} className="text-sm">
+                      {permission.name}
+                    </Label>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
+          
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setShowAddMemberDialog(false)}>Cancel</Button>
-            <Button onClick={handleAddMember} disabled={!newMemberData.name || !newMemberData.email}>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowAddMemberDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleAddMember}
+              disabled={!newMemberData.name || !newMemberData.email}
+            >
               Add Team Member
             </Button>
           </div>
