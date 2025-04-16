@@ -53,6 +53,8 @@ const EventManagement = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 
   const handleCreateEvent = async (data: any) => {
     setIsSubmitting(true);
@@ -99,7 +101,8 @@ const EventManagement = () => {
 
   const handleDeleteClick = (event: Event) => {
     setCurrentEvent(event);
-    setIsDeleteDialogOpen(true);
+    setSelectedEvent(event);
+    setShowDeleteConfirm(true);
   };
 
   const resetDateFilter = () => {
@@ -404,13 +407,13 @@ const EventManagement = () => {
       
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog
-        isOpen={isDeleteDialogOpen}
-        onClose={() => setIsDeleteDialogOpen(false)}
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
         onConfirm={handleDeleteEvent}
         title="Delete Event"
-        description="Are you sure you want to delete this event? This action cannot be undone."
-        confirmButtonText="Delete Event"
-        confirmButtonVariant="destructive"
+        description={`Are you sure you want to delete ${selectedEvent?.title}? This action cannot be undone.`}
+        confirmText="Delete Event"
+        isSubmitting={isDeleting}
       />
     </div>
   );

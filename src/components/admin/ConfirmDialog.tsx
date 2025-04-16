@@ -13,6 +13,8 @@ export interface ConfirmDialogProps {
   confirmText?: string;
   cancelText?: string;
   isSubmitting?: boolean;
+  confirmButtonText?: string;  // Added for backward compatibility
+  confirmButtonVariant?: string; // Added for backward compatibility
 }
 
 const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
@@ -23,8 +25,13 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   description,
   confirmText = "Confirm",
   cancelText = "Cancel",
-  isSubmitting = false
+  isSubmitting = false,
+  confirmButtonText, // Support for older prop name
+  confirmButtonVariant = "destructive" // Default variant
 }) => {
+  // Use confirmButtonText if provided (for backward compatibility)
+  const buttonText = confirmButtonText || confirmText;
+  
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="bg-card-gradient backdrop-blur-sm border-gold/10">
@@ -46,12 +53,12 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             {cancelText}
           </Button>
           <Button 
-            variant="destructive"
+            variant={confirmButtonVariant as any}
             onClick={onConfirm}
             disabled={isSubmitting}
             className="gap-1"
           >
-            {isSubmitting ? "Processing..." : confirmText}
+            {isSubmitting ? "Processing..." : buttonText}
           </Button>
         </DialogFooter>
       </DialogContent>

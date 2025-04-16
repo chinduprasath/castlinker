@@ -4,11 +4,12 @@ import { AdminPermission, AdminRole, AdminRoleWithPermissions } from "@/types/rb
 
 export const fetchRoles = async (): Promise<AdminRole[]> => {
   try {
-    // We need to cast since we're directly accessing tables not in the types
-    const { data, error } = await supabase
-      .from('admin_roles')
+    // Use type assertion to bypass TypeScript checking since the admin_roles table
+    // is not in the generated Supabase TypeScript types
+    const { data, error } = await (supabase
+      .from('admin_roles') as any)
       .select('*')
-      .order('name') as any;
+      .order('name');
       
     if (error) {
       console.error('Error fetching roles:', error);
@@ -33,11 +34,11 @@ export const fetchRoles = async (): Promise<AdminRole[]> => {
 export const fetchRoleWithPermissions = async (roleId: string): Promise<AdminRoleWithPermissions> => {
   try {
     // Fetch the role
-    const { data: role, error: roleError } = await supabase
-      .from('admin_roles')
+    const { data: role, error: roleError } = await (supabase
+      .from('admin_roles') as any)
       .select('*')
       .eq('id', roleId)
-      .single() as any;
+      .single();
       
     if (roleError) {
       console.error('Error fetching role:', roleError);
@@ -45,10 +46,10 @@ export const fetchRoleWithPermissions = async (roleId: string): Promise<AdminRol
     }
     
     // Fetch permissions for the role
-    const { data: permissions, error: permError } = await supabase
-      .from('admin_permissions')
+    const { data: permissions, error: permError } = await (supabase
+      .from('admin_permissions') as any)
       .select('*')
-      .eq('role_id', roleId) as any;
+      .eq('role_id', roleId);
       
     if (permError) {
       console.error('Error fetching permissions:', permError);
@@ -85,11 +86,11 @@ export const fetchRoleWithPermissions = async (roleId: string): Promise<AdminRol
 
 export const createRole = async (role: Partial<AdminRole>): Promise<AdminRole> => {
   try {
-    const { data, error } = await supabase
-      .from('admin_roles')
+    const { data, error } = await (supabase
+      .from('admin_roles') as any)
       .insert([role])
       .select()
-      .single() as any;
+      .single();
       
     if (error) {
       console.error('Error creating role:', error);
@@ -105,12 +106,12 @@ export const createRole = async (role: Partial<AdminRole>): Promise<AdminRole> =
 
 export const updateRole = async (id: string, role: Partial<AdminRole>): Promise<AdminRole> => {
   try {
-    const { data, error } = await supabase
-      .from('admin_roles')
+    const { data, error } = await (supabase
+      .from('admin_roles') as any)
       .update(role)
       .eq('id', id)
       .select()
-      .single() as any;
+      .single();
       
     if (error) {
       console.error('Error updating role:', error);
@@ -126,10 +127,10 @@ export const updateRole = async (id: string, role: Partial<AdminRole>): Promise<
 
 export const deleteRole = async (id: string): Promise<void> => {
   try {
-    const { error } = await supabase
-      .from('admin_roles')
+    const { error } = await (supabase
+      .from('admin_roles') as any)
       .delete()
-      .eq('id', id) as any;
+      .eq('id', id);
       
     if (error) {
       console.error('Error deleting role:', error);
@@ -149,12 +150,12 @@ export const updatePermission = async (roleId: string, module: string, permissio
 }): Promise<AdminPermission> => {
   try {
     // Check if permission exists
-    const { data: existingPerm, error: checkError } = await supabase
-      .from('admin_permissions')
+    const { data: existingPerm, error: checkError } = await (supabase
+      .from('admin_permissions') as any)
       .select('*')
       .eq('role_id', roleId)
       .eq('module', module)
-      .single() as any;
+      .single();
       
     if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "No rows returned" error
       console.error('Error checking permission:', checkError);
@@ -163,12 +164,12 @@ export const updatePermission = async (roleId: string, module: string, permissio
     
     if (existingPerm) {
       // Update existing permission
-      const { data, error } = await supabase
-        .from('admin_permissions')
+      const { data, error } = await (supabase
+        .from('admin_permissions') as any)
         .update(permissions)
         .eq('id', existingPerm.id)
         .select()
-        .single() as any;
+        .single();
         
       if (error) {
         console.error('Error updating permission:', error);
@@ -178,15 +179,15 @@ export const updatePermission = async (roleId: string, module: string, permissio
       return data as AdminPermission;
     } else {
       // Insert new permission
-      const { data, error } = await supabase
-        .from('admin_permissions')
+      const { data, error } = await (supabase
+        .from('admin_permissions') as any)
         .insert([{
           role_id: roleId,
           module,
           ...permissions
         }])
         .select()
-        .single() as any;
+        .single();
         
       if (error) {
         console.error('Error creating permission:', error);

@@ -61,7 +61,6 @@ export const useAdminAuth = () => {
           if (adminData) {
             console.log('Admin user found:', adminData);
             
-            // Since admin_role_id is not yet implemented in the database, we'll use the legacy role system
             // Ensure we handle the role as a string to avoid type issues
             const role = String(adminData.role).toLowerCase().trim();
             console.log('Role as string:', role);
@@ -72,11 +71,12 @@ export const useAdminAuth = () => {
               
               try {
                 // Try to get the SuperAdmin role from the new roles table
-                const { data: superAdminRoleData } = await supabaseAdmin
-                  .from('admin_roles')
+                // Use type assertion for tables not in Supabase types
+                const { data: superAdminRoleData } = await (supabaseAdmin
+                  .from('admin_roles') as any)
                   .select('*')
                   .eq('name', 'SuperAdmin')
-                  .single() as any;
+                  .single();
                 
                 if (superAdminRoleData) {
                   // Map to AdminRole type
@@ -92,10 +92,11 @@ export const useAdminAuth = () => {
                   setAdminRole(superAdminRole);
                   
                   // Get all permissions for SuperAdmin
-                  const { data: permissionsData } = await supabaseAdmin
-                    .from('admin_permissions')
+                  // Use type assertion for tables not in Supabase types
+                  const { data: permissionsData } = await (supabaseAdmin
+                    .from('admin_permissions') as any)
                     .select('*')
-                    .eq('role_id', superAdminRole.id) as any;
+                    .eq('role_id', superAdminRole.id);
                   
                   // Create typed permissions array
                   const typedPermissions: AdminPermission[] = permissionsData ? 
@@ -183,15 +184,19 @@ export const useAdminAuth = () => {
       // If this is a module-specific permission like 'users.view'
       if (permission.includes('.')) {
         const [module, action] = permission.split('.');
-        const modulePerm = adminUser.permissions.find(p => p.module === module as AdminModule);
-        
-        if (modulePerm) {
-          switch(action) {
-            case 'create': return modulePerm.can_create;
-            case 'edit': return modulePerm.can_edit;
-            case 'delete': return modulePerm.can_delete;
-            case 'view': return modulePerm.can_view;
-            default: return false;
+        // Check if module is a valid AdminModule
+        const validModule = ['posts', 'users', 'jobs', 'events', 'content', 'team'].includes(module);
+        if (validModule) {
+          const modulePerm = adminUser.permissions.find(p => p.module === module as AdminModule);
+          
+          if (modulePerm) {
+            switch(action) {
+              case 'create': return modulePerm.can_create;
+              case 'edit': return modulePerm.can_edit;
+              case 'delete': return modulePerm.can_delete;
+              case 'view': return modulePerm.can_view;
+              default: return false;
+            }
           }
         }
         return false;
