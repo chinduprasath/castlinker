@@ -42,11 +42,13 @@ import {
   Database,
   RefreshCw,
   HelpCircle,
-  Edit
+  Upload,
+  Image
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import RoleEditor from "@/components/admin/RoleEditor";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { toast } from "sonner";
 
 const AdminSettings = () => {
   const { hasPermission } = useAdminAuth();
@@ -61,9 +63,17 @@ const AdminSettings = () => {
       maxUploadSize: "10",
       maintenance: false,
       analyticsEnabled: true,
+      primaryColor: "#FFC107",
+      secondaryColor: "#6B46C1",
     }
   });
 
+  // File upload states
+  const [faviconFile, setFaviconFile] = useState<File | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [faviconPreview, setFaviconPreview] = useState<string | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  
   // Security settings
   const [securitySettings, setSecuritySettings] = useState({
     twoFactorAuth: true,
@@ -81,6 +91,40 @@ const AdminSettings = () => {
     enableNotificationEmails: true,
     emailFooter: "© 2024 CastLinker. All rights reserved."
   });
+
+  // Handle favicon upload
+  const handleFaviconChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setFaviconFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFaviconPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+      
+      toast.success("Favicon uploaded. Click 'Save Settings' to apply changes.");
+    }
+  };
+  
+  // Handle logo upload
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setLogoFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+      
+      toast.success("Logo uploaded. Click 'Save Settings' to apply changes.");
+    }
+  };
 
   // Function to handle security settings change
   const handleSecurityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -100,6 +144,18 @@ const AdminSettings = () => {
       ...emailSettings,
       [name]: type === "checkbox" ? checked : value
     });
+  };
+  
+  // Function to handle saving site settings
+  const handleSaveSiteSettings = (data: any) => {
+    console.log("Saving site settings:", data);
+    console.log("Favicon file:", faviconFile);
+    console.log("Logo file:", logoFile);
+    
+    // In a real app, upload the files to a server or storage service
+    // Then update the site settings with the file URLs
+    
+    toast.success("Site settings saved successfully!");
   };
 
   return (
@@ -136,7 +192,7 @@ const AdminSettings = () => {
             </CardHeader>
             <CardContent>
               <Form {...siteSettingsForm}>
-                <form className="space-y-6">
+                <form onSubmit={siteSettingsForm.handleSubmit(handleSaveSiteSettings)} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                       control={siteSettingsForm.control}
@@ -186,6 +242,154 @@ const AdminSettings = () => {
                       </FormItem>
                     )}
                   />
+                  
+                  {/* Branding Section */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium">Branding</h3>
+                    <Separator />
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Favicon Upload */}
+                      <div className="space-y-2">
+                        <FormLabel>Site Favicon</FormLabel>
+                        <div className="flex items-start gap-4">
+                          <div className="w-16 h-16 border rounded flex items-center justify-center bg-muted">
+                            {faviconPreview ? (
+                              <img src={faviconPreview} alt="Favicon Preview" className="max-w-full max-h-full" />
+                            ) : (
+                              <Image className="h-8 w-8 text-muted-foreground" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <Button type="button" variant="outline" onClick={() => document.getElementById('favicon-upload')?.click()}>
+                                <Upload className="h-4 w-4 mr-2" />
+                                Upload Favicon
+                              </Button>
+                              {faviconFile && (
+                                <Button type="button" variant="ghost" size="sm" onClick={() => {
+                                  setFaviconFile(null);
+                                  setFaviconPreview(null);
+                                }}>
+                                  Remove
+                                </Button>
+                              )}
+                            </div>
+                            <input 
+                              id="favicon-upload" 
+                              type="file" 
+                              className="hidden" 
+                              accept="image/png,image/jpeg,image/gif" 
+                              onChange={handleFaviconChange}
+                            />
+                            <FormDescription className="mt-2">
+                              Upload a small image (PNG, JPG, GIF) to be shown in browser tabs. Recommended size: 32x32px.
+                            </FormDescription>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Logo Upload */}
+                      <div className="space-y-2">
+                        <FormLabel>Site Logo</FormLabel>
+                        <div className="flex items-start gap-4">
+                          <div className="w-32 h-16 border rounded flex items-center justify-center bg-muted">
+                            {logoPreview ? (
+                              <img src={logoPreview} alt="Logo Preview" className="max-w-full max-h-full" />
+                            ) : (
+                              <Image className="h-8 w-8 text-muted-foreground" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <Button type="button" variant="outline" onClick={() => document.getElementById('logo-upload')?.click()}>
+                                <Upload className="h-4 w-4 mr-2" />
+                                Upload Logo
+                              </Button>
+                              {logoFile && (
+                                <Button type="button" variant="ghost" size="sm" onClick={() => {
+                                  setLogoFile(null);
+                                  setLogoPreview(null);
+                                }}>
+                                  Remove
+                                </Button>
+                              )}
+                            </div>
+                            <input 
+                              id="logo-upload" 
+                              type="file" 
+                              className="hidden" 
+                              accept="image/png,image/jpeg,image/svg+xml" 
+                              onChange={handleLogoChange}
+                            />
+                            <FormDescription className="mt-2">
+                              Upload your website logo in PNG, JPG, or SVG format. Recommended size: 200x50px.
+                            </FormDescription>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Theme Section */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium">Theme Colors</h3>
+                    <Separator />
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={siteSettingsForm.control}
+                        name="primaryColor"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Primary Color</FormLabel>
+                            <div className="flex items-center gap-2">
+                              <FormControl>
+                                <Input {...field} type="text" />
+                              </FormControl>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="color"
+                                  value={field.value}
+                                  onChange={(e) => field.onChange(e.target.value)}
+                                  className="h-8 w-10 border rounded"
+                                />
+                              </div>
+                            </div>
+                            <FormDescription>
+                              Primary brand color (buttons, accents, etc.)
+                            </FormDescription>
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={siteSettingsForm.control}
+                        name="secondaryColor"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Secondary Color</FormLabel>
+                            <div className="flex items-center gap-2">
+                              <FormControl>
+                                <Input {...field} type="text" />
+                              </FormControl>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="color"
+                                  value={field.value}
+                                  onChange={(e) => field.onChange(e.target.value)}
+                                  className="h-8 w-10 border rounded"
+                                />
+                              </div>
+                            </div>
+                            <FormDescription>
+                              Secondary brand color (highlights, complementary elements)
+                            </FormDescription>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
@@ -252,15 +456,15 @@ const AdminSettings = () => {
                       />
                     </div>
                   </div>
+                  <div className="flex justify-end">
+                    <Button type="submit" className="gap-2">
+                      <Save className="h-4 w-4" />
+                      Save Settings
+                    </Button>
+                  </div>
                 </form>
               </Form>
             </CardContent>
-            <CardFooter className="flex justify-end">
-              <Button className="gap-2">
-                <Save className="h-4 w-4" />
-                Save Settings
-              </Button>
-            </CardFooter>
           </Card>
         </TabsContent>
 
@@ -535,7 +739,7 @@ const AdminSettings = () => {
           </Card>
         </TabsContent>
 
-        {/* Permissions Tab - Updated to use database-driven roles */}
+        {/* Permissions Tab - Using RoleEditor component */}
         <TabsContent value="permissions">
           <Card>
             <CardHeader>

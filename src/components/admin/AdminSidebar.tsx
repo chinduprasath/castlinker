@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,6 +13,7 @@ import {
   Settings,
   Menu,
   ChevronRight,
+  ChevronLeft,
   Bell,
   BarChart2,
   FileText,
@@ -153,9 +155,8 @@ const AdminSidebar = ({ collapsed, toggleSidebar }: AdminSidebarProps) => {
           variant="ghost"
           size="icon"
           onClick={toggleSidebar}
-          className={collapsed ? "hidden" : ""}
         >
-          <ChevronRight className="h-5 w-5" />
+          {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
         </Button>
       </div>
 
@@ -180,15 +181,21 @@ const AdminSidebar = ({ collapsed, toggleSidebar }: AdminSidebarProps) => {
         </nav>
       </div>
 
-      <div className="border-t p-2 md:hidden">
+      <div className="border-t p-2">
         <Button
           variant="outline"
           size="sm"
-          className="w-full"
+          className={cn("w-full", collapsed && "justify-center p-2")}
           onClick={toggleSidebar}
         >
-          <Menu className="h-4 w-4 mr-2" />
-          {!collapsed && <span>Collapse</span>}
+          {collapsed ? (
+            <ChevronRight className="h-4 w-4" />
+          ) : (
+            <>
+              <Menu className="h-4 w-4 mr-2" />
+              <span>Collapse</span>
+            </>
+          )}
         </Button>
       </div>
     </aside>
