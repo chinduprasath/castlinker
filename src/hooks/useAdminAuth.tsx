@@ -1,12 +1,13 @@
-
 import { useAuth } from '@/contexts/AuthContext';
 import { hasPermission } from '@/lib/adminPermissions';
 import { useEffect, useState } from "react";
 import { AdminTeamRole } from '@/types/adminTypes';
 import { supabase } from "@/integrations/supabase/client";
+import { supabaseAdmin } from "@/integrations/supabase/adminClient";
 
 interface AdminUser {
   role: AdminTeamRole;
+  name?: string;
 }
 
 export const useAdminAuth = () => {
@@ -34,12 +35,12 @@ export const useAdminAuth = () => {
             return;
           }
           
-          // Get actual admin role from database
-          const { data: adminData, error } = await supabase
+          // Get actual admin role from database using admin client
+          const { data: adminData, error } = await supabaseAdmin
             .from('users_management')
-            .select('role')
-            .eq('email', user.email.toLowerCase()) // Ensure we use lowercase for comparison
-            .maybeSingle();
+            .select('role, name')
+            .eq('email', user.email.toLowerCase())
+            .single();
           
           if (error) {
             console.error('Error fetching admin data:', error);
@@ -53,21 +54,19 @@ export const useAdminAuth = () => {
             console.log('Admin user found:', adminData);
             
             // Ensure we handle the role as a string to avoid type issues
-            const role = String(adminData.role);
+            const role = String(adminData.role).toLowerCase().trim();
             console.log('Role as string:', role);
             
-            // List of valid admin roles
-            const adminRoles = ['super_admin', 'moderator', 'content_manager', 'recruiter'];
-            
-            if (adminRoles.includes(role)) {
-              // Map string role to AdminTeamRole enum
-              const adminRole = role as AdminTeamRole;
-              
-              console.log('Mapped to AdminTeamRole:', adminRole);
-              setAdminUser({ role: adminRole });
+            // Check specifically for super_admin role
+            if (role === 'super_admin') {
+              console.log('User is a super_admin');
+              setAdminUser({ 
+                role: 'super_admin',
+                name: adminData.name 
+              });
               setIsAdmin(true);
             } else {
-              console.log('Role not recognized as admin role:', role);
+              console.log('User is not a super_admin:', role);
               setAdminUser(null);
               setIsAdmin(false);
             }
@@ -95,6 +94,8 @@ export const useAdminAuth = () => {
   
   const can = (permission: string): boolean => {
     if (!adminUser) return false;
+    // Super admin has all permissions
+    if (adminUser.role === 'super_admin') return true;
     const hasPermissionResult = hasPermission(adminUser.role, permission);
     console.log(`Checking permission "${permission}" for role "${adminUser.role}": ${hasPermissionResult}`);
     return hasPermissionResult;

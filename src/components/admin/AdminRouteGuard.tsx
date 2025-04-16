@@ -1,4 +1,3 @@
-
 import { Navigate, useNavigate } from "react-router-dom";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Shield } from "lucide-react";
@@ -24,7 +23,6 @@ const AdminRouteGuard = ({ children, requiredPermission }: AdminRouteGuardProps)
         
         if (!sessionData.session) {
           console.log("No active Supabase session found");
-          // No session, redirect to login
           navigate("/superadmin-signin");
           return;
         }
@@ -34,6 +32,7 @@ const AdminRouteGuard = ({ children, requiredPermission }: AdminRouteGuardProps)
       } catch (err) {
         console.error("Error verifying Supabase session:", err);
         setAuthChecking(false);
+        navigate("/superadmin-signin");
       }
     };
     
@@ -61,19 +60,18 @@ const AdminRouteGuard = ({ children, requiredPermission }: AdminRouteGuardProps)
   }
   
   // Check if user is an admin
-  if (!isAdmin) {
+  if (!isAdmin || !adminUser) {
     console.log("Access denied: User is not an admin");
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background">
         <Shield className="h-12 w-12 text-red-500 mb-4" />
         <h1 className="text-2xl font-bold mb-2">Access Denied</h1>
         <p className="text-muted-foreground mb-4">You don't have permission to access the admin panel.</p>
-        <div className="space-y-2">
+        <div className="space-x-2">
           <Button onClick={() => navigate("/")}>Return to Home</Button>
           <Button 
             variant="outline"
             onClick={() => navigate("/superadmin-signin")} 
-            className="ml-2"
           >
             Admin Sign In
           </Button>
@@ -90,7 +88,7 @@ const AdminRouteGuard = ({ children, requiredPermission }: AdminRouteGuardProps)
         <Shield className="h-12 w-12 text-orange-500 mb-4" />
         <h1 className="text-2xl font-bold mb-2">Permission Denied</h1>
         <p className="text-muted-foreground mb-4">
-          {adminUser?.role === 'super_admin' 
+          {adminUser.role === 'super_admin' 
             ? "This feature is currently under maintenance."
             : "You don't have the required permissions for this section."}
         </p>

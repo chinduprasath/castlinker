@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,7 +19,6 @@ const formSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
   confirmPassword: z.string().min(8, "Password must be at least 8 characters"),
-  role: z.enum(["super_admin", "moderator", "content_manager", "recruiter"] as const),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
@@ -41,7 +39,6 @@ const SuperAdminSignup = () => {
       email: "",
       password: "",
       confirmPassword: "",
-      role: "super_admin",
     }
   });
 
@@ -57,12 +54,15 @@ const SuperAdminSignup = () => {
         options: {
           data: {
             name: data.name,
-            role: data.role
+            role: 'SuperAdmin'
           }
         }
       });
       
-      if (signupError) throw signupError;
+      if (signupError) {
+        console.error("Auth signup error:", signupError);
+        throw new Error(signupError.message);
+      }
       
       if (!authData.user) {
         throw new Error("Failed to create user account");
@@ -71,23 +71,25 @@ const SuperAdminSignup = () => {
       console.log("Auth account created:", authData.user.id);
       
       // Create entry in users_management table for admin team member
-      // Use explicit type casting to ensure TypeScript understands the role type
       const { error: managementError } = await supabase
         .from('users_management')
         .insert({
+          id: authData.user.id,
           name: data.name,
-          email: data.email.toLowerCase(), // Ensure email is lowercase for consistency
-          role: data.role as any, // Use type assertion to bypass type checking
+          email: data.email.toLowerCase(),
+          role: 'super_admin',
           status: 'active',
           verified: true
         });
       
       if (managementError) {
         console.error("Error creating admin user record:", managementError);
-        throw managementError;
+        // If we fail to create the management record, delete the auth user
+        await supabase.auth.admin.deleteUser(authData.user.id);
+        throw new Error(`Failed to create admin record: ${managementError.message}`);
       }
       
-      toast.success("Admin account created successfully!");
+      toast.success("SuperAdmin account created successfully! Please check your email to verify your account.");
       navigate("/superadmin-signin");
     } catch (err: any) {
       console.error("Signup error:", err);
@@ -183,33 +185,6 @@ const SuperAdminSignup = () => {
                       className="bg-background/70"
                     />
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="role"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Role</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="bg-background/70">
-                        <SelectValue placeholder="Select a role" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="super_admin">Super Admin</SelectItem>
-                      <SelectItem value="moderator">Moderator</SelectItem>
-                      <SelectItem value="content_manager">Content Manager</SelectItem>
-                      <SelectItem value="recruiter">Recruiter</SelectItem>
-                    </SelectContent>
-                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

@@ -11,6 +11,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Shield } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { supabaseAdmin } from "@/integrations/supabase/adminClient";
+import type { Database } from "@/integrations/supabase/types";
+
+const SUPABASE_URL = "https://qnpdieomxraerzgocofk.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFucGRpZW9teHJhZXJ6Z29jb2ZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM0MDI0NzEsImV4cCI6MjA1ODk3ODQ3MX0.BcLb9NnIeaV6FOymxkP4pGU91uo35MiXe2cGj2P6Ea4";
 
 const formSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -87,39 +92,36 @@ const SuperAdminSignin = () => {
       
       console.log("Basic authentication successful, checking admin status...");
       
-      // Step 2: Check if user is in the users_management table
-      const { data: adminUser, error: adminError } = await supabase
+      // Step 2: Check if user is in the users_management table using admin client
+      const { data: adminUser, error: adminError } = await supabaseAdmin
         .from('users_management')
         .select('role, name')
-        .eq('email', data.email)
-        .maybeSingle();
+        .eq('email', data.email.toLowerCase())
+        .single();
       
       if (adminError) {
         console.error("Admin check error:", adminError);
-        // If there's an error checking admin status, still log the user out
         await supabase.auth.signOut();
-        throw new Error("Error verifying admin privileges");
+        throw new Error(`Error verifying admin privileges: ${adminError.message}`);
       }
       
       if (!adminUser) {
-        console.error("User not found in users_management table");
+        console.error("User not found in users_management table for email:", data.email);
         await supabase.auth.signOut();
-        throw new Error("You don't have admin access privileges");
+        throw new Error("You don't have admin access privileges. Please contact system administrator.");
       }
       
       console.log("Admin check result:", adminUser);
       
       // Get the role value and convert to string to avoid type issues
-      const userRole = String(adminUser.role);
+      const userRole = String(adminUser.role).toLowerCase().trim();
       console.log("User role (as string):", userRole);
       
-      // List of admin roles we want to allow
-      const adminRoles = ['super_admin', 'moderator', 'content_manager', 'recruiter'];
-      
-      if (!adminRoles.includes(userRole)) {
-        console.error("Not an admin role:", userRole);
+      // Check if the role is super_admin
+      if (userRole !== 'super_admin') {
+        console.error("Not a SuperAdmin role:", userRole);
         await supabase.auth.signOut();
-        throw new Error("You don't have admin access privileges");
+        throw new Error("You don't have SuperAdmin access privileges.");
       }
       
       // Save remember me preference
@@ -130,11 +132,9 @@ const SuperAdminSignin = () => {
       }
       
       // Show success message
-      const displayName = adminUser.name || "Admin";
-      const roleDisplay = userRole.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-      
-      toast.success(`Welcome back, ${displayName} (${roleDisplay})`);
-      console.log("Admin authentication successful, navigating to dashboard");
+      const displayName = adminUser.name || "SuperAdmin";
+      toast.success(`Welcome back, ${displayName}`);
+      console.log("SuperAdmin authentication successful, navigating to dashboard");
       
       // Navigate to admin dashboard
       navigate("/admin/dashboard");
