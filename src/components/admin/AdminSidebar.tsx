@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AdminModule } from "@/types/rbacTypes";
+import ThemeToggle from "@/components/ThemeToggle";
 
 interface AdminSidebarProps {
   collapsed: boolean;
@@ -181,22 +182,8 @@ const AdminSidebar = ({ collapsed, toggleSidebar }: AdminSidebarProps) => {
         </nav>
       </div>
 
-      <div className="border-t p-2">
-        <Button
-          variant="outline"
-          size="sm"
-          className={cn("w-full", collapsed && "justify-center p-2")}
-          onClick={toggleSidebar}
-        >
-          {collapsed ? (
-            <ChevronRight className="h-4 w-4" />
-          ) : (
-            <>
-              <Menu className="h-4 w-4 mr-2" />
-              <span>Collapse</span>
-            </>
-          )}
-        </Button>
+      <div className="border-t p-2 flex justify-center items-center">
+        <ThemeToggle showTooltip={true} className="w-full" />
       </div>
     </aside>
   );
