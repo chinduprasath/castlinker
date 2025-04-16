@@ -2,14 +2,14 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { TeamMember, UserManagementRole } from "@/types/adminTypes";
+import { TeamMember } from "@/types/adminTypes";
 import { roles, permissions } from "@/lib/adminPermissions";
 
 interface RoleDialogProps {
   isOpen: boolean;
   onClose: () => void;
   member: TeamMember | null;
-  onUpdateRole: (roleId: UserManagementRole) => void;
+  onUpdateRole: (roleId: string) => void;
 }
 
 const RoleDialog = ({ isOpen, onClose, member, onUpdateRole }: RoleDialogProps) => {
@@ -51,7 +51,7 @@ const RoleDialog = ({ isOpen, onClose, member, onUpdateRole }: RoleDialogProps) 
                       ? 'bg-gold/10 border-gold' 
                       : 'border-border hover:border-gold/50'
                   }`}
-                  onClick={() => onUpdateRole(role.id as UserManagementRole)}
+                  onClick={() => onUpdateRole(role.id)}
                 >
                   <div className="flex-1">
                     <div className="flex items-center">
