@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Shield } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AdminTeamRole, UserManagementRole } from "@/types/adminTypes";
+import { AdminTeamRole, UserManagementRole, AdminUserRole } from "@/types/adminTypes";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -54,9 +54,9 @@ const SuperAdminSignup = () => {
       await signup(data.email, data.password, data.name, data.role);
       
       // Map admin team role to database-compatible role for users_management table
-      // For this solution, we're treating "director" as the default database role
-      // for admin team members as a workaround for the type constraints
-      const dbRole: string = "director";  // Using 'director' as the stand-in role for all admin team members
+      // For this solution, we're using 'director' as the default database role for all admin team members
+      // as a workaround for the type constraints
+      const dbRole: AdminUserRole = "director";
       
       // Create entry in users_management table for admin team member
       const { error: managementError } = await supabase

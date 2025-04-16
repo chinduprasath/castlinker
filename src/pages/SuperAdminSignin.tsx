@@ -58,12 +58,17 @@ const SuperAdminSignin = () => {
       }
       
       // Verify the user has an admin role
-      const adminRoles: string[] = ['super_admin', 'moderator', 'content_manager', 'recruiter'];
-      if (!adminUser || !adminRoles.includes(adminUser.role)) {
+      // Using string comparison instead of type checking since the database role might be different
+      const adminRoles = ['super_admin', 'moderator', 'content_manager', 'recruiter'];
+      
+      // Type assertion to make TypeScript happy - we know this is a string value
+      const userRole = String(adminUser.role);
+      
+      if (!adminUser || !adminRoles.includes(userRole)) {
         throw new Error("You don't have admin access privileges");
       }
       
-      toast.success(`Welcome back, ${adminUser.role === 'super_admin' ? 'Super Admin' : 'Admin'}`);
+      toast.success(`Welcome back, ${userRole === 'super_admin' ? 'Super Admin' : 'Admin'}`);
       navigate("/admin/dashboard");
     } catch (error: any) {
       console.error("Login error:", error);
