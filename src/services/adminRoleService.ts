@@ -87,3 +87,43 @@ export const updateRolePermissions = async (
     throw err;
   }
 };
+
+export const fetchRoleWithPermissions = async (roleId: string): Promise<AdminRoleWithPermissions | null> => {
+  try {
+    // First fetch the role details
+    const { data: roleData, error: roleError } = await supabase
+      .from('admin_roles')
+      .select('*')
+      .eq('id', roleId)
+      .single();
+      
+    if (roleError) {
+      console.error('Error fetching role:', roleError);
+      throw roleError;
+    }
+    
+    if (!roleData) return null;
+    
+    // Then fetch the permissions for this role
+    const { data: permissionsData, error: permError } = await supabase
+      .from('admin_permissions')
+      .select('*')
+      .eq('role_id', roleId);
+      
+    if (permError) {
+      console.error('Error fetching permissions:', permError);
+      throw permError;
+    }
+    
+    // Build the combined object
+    const roleWithPermissions: AdminRoleWithPermissions = {
+      ...roleData,
+      permissions: permissionsData || []
+    };
+    
+    return roleWithPermissions;
+  } catch (err) {
+    console.error('Error in fetchRoleWithPermissions:', err);
+    return null;
+  }
+};

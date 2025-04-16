@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,47 +11,36 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { fetchRoles } from "@/services/adminRoleService";
 import { createTeamMember } from "@/services/teamMemberService";
 import { AdminRole } from "@/types/rbacTypes";
 
 interface AddTeamMemberFormProps {
   onSuccess?: () => void;
   onCancel: () => void;
+  availableRoles: AdminRole[];
 }
 
-const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({ onSuccess, onCancel }) => {
+const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({ 
+  onSuccess, 
+  onCancel,
+  availableRoles 
+}) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [roleId, setRoleId] = useState("");
   const [generatePassword, setGeneratePassword] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [roles, setRoles] = useState<AdminRole[]>([]);
-  const [rolesLoading, setRolesLoading] = useState(true);
   
-  useEffect(() => {
-    const loadRoles = async () => {
-      try {
-        setRolesLoading(true);
-        const data = await fetchRoles();
-        setRoles(data);
-        
-        // Set default role to the first non-SuperAdmin role if available
-        const defaultRole = data.find(r => r.name !== 'SuperAdmin') || data[0];
-        if (defaultRole) {
-          setRoleId(defaultRole.id);
-        }
-      } catch (err) {
-        console.error('Error loading roles:', err);
-        toast.error("Failed to load roles");
-      } finally {
-        setRolesLoading(false);
+  // Set default role to the first non-SuperAdmin role if available
+  React.useEffect(() => {
+    if (availableRoles.length > 0) {
+      const defaultRole = availableRoles.find(r => r.name !== 'SuperAdmin') || availableRoles[0];
+      if (defaultRole) {
+        setRoleId(defaultRole.id);
       }
-    };
-    
-    loadRoles();
-  }, []);
+    }
+  }, [availableRoles]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,13 +106,13 @@ const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({ onSuccess, onCanc
         <Select
           value={roleId}
           onValueChange={setRoleId}
-          disabled={rolesLoading}
+          disabled={availableRoles.length === 0}
         >
           <SelectTrigger id="role" className="w-full">
             <SelectValue placeholder="Select a role" />
           </SelectTrigger>
           <SelectContent>
-            {roles.map((role) => (
+            {availableRoles.map((role) => (
               <SelectItem key={role.id} value={role.id}>
                 {role.name}
               </SelectItem>
@@ -163,7 +152,7 @@ const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({ onSuccess, onCanc
         <Button type="button" variant="outline" onClick={onCancel} disabled={submitting}>
           Cancel
         </Button>
-        <Button type="submit" disabled={submitting || rolesLoading}>
+        <Button type="submit" disabled={submitting}>
           {submitting ? "Creating..." : "Create Team Member"}
         </Button>
       </div>

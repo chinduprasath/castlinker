@@ -24,7 +24,7 @@ import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { MoreHorizontal, Shield, Trash2, UserCog } from "lucide-react";
 import { AdminTeamMember, AdminRole } from "@/types/rbacTypes";
-import { fetchRoles, fetchRoleWithPermissions } from "@/services/adminRoleService";
+import { fetchRoles } from "@/services/adminRoleService";
 import { updateTeamMemberRole, deleteTeamMember } from "@/services/teamMemberService";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ConfirmDialog from "../ConfirmDialog";
@@ -33,17 +33,17 @@ import { useEffect } from "react";
 interface TeamMemberListProps {
   teamMembers: AdminTeamMember[];
   loading: boolean;
-  canEditRoles: boolean;
-  onEditRole?: (member: AdminTeamMember) => void;
+  roles?: AdminRole[];
   onRefresh?: () => void;
+  canEditRoles?: boolean;
 }
 
 const TeamMemberList = ({ 
   teamMembers, 
   loading, 
-  canEditRoles,
-  onEditRole,
-  onRefresh
+  roles: initialRoles,
+  onRefresh,
+  canEditRoles = true
 }: TeamMemberListProps) => {
   const [roles, setRoles] = useState<AdminRole[]>([]);
   const [rolesLoading, setRolesLoading] = useState(false);
@@ -54,20 +54,24 @@ const TeamMemberList = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    const loadRoles = async () => {
-      try {
-        setRolesLoading(true);
-        const data = await fetchRoles();
-        setRoles(data);
-      } catch (err) {
-        console.error('Error loading roles:', err);
-      } finally {
-        setRolesLoading(false);
-      }
-    };
-    
-    loadRoles();
-  }, []);
+    if (initialRoles && initialRoles.length > 0) {
+      setRoles(initialRoles);
+    } else {
+      loadRoles();
+    }
+  }, [initialRoles]);
+
+  const loadRoles = async () => {
+    try {
+      setRolesLoading(true);
+      const data = await fetchRoles();
+      setRoles(data);
+    } catch (err) {
+      console.error('Error loading roles:', err);
+    } finally {
+      setRolesLoading(false);
+    }
+  };
 
   const handleOpenRoleDialog = (member: AdminTeamMember) => {
     setSelectedMember(member);
@@ -147,7 +151,7 @@ const TeamMemberList = ({
   
   return (
     <>
-      <div className="rounded-md border border-gold/10 overflow-hidden">
+      <div className="rounded-md border overflow-hidden">
         <Table>
           <TableHeader className="bg-card">
             <TableRow>
@@ -163,7 +167,7 @@ const TeamMemberList = ({
               <TableRow key={member.id}>
                 <TableCell>
                   <div className="flex items-center gap-3">
-                    <Avatar className="h-9 w-9 border border-gold/10">
+                    <Avatar className="h-9 w-9 border">
                       <AvatarImage 
                         src={member.avatar_url} 
                         alt={member.name} 
@@ -209,7 +213,7 @@ const TeamMemberList = ({
                           <>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem 
-                              className="text-red-500"
+                              className="text-destructive"
                               onClick={() => handleOpenDeleteDialog(member)}
                             >
                               <Trash2 className="h-4 w-4 mr-2" /> Remove
@@ -228,7 +232,7 @@ const TeamMemberList = ({
       
       {/* Change Role Dialog */}
       <Dialog open={showChangeRoleDialog} onOpenChange={setShowChangeRoleDialog}>
-        <DialogContent className="bg-card-gradient backdrop-blur-sm border-gold/10 sm:max-w-[425px]">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Change Role</DialogTitle>
             <DialogDescription>
