@@ -1,211 +1,236 @@
 
-import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { AlertCircle, CheckCircle2, Info } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { AdminModule, AdminPermission, AdminRoleWithPermissions } from "@/types/rbacTypes";
-import { updateRolePermissions, fetchRoleWithPermissions } from "@/services/adminRoleService";
+import { AdminModule, AdminPermission } from "@/types/rbacTypes";
+import { updateRolePermissions } from "@/services/adminRoleService";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
 
 interface RolePermissionsProps {
   roleId: string;
-  onUpdate?: () => void;
+  permissions: AdminPermission[];
+  onPermissionsUpdated?: () => void;
 }
 
-const ModuleLabels: Record<AdminModule, string> = {
-  posts: "Blog Posts",
-  users: "User Management",
-  jobs: "Job Listings",
-  events: "Events",
-  content: "Content",
-  team: "Team Management"
-};
+interface PermissionModule {
+  name: AdminModule;
+  label: string;
+  description: string;
+}
 
-const RolePermissions: React.FC<RolePermissionsProps> = ({ roleId, onUpdate }) => {
-  const [role, setRole] = useState<AdminRoleWithPermissions | null>(null);
-  const [permissions, setPermissions] = useState<Record<string, AdminPermission>>({});
-  const [saving, setSaving] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+// Define the modules with their labels and descriptions
+const permissionModules: PermissionModule[] = [
+  {
+    name: "posts",
+    label: "Posts & Content",
+    description: "Manage blog posts, articles and content"
+  },
+  {
+    name: "users",
+    label: "Users Management",
+    description: "Manage platform users and profiles"
+  },
+  {
+    name: "jobs",
+    label: "Jobs & Listings",
+    description: "Manage job postings and applications"
+  },
+  {
+    name: "events",
+    label: "Events",
+    description: "Manage events and calendar items"
+  },
+  {
+    name: "content",
+    label: "Media & Resources",
+    description: "Manage uploaded files and resources"
+  },
+  {
+    name: "team",
+    label: "Team Management",
+    description: "Manage team members and roles"
+  }
+];
+
+const RolePermissions = ({ roleId, permissions = [], onPermissionsUpdated }: RolePermissionsProps) => {
+  const [activeTab, setActiveTab] = useState<string>("posts");
+  const [permissionsState, setPermissionsState] = useState<Map<string, AdminPermission>>(new Map());
+  const [isSaving, setIsSaving] = useState<boolean>(false);
   
-  // Available modules for permissions
-  const modules: AdminModule[] = ["posts", "users", "jobs", "events", "content", "team"];
-  
+  // Initialize permissions state from props
   useEffect(() => {
-    if (!roleId) return;
-    loadRolePermissions();
-  }, [roleId]);
-  
-  const loadRolePermissions = async () => {
-    setLoading(true);
-    setError(null);
+    const permMap = new Map<string, AdminPermission>();
     
-    try {
-      const roleData = await fetchRoleWithPermissions(roleId);
-      
-      if (!roleData) {
-        setError("Role not found");
-        return;
+    // Add existing permissions to the map
+    permissions.forEach(perm => {
+      permMap.set(perm.module, perm);
+    });
+    
+    // Ensure all modules have an entry with default values
+    permissionModules.forEach(module => {
+      if (!permMap.has(module.name)) {
+        permMap.set(module.name, {
+          id: "",
+          role_id: roleId,
+          module: module.name,
+          can_create: false,
+          can_edit: false,
+          can_delete: false,
+          can_view: false,
+          created_at: "",
+          updated_at: ""
+        });
       }
-      
-      setRole(roleData);
-      
-      // Convert permissions array to a lookup object
-      const permMap: Record<string, AdminPermission> = {};
-      roleData.permissions.forEach(perm => {
-        permMap[perm.module] = perm;
-      });
-      
-      setPermissions(permMap);
-    } catch (err) {
-      console.error("Error loading role permissions:", err);
-      setError("Failed to load role permissions");
-    } finally {
-      setLoading(false);
-    }
+    });
+    
+    setPermissionsState(permMap);
+  }, [roleId, permissions]);
+  
+  const getPermission = (module: AdminModule): AdminPermission => {
+    return permissionsState.get(module) || {
+      id: "",
+      role_id: roleId,
+      module,
+      can_create: false,
+      can_edit: false,
+      can_delete: false,
+      can_view: false,
+      created_at: "",
+      updated_at: ""
+    };
   };
   
-  const handlePermissionChange = async (
+  const handlePermissionChange = (
     module: AdminModule,
-    permission: "can_create" | "can_edit" | "can_delete" | "can_view",
-    value: boolean
+    permission: 'can_create' | 'can_edit' | 'can_delete' | 'can_view',
+    checked: boolean
   ) => {
-    if (!roleId) return;
-    
-    // Create a copy of the current permission
-    const updatedPerm = { 
-      ...(permissions[module] || { 
-        role_id: roleId,
-        module,
-        can_create: false,
-        can_edit: false,
-        can_delete: false,
-        can_view: false
-      })
+    const currentPerm = getPermission(module);
+    const updatedPerm: AdminPermission = {
+      ...currentPerm,
+      [permission]: checked
     };
     
-    // Update the specific permission
-    updatedPerm[permission] = value;
-    
-    // Save to Supabase
+    const newState = new Map(permissionsState);
+    newState.set(module, updatedPerm);
+    setPermissionsState(newState);
+  };
+  
+  const handleSavePermissions = async (module: AdminModule) => {
     try {
-      setSaving(module);
+      setIsSaving(true);
+      const permission = getPermission(module);
       
-      // Extract the necessary fields to update
-      const permToUpdate = {
-        can_create: updatedPerm.can_create,
-        can_edit: updatedPerm.can_edit,
-        can_delete: updatedPerm.can_delete,
-        can_view: updatedPerm.can_view
-      };
-      
-      const updatedPermission = await updateRolePermissions(
+      await updateRolePermissions(
         roleId,
         module,
-        permToUpdate
+        {
+          can_create: permission.can_create,
+          can_edit: permission.can_edit,
+          can_delete: permission.can_delete,
+          can_view: permission.can_view
+        }
       );
       
-      // Update local state
-      setPermissions(prev => ({
-        ...prev,
-        [module]: updatedPermission
-      }));
+      toast.success(`Permissions for ${module} updated successfully`);
       
-      // Show success toast
-      toast.success(`Updated ${ModuleLabels[module]} permissions`);
-      
-      // Call onUpdate callback if provided
-      if (onUpdate) onUpdate();
-      
-    } catch (err) {
-      console.error(`Error updating ${module} permission:`, err);
-      toast.error(`Failed to update ${ModuleLabels[module]} permissions`);
+      if (onPermissionsUpdated) {
+        onPermissionsUpdated();
+      }
+    } catch (error) {
+      console.error("Error updating permissions:", error);
+      toast.error("Failed to update permissions");
     } finally {
-      setSaving(null);
+      setIsSaving(false);
     }
   };
   
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center py-12">
-        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-  
-  if (error || !role) {
-    return (
-      <div className="flex items-center justify-center p-4 bg-red-50 rounded-lg">
-        <AlertCircle className="text-red-500 mr-2" />
-        <p className="text-red-700">{error || "Could not load role"}</p>
-      </div>
-    );
-  }
-  
-  if (role.is_system && role.name === "SuperAdmin") {
-    return (
-      <div className="bg-muted/50 rounded-lg p-4 flex items-start gap-3">
-        <Info className="text-muted-foreground h-5 w-5 mt-0.5 flex-shrink-0" />
-        <div>
-          <h4 className="font-medium">System Role Permissions</h4>
-          <p className="text-muted-foreground text-sm mt-1">
-            The SuperAdmin role has all permissions by default and cannot be modified.
-          </p>
-        </div>
-      </div>
-    );
-  }
-  
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-1 mb-4">
-        <h3 className="text-lg font-semibold">{role.name}</h3>
-        {role.description && (
-          <p className="text-muted-foreground">{role.description}</p>
-        )}
-        {role.is_system && (
-          <Badge variant="outline" className="w-fit mt-1">System Role</Badge>
-        )}
-      </div>
-      
-      <div className="grid gap-4 md:grid-cols-2">
-        {modules.map(module => (
-          <Card key={module}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">{ModuleLabels[module]}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {['can_view', 'can_create', 'can_edit', 'can_delete'].map(perm => (
-                  <div key={`${module}-${perm}`} className="flex items-center space-x-2">
-                    <Checkbox 
-                      id={`${module}-${perm}`} 
-                      checked={permissions[module]?.[perm as keyof AdminPermission] || false}
-                      onCheckedChange={(checked) => {
-                        handlePermissionChange(
-                          module, 
-                          perm as "can_create" | "can_edit" | "can_delete" | "can_view", 
-                          checked === true
-                        );
-                      }}
-                      disabled={saving === module}
-                    />
-                    <label 
-                      htmlFor={`${module}-${perm}`}
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      {perm.replace('can_', '').charAt(0).toUpperCase() + perm.replace('can_', '').slice(1)}
-                    </label>
-                  </div>
-                ))}
+    <Card>
+      <CardHeader>
+        <CardTitle>Permissions</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="w-full grid grid-cols-3 mb-4">
+            {permissionModules.map(module => (
+              <TabsTrigger 
+                key={module.name}
+                value={module.name}
+                className="text-xs px-2 py-1 sm:text-sm sm:px-3 sm:py-2"
+              >
+                {module.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          
+          {permissionModules.map(module => (
+            <TabsContent key={module.name} value={module.name} className="space-y-4">
+              <div className="text-sm text-muted-foreground mb-4">
+                {module.description}
               </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
+              
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`${module.name}-view`}
+                    checked={getPermission(module.name).can_view}
+                    onCheckedChange={(checked) => 
+                      handlePermissionChange(module.name, 'can_view', checked === true)
+                    }
+                  />
+                  <Label htmlFor={`${module.name}-view`}>View</Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`${module.name}-create`}
+                    checked={getPermission(module.name).can_create}
+                    onCheckedChange={(checked) => 
+                      handlePermissionChange(module.name, 'can_create', checked === true)
+                    }
+                  />
+                  <Label htmlFor={`${module.name}-create`}>Create</Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`${module.name}-edit`}
+                    checked={getPermission(module.name).can_edit}
+                    onCheckedChange={(checked) => 
+                      handlePermissionChange(module.name, 'can_edit', checked === true)
+                    }
+                  />
+                  <Label htmlFor={`${module.name}-edit`}>Edit</Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`${module.name}-delete`}
+                    checked={getPermission(module.name).can_delete}
+                    onCheckedChange={(checked) => 
+                      handlePermissionChange(module.name, 'can_delete', checked === true)
+                    }
+                  />
+                  <Label htmlFor={`${module.name}-delete`}>Delete</Label>
+                </div>
+              </div>
+              
+              <Button 
+                onClick={() => handleSavePermissions(module.name)} 
+                disabled={isSaving}
+                className="mt-4"
+              >
+                {isSaving ? "Saving..." : "Save Permissions"}
+              </Button>
+            </TabsContent>
+          ))}
+        </Tabs>
+      </CardContent>
+    </Card>
   );
 };
 

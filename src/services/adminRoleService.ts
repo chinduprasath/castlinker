@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { AdminPermission, AdminRole, AdminRoleWithPermissions } from "@/types/rbacTypes";
+import { AdminPermission, AdminRole, AdminRoleWithPermissions, AdminModule } from "@/types/rbacTypes";
 
 export const fetchRoles = async (): Promise<AdminRole[]> => {
   try {
@@ -57,7 +57,7 @@ export const createRole = async (role: {
 
 export const updateRolePermissions = async (
   roleId: string, 
-  module: string, 
+  module: AdminModule, 
   permissions: {
     can_create?: boolean;
     can_edit?: boolean;
@@ -81,7 +81,20 @@ export const updateRolePermissions = async (
       throw error;
     }
     
-    return data as AdminPermission;
+    // Cast the returned data to ensure it matches the AdminPermission type
+    const typedData: AdminPermission = {
+      id: data.id,
+      role_id: data.role_id,
+      module: data.module as AdminModule,
+      can_create: data.can_create,
+      can_edit: data.can_edit,
+      can_delete: data.can_delete,
+      can_view: data.can_view,
+      created_at: data.created_at,
+      updated_at: data.updated_at
+    };
+    
+    return typedData;
   } catch (err) {
     console.error('Error in updateRolePermissions:', err);
     throw err;
@@ -115,10 +128,23 @@ export const fetchRoleWithPermissions = async (roleId: string): Promise<AdminRol
       throw permError;
     }
     
+    // Type-convert the permissions array
+    const typedPermissions: AdminPermission[] = (permissionsData || []).map(perm => ({
+      id: perm.id,
+      role_id: perm.role_id,
+      module: perm.module as AdminModule,
+      can_create: perm.can_create,
+      can_edit: perm.can_edit,
+      can_delete: perm.can_delete,
+      can_view: perm.can_view,
+      created_at: perm.created_at,
+      updated_at: perm.updated_at
+    }));
+    
     // Build the combined object
     const roleWithPermissions: AdminRoleWithPermissions = {
       ...roleData,
-      permissions: permissionsData || []
+      permissions: typedPermissions
     };
     
     return roleWithPermissions;
