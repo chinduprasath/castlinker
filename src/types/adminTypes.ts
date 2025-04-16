@@ -1,6 +1,4 @@
 
-
-
 export interface User {
   id: string;
   name: string;
@@ -47,4 +45,3 @@ export interface TeamMember {
   joined_date: string;
   avatar_url?: string;
 }
-

@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { toast } from "sonner";
 import RoleEditor from "@/components/admin/RoleEditor";
-import { TeamMember } from "@/types/adminTypes";
+import { TeamMember, AdminUserRole } from "@/types/adminTypes";
 import TeamMemberList from "@/components/admin/team/TeamMemberList";
 import AddMemberDialog from "@/components/admin/team/AddMemberDialog";
 import RoleDialog from "@/components/admin/team/RoleDialog";
@@ -56,7 +56,7 @@ const TeamManagement = () => {
         .insert({
           name: newMemberData.name,
           email: newMemberData.email,
-          role: newMemberData.role,
+          role: newMemberData.role as string,
           verified: true,
           status: 'active'
         })
@@ -79,9 +79,10 @@ const TeamManagement = () => {
     if (!currentMember) return;
     
     try {
+      // Cast the role to a string explicitly for the database update
       const { error } = await supabase
         .from('users_management')
-        .update({ role: selectedRole })
+        .update({ role: selectedRole as string })
         .eq('id', currentMember.id);
       
       if (error) throw error;
