@@ -41,8 +41,7 @@ export interface TeamMember {
   id: string;
   name: string;
   email: string;
-  // Using string type here to accommodate all possible role values
-  role: string;
+  role: UserManagementRole; // Changed to use our union type
   joined_date: string;
   avatar_url?: string;
 }
