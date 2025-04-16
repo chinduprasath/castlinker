@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { AdminTeamMember } from "@/types/rbacTypes";
-import { TeamMember } from "@/types/adminTypes";
+import { TeamMember, AdminTeamRole } from "@/types/adminTypes";
 
 export const fetchTeamMembers = async (): Promise<AdminTeamMember[]> => {
   const { data, error } = await supabase
@@ -55,9 +55,10 @@ export const fetchAllTeamMembers = async (): Promise<TeamMember[]> => {
 };
 
 export const updateTeamMemberRole = async (userId: string, roleId: string): Promise<void> => {
+  // Use type assertion to handle the admin_role_id property
   const { error } = await supabase
     .from('users_management')
-    .update({ admin_role_id: roleId })
+    .update({ admin_role_id: roleId } as any)
     .eq('id', userId);
     
   if (error) {
@@ -90,19 +91,21 @@ export const createTeamMember = async (member: {
     
     if (!authData.user) throw new Error("Failed to create user account");
     
-    // Create entry in users_management table
+    // Create entry in users_management table with type assertion to handle additional properties
     const { error: managementError } = await supabase
       .from('users_management')
       .insert({
         id: authData.user.id,
         name: member.name,
         email: member.email.toLowerCase(),
-        admin_role_id: member.roleId,
-        role: 'team_member', // Legacy role
+        // Use 'moderator' as a valid role from AdminTeamRole type instead of 'team_member'
+        role: 'moderator' as AdminTeamRole,
         status: 'active',
         verified: true,
-        avatar_url: member.avatar_url
-      });
+        avatar_url: member.avatar_url,
+        // Add admin_role_id as part of the type assertion
+        admin_role_id: member.roleId
+      } as any);
     
     if (managementError) {
       // Try to delete the auth user if the management record failed
