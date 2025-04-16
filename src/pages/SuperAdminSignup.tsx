@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -53,9 +52,8 @@ const SuperAdminSignup = () => {
       // Create the user account
       await signup(data.email, data.password, data.name, data.role);
       
-      // Map admin team role to database-compatible role for users_management table
-      // For this solution, we're using 'director' as the default database role for all admin team members
-      // as a workaround for the type constraints
+      // Cast the admin role to a database-compatible role
+      // We're using "director" as a placeholder in the database since it's one of the valid AdminUserRole types
       const dbRole: AdminUserRole = "director";
       
       // Create entry in users_management table for admin team member

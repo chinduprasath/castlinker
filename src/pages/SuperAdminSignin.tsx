@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -57,11 +56,10 @@ const SuperAdminSignin = () => {
         throw new Error("Authentication failed. Please check your credentials.");
       }
       
-      // Verify the user has an admin role
-      // Using string comparison instead of type checking since the database role might be different
+      // List of admin roles we want to allow
       const adminRoles = ['super_admin', 'moderator', 'content_manager', 'recruiter'];
       
-      // Type assertion to make TypeScript happy - we know this is a string value
+      // Convert the database role to a string to avoid type issues
       const userRole = String(adminUser.role);
       
       if (!adminUser || !adminRoles.includes(userRole)) {
