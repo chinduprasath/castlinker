@@ -2,14 +2,14 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { TeamMember, UserManagementRole } from "@/types/adminTypes";
+import { TeamMember, AdminTeamRole } from "@/types/adminTypes";
 import { roles, permissions } from "@/lib/adminPermissions";
 
 interface RoleDialogProps {
   isOpen: boolean;
   onClose: () => void;
   member: TeamMember | null;
-  onUpdateRole: (roleId: UserManagementRole) => void;
+  onUpdateRole: (roleId: AdminTeamRole) => void;
 }
 
 const RoleDialog = ({ isOpen, onClose, member, onUpdateRole }: RoleDialogProps) => {
@@ -30,6 +30,11 @@ const RoleDialog = ({ isOpen, onClose, member, onUpdateRole }: RoleDialogProps) 
     }
   };
   
+  // Filter roles to only include admin team roles
+  const adminRoles = roles.filter(role => 
+    ['super_admin', 'moderator', 'content_manager', 'recruiter'].includes(role.id)
+  );
+  
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="bg-card-gradient backdrop-blur-sm border-gold/10 sm:max-w-[525px]">
@@ -43,7 +48,7 @@ const RoleDialog = ({ isOpen, onClose, member, onUpdateRole }: RoleDialogProps) 
           <div className="grid gap-4">
             <Label>Select Role</Label>
             <div className="grid grid-cols-1 gap-4">
-              {roles.map(role => (
+              {adminRoles.map(role => (
                 <div 
                   key={role.id} 
                   className={`flex items-start p-4 rounded-lg border cursor-pointer transition-colors ${
@@ -51,7 +56,7 @@ const RoleDialog = ({ isOpen, onClose, member, onUpdateRole }: RoleDialogProps) 
                       ? 'bg-gold/10 border-gold' 
                       : 'border-border hover:border-gold/50'
                   }`}
-                  onClick={() => onUpdateRole(role.id as UserManagementRole)}
+                  onClick={() => onUpdateRole(role.id as AdminTeamRole)}
                 >
                   <div className="flex-1">
                     <div className="flex items-center">

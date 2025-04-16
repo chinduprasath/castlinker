@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { toast } from "sonner";
 import RoleEditor from "@/components/admin/RoleEditor";
-import { TeamMember, UserManagementRole } from "@/types/adminTypes";
+import { TeamMember, AdminTeamRole } from "@/types/adminTypes";
 import TeamMemberList from "@/components/admin/team/TeamMemberList";
 import AddMemberDialog from "@/components/admin/team/AddMemberDialog";
 import RoleDialog from "@/components/admin/team/RoleDialog";
@@ -39,8 +39,10 @@ const TeamManagement = () => {
       
       if (error) throw error;
       
-      // Ensure the data is correctly typed
-      const typedData = data as TeamMember[] || [];
+      // Ensure the data is correctly typed - filter to only include admin team roles
+      const typedData = (data as any[] || []).filter(user => {
+        return ['super_admin', 'moderator', 'content_manager', 'recruiter'].includes(user.role);
+      }) as TeamMember[];
       
       setTeamMembers(typedData);
     } catch (error) {
@@ -53,8 +55,12 @@ const TeamManagement = () => {
 
   const handleAddMember = async (newMemberData: any) => {
     try {
-      // Store the role value as is
-      const roleValue = newMemberData.role as UserManagementRole;
+      // Ensure the role value is one of the admin team roles
+      if (!['super_admin', 'moderator', 'content_manager', 'recruiter'].includes(newMemberData.role)) {
+        throw new Error("Invalid role selected");
+      }
+      
+      const roleValue = newMemberData.role as AdminTeamRole;
       
       // Type assertion for database operation
       const { data, error } = await supabase
@@ -62,7 +68,7 @@ const TeamManagement = () => {
         .insert({
           name: newMemberData.name,
           email: newMemberData.email,
-          role: roleValue, // Now correctly typed
+          role: roleValue,
           verified: true,
           status: 'active'
         })
@@ -71,10 +77,12 @@ const TeamManagement = () => {
       if (error) throw error;
       
       if (data) {
-        // Typing as TeamMember[]
-        const typedData = data as TeamMember[];
+        // Filter and type the response to ensure only team members are included
+        const newTeamMembers = (data as any[]).filter(user => {
+          return ['super_admin', 'moderator', 'content_manager', 'recruiter'].includes(user.role);
+        }) as TeamMember[];
         
-        setTeamMembers(prev => [...prev, ...typedData]);
+        setTeamMembers(prev => [...prev, ...newTeamMembers]);
         setShowAddMemberDialog(false);
         toast.success("Team member added successfully!");
       }
@@ -84,13 +92,13 @@ const TeamManagement = () => {
     }
   };
 
-  const handleUpdateRole = async (selectedRole: UserManagementRole) => {
+  const handleUpdateRole = async (selectedRole: AdminTeamRole) => {
     if (!currentMember) return;
     
     try {
       const { error } = await supabase
         .from('users_management')
-        .update({ role: selectedRole }) // Now correctly typed
+        .update({ role: selectedRole })
         .eq('id', currentMember.id);
       
       if (error) throw error;

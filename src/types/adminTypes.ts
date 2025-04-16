@@ -6,7 +6,7 @@ export type AdminUserRole = 'actor' | 'director' | 'producer' | 'writer' | 'cine
 export type AdminTeamRole = 'super_admin' | 'moderator' | 'content_manager' | 'recruiter';
 
 // Define all possible role types for user_management table
-export type UserManagementRole = AdminUserRole | AdminTeamRole | string;
+export type UserManagementRole = AdminUserRole | AdminTeamRole;
 
 export interface User {
   id: string;
@@ -41,7 +41,7 @@ export interface TeamMember {
   id: string;
   name: string;
   email: string;
-  role: UserManagementRole; // Use UserManagementRole to support all possible role values
+  role: AdminTeamRole; // Change to AdminTeamRole since TeamManagement only uses admin roles
   joined_date: string;
   avatar_url?: string;
 }
