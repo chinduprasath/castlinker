@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -39,6 +40,8 @@ import ProjectDetail from '@/pages/ProjectDetail';
 
 // Admin Pages
 import AdminLogin from '@/pages/AdminLogin';
+import SuperAdminSignin from '@/pages/SuperAdminSignin';
+import SuperAdminSignup from '@/pages/SuperAdminSignup';
 import AdminDashboard from '@/pages/admin/AdminDashboard';
 import UserManagement from '@/pages/admin/UserManagement';
 import JobManagement from '@/pages/admin/JobManagement';
@@ -253,7 +256,10 @@ const App = () => {
 
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminLogin />} />
-            <Route path="/admin/login" element={<AdminLogin />} /> {/* Add explicit /admin/login route */}
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/superadmin-signin" element={<SuperAdminSignin />} />
+            <Route path="/superadmin-signup" element={<SuperAdminSignup />} />
+            
             <Route 
               path="/admin/dashboard" 
               element={
