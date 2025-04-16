@@ -7,12 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { roles, permissions } from "@/lib/adminPermissions";
-import { UserManagementRole } from "@/types/adminTypes";
 
 interface NewMemberData {
   name: string;
   email: string;
-  role: UserManagementRole;
+  role: string;
   permissions: string[];
 }
 
@@ -26,7 +25,7 @@ const AddMemberDialog = ({ isOpen, onClose, onSubmit }: AddMemberDialogProps) =>
   const [newMemberData, setNewMemberData] = useState<NewMemberData>({
     name: "",
     email: "",
-    role: "moderator" as UserManagementRole,
+    role: "moderator",
     permissions: []
   });
 
@@ -50,7 +49,7 @@ const AddMemberDialog = ({ isOpen, onClose, onSubmit }: AddMemberDialogProps) =>
     setNewMemberData({ 
       name: "", 
       email: "", 
-      role: "moderator" as UserManagementRole, 
+      role: "moderator", 
       permissions: [] 
     });
   };
@@ -58,7 +57,7 @@ const AddMemberDialog = ({ isOpen, onClose, onSubmit }: AddMemberDialogProps) =>
   const handleRoleChange = (value: string) => {
     setNewMemberData({
       ...newMemberData,
-      role: value as UserManagementRole
+      role: value
     });
   };
 

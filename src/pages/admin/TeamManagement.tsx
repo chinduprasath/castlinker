@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { toast } from "sonner";
 import RoleEditor from "@/components/admin/RoleEditor";
-import { TeamMember, AdminUserRole, AdminTeamRole, UserManagementRole } from "@/types/adminTypes";
+import { TeamMember } from "@/types/adminTypes";
 import TeamMemberList from "@/components/admin/team/TeamMemberList";
 import AddMemberDialog from "@/components/admin/team/AddMemberDialog";
 import RoleDialog from "@/components/admin/team/RoleDialog";
@@ -39,11 +39,8 @@ const TeamManagement = () => {
       
       if (error) throw error;
       
-      // Ensure the data is properly typed as TeamMember[]
-      const typedData = data?.map(item => ({
-        ...item,
-        role: item.role as UserManagementRole
-      })) as TeamMember[] || [];
+      // Now typing as TeamMember[] directly since role is string
+      const typedData = data as TeamMember[] || [];
       
       setTeamMembers(typedData);
     } catch (error) {
@@ -56,15 +53,15 @@ const TeamManagement = () => {
 
   const handleAddMember = async (newMemberData: any) => {
     try {
-      // Ensure the role is of the correct type before inserting
-      const roleValue = newMemberData.role as UserManagementRole;
+      // Store the role as a plain string
+      const roleValue = newMemberData.role;
       
       const { data, error } = await supabase
         .from('users_management')
         .insert({
           name: newMemberData.name,
           email: newMemberData.email,
-          role: roleValue,
+          role: roleValue as string, // Cast as string to ensure type compatibility
           verified: true,
           status: 'active'
         })
@@ -73,11 +70,8 @@ const TeamManagement = () => {
       if (error) throw error;
       
       if (data) {
-        // Ensure the data is properly typed as TeamMember[]
-        const typedData = data.map(item => ({
-          ...item,
-          role: item.role as UserManagementRole
-        })) as TeamMember[];
+        // Now typing as TeamMember[] since role is string
+        const typedData = data as TeamMember[];
         
         setTeamMembers(prev => [...prev, ...typedData]);
         setShowAddMemberDialog(false);
@@ -89,7 +83,7 @@ const TeamManagement = () => {
     }
   };
 
-  const handleUpdateRole = async (selectedRole: UserManagementRole) => {
+  const handleUpdateRole = async (selectedRole: string) => {
     if (!currentMember) return;
     
     try {
