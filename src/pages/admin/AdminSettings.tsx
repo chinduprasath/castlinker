@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Card, 
   CardContent, 
@@ -41,12 +41,17 @@ import {
   FileText,
   Database,
   RefreshCw,
-  HelpCircle
+  HelpCircle,
+  Edit
 } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { roles, permissions } from "@/lib/adminPermissions";
+import RoleEditor from "@/components/admin/RoleEditor";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 
 const AdminSettings = () => {
+  const { hasPermission } = useAdminAuth();
+  const canManageRoles = hasPermission('team', 'edit');
+  
   // Site settings form
   const siteSettingsForm = useForm({
     defaultValues: {
@@ -530,101 +535,26 @@ const AdminSettings = () => {
           </Card>
         </TabsContent>
 
-        {/* Permissions Tab */}
+        {/* Permissions Tab - Updated to use database-driven roles */}
         <TabsContent value="permissions">
           <Card>
             <CardHeader>
               <CardTitle>Role & Permission Management</CardTitle>
-              <CardDescription>Configure user roles and access control</CardDescription>
+              <CardDescription>Manage administrative roles and their access levels</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Roles</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {roles.map((role) => (
-                      <Card key={role.id} className="overflow-hidden">
-                        <CardHeader className="pb-3">
-                          <div className="flex justify-between items-center">
-                            <CardTitle className="text-lg">{role.name}</CardTitle>
-                            <Badge>{role.permissions.length} permissions</Badge>
-                          </div>
-                          <CardDescription>{role.description}</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-2">
-                            <label className="text-sm font-medium">Permissions:</label>
-                            <div className="flex flex-wrap gap-2">
-                              {role.permissions.slice(0, 5).map((permId) => {
-                                const perm = permissions.find(p => p.id === permId);
-                                return perm ? (
-                                  <Badge key={perm.id} variant="outline" className="text-xs">
-                                    {perm.name}
-                                  </Badge>
-                                ) : null;
-                              })}
-                              {role.permissions.length > 5 && (
-                                <Badge variant="outline" className="text-xs">
-                                  +{role.permissions.length - 5} more
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        </CardContent>
-                        <CardFooter className="border-t pt-4 bg-muted/10">
-                          <Button variant="outline" size="sm" className="w-full">
-                            Edit Role
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                    ))}
-                  </div>
+              {canManageRoles ? (
+                <RoleEditor />
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <Lock className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-xl font-medium">Permission Restricted</h3>
+                  <p className="text-center text-muted-foreground mt-2">
+                    You don't have permission to manage roles and permissions.
+                  </p>
                 </div>
-                
-                <Separator />
-                
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-medium">Available Permissions</h3>
-                    <Button variant="outline" size="sm">
-                      Create Permission
-                    </Button>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                    {permissions.slice(0, 9).map((permission) => (
-                      <div 
-                        key={permission.id} 
-                        className="flex flex-col p-3 border rounded-lg hover:border-primary/50 cursor-pointer transition-colors"
-                      >
-                        <div className="flex justify-between items-start">
-                          <span className="font-medium">{permission.name}</span>
-                          <Badge variant="outline" className="text-xs font-mono">
-                            {permission.id}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {permission.description}
-                        </p>
-                      </div>
-                    ))}
-                    <div className="flex items-center justify-center p-3 border rounded-lg border-dashed text-muted-foreground">
-                      <span>+{permissions.length - 9} more permissions</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              )}
             </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button variant="outline">
-                <HelpCircle className="h-4 w-4 mr-2" />
-                Permissions Guide
-              </Button>
-              <Button className="gap-2">
-                <Save className="h-4 w-4" />
-                Save Changes
-              </Button>
-            </CardFooter>
           </Card>
         </TabsContent>
       </Tabs>
