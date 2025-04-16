@@ -8,6 +8,9 @@ export type AdminTeamRole = 'super_admin' | 'moderator' | 'content_manager' | 'r
 // Define all possible role types for user_management table
 export type UserManagementRole = AdminUserRole | AdminTeamRole;
 
+// Create a database role type to match what the Supabase schema expects
+export type DatabaseRole = AdminUserRole;
+
 export interface User {
   id: string;
   name: string;
@@ -41,7 +44,7 @@ export interface TeamMember {
   id: string;
   name: string;
   email: string;
-  role: AdminTeamRole; // Change to AdminTeamRole since TeamManagement only uses admin roles
+  role: AdminTeamRole;
   joined_date: string;
   avatar_url?: string;
 }

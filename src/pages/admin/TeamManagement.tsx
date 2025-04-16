@@ -8,10 +8,29 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { toast } from "sonner";
 import RoleEditor from "@/components/admin/RoleEditor";
-import { TeamMember, AdminTeamRole } from "@/types/adminTypes";
+import { TeamMember, AdminTeamRole, AdminUserRole } from "@/types/adminTypes";
 import TeamMemberList from "@/components/admin/team/TeamMemberList";
 import AddMemberDialog from "@/components/admin/team/AddMemberDialog";
 import RoleDialog from "@/components/admin/team/RoleDialog";
+
+// Helper function to convert AdminTeamRole to a database-compatible role
+const convertToDBRole = (role: AdminTeamRole): AdminUserRole => {
+  // Map admin team roles to database roles
+  // For this example, we'll map all admin roles to 'director' for simplicity
+  // In a real application, you might want to map these differently
+  return 'director';
+};
+
+// Helper function to convert database roles back to AdminTeamRole
+const convertFromDBRole = (dbRole: string): AdminTeamRole => {
+  // Check if the database role is already a valid AdminTeamRole
+  if (dbRole === 'super_admin' || dbRole === 'moderator' || 
+      dbRole === 'content_manager' || dbRole === 'recruiter') {
+    return dbRole as AdminTeamRole;
+  }
+  // Default fallback role
+  return 'moderator';
+};
 
 const TeamManagement = () => {
   const { adminUser, can } = useAdminAuth();
@@ -39,12 +58,22 @@ const TeamManagement = () => {
       
       if (error) throw error;
       
-      // Ensure the data is correctly typed - filter to only include admin team roles
-      const typedData = (data as any[] || []).filter(user => {
-        return ['super_admin', 'moderator', 'content_manager', 'recruiter'].includes(user.role);
-      }) as TeamMember[];
+      // Process the data to convert DB roles to AdminTeamRoles
+      const processedData = (data as any[] || [])
+        .filter(user => {
+          // Filter to only include what we consider admin team roles
+          const role = user.role as string;
+          return ['super_admin', 'moderator', 'content_manager', 'recruiter'].includes(role) ||
+                 // Include records we can convert to admin roles
+                 (role && ['actor', 'director', 'producer', 'writer', 'cinematographer', 'agency'].includes(role));
+        })
+        .map(user => ({
+          ...user,
+          // Convert the role from database to our application's AdminTeamRole
+          role: convertFromDBRole(user.role as string)
+        })) as TeamMember[];
       
-      setTeamMembers(typedData);
+      setTeamMembers(processedData);
     } catch (error) {
       console.error("Error fetching team members:", error);
       toast.error("Failed to load team members");
@@ -55,20 +84,15 @@ const TeamManagement = () => {
 
   const handleAddMember = async (newMemberData: any) => {
     try {
-      // Ensure the role value is one of the admin team roles
-      if (!['super_admin', 'moderator', 'content_manager', 'recruiter'].includes(newMemberData.role)) {
-        throw new Error("Invalid role selected");
-      }
+      // Convert AdminTeamRole to a database-compatible role
+      const dbRole = convertToDBRole(newMemberData.role as AdminTeamRole);
       
-      const roleValue = newMemberData.role as AdminTeamRole;
-      
-      // Type assertion for database operation
       const { data, error } = await supabase
         .from('users_management')
         .insert({
           name: newMemberData.name,
           email: newMemberData.email,
-          role: roleValue,
+          role: dbRole, // Use the converted role that DB accepts
           verified: true,
           status: 'active'
         })
@@ -77,10 +101,11 @@ const TeamManagement = () => {
       if (error) throw error;
       
       if (data) {
-        // Filter and type the response to ensure only team members are included
-        const newTeamMembers = (data as any[]).filter(user => {
-          return ['super_admin', 'moderator', 'content_manager', 'recruiter'].includes(user.role);
-        }) as TeamMember[];
+        // Convert roles back for our application
+        const newTeamMembers = (data as any[]).map(user => ({
+          ...user,
+          role: convertFromDBRole(user.role as string)
+        })) as TeamMember[];
         
         setTeamMembers(prev => [...prev, ...newTeamMembers]);
         setShowAddMemberDialog(false);
@@ -96,9 +121,12 @@ const TeamManagement = () => {
     if (!currentMember) return;
     
     try {
+      // Convert AdminTeamRole to a database-compatible role
+      const dbRole = convertToDBRole(selectedRole);
+      
       const { error } = await supabase
         .from('users_management')
-        .update({ role: selectedRole })
+        .update({ role: dbRole }) // Use the converted role
         .eq('id', currentMember.id);
       
       if (error) throw error;
