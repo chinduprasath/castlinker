@@ -20,6 +20,7 @@ export const useAdminAuth = () => {
       setLoading(true);
       
       if (user && user.email) {
+        console.log('useAdminAuth: Checking admin status for', user.email);
         try {
           // Get actual admin role from database
           const { data: adminData, error } = await supabase
@@ -32,6 +33,7 @@ export const useAdminAuth = () => {
             console.log('Admin user found:', adminData);
             // Ensure we handle the role as a string to avoid type issues
             const role = String(adminData.role);
+            console.log('Role as string:', role);
             
             // Map string role to AdminTeamRole enum
             const adminRole: AdminTeamRole = 
@@ -40,6 +42,7 @@ export const useAdminAuth = () => {
               role === 'content_manager' ? 'content_manager' : 
               role === 'recruiter' ? 'recruiter' : 'moderator';
             
+            console.log('Mapped to AdminTeamRole:', adminRole);
             setAdminUser({ role: adminRole });
             setIsAdmin(true);
           } else {
@@ -53,6 +56,7 @@ export const useAdminAuth = () => {
           setIsAdmin(false);
         }
       } else {
+        console.log('No user found or missing email');
         setAdminUser(null);
         setIsAdmin(false);
       }
@@ -65,7 +69,9 @@ export const useAdminAuth = () => {
   
   const can = (permission: string): boolean => {
     if (!adminUser) return false;
-    return hasPermission(adminUser.role, permission);
+    const hasPermissionResult = hasPermission(adminUser.role, permission);
+    console.log(`Checking permission "${permission}" for role "${adminUser.role}": ${hasPermissionResult}`);
+    return hasPermissionResult;
   };
   
   return {

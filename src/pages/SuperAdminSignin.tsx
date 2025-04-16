@@ -24,7 +24,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const SuperAdminSignin = () => {
-  const { user, login } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isLoading, setIsLoading] = useState(false);
@@ -43,7 +43,11 @@ const SuperAdminSignin = () => {
             .single();
           
           if (!adminError && adminData) {
+            // Convert the role to string for comparison
             const role = String(adminData.role);
+            console.log("Found existing user role:", role);
+            
+            // List of admin roles
             const adminRoles = ['super_admin', 'moderator', 'content_manager', 'recruiter'];
             
             if (adminRoles.includes(role)) {
@@ -73,15 +77,19 @@ const SuperAdminSignin = () => {
   const onSubmit = async (data: FormValues) => {
     setIsLoading(true);
     setError(null);
+    console.log("Attempting sign in with:", data.email);
     
     try {
       // First attempt to sign in with Supabase
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password
       });
       
-      if (signInError) throw signInError;
+      if (signInError) {
+        console.error("Sign in error:", signInError);
+        throw signInError;
+      }
       
       console.log("Basic authentication successful, checking admin status...");
       
@@ -97,6 +105,8 @@ const SuperAdminSignin = () => {
         throw new Error("Authentication failed. Please check your credentials.");
       }
       
+      console.log("Admin check result:", adminUser);
+      
       // List of admin roles we want to allow
       const adminRoles = ['super_admin', 'moderator', 'content_manager', 'recruiter'];
       
@@ -106,6 +116,7 @@ const SuperAdminSignin = () => {
       
       if (!adminUser || !adminRoles.includes(userRole)) {
         // Logout if not an admin
+        console.error("Not an admin user, signing out");
         await supabase.auth.signOut();
         throw new Error("You don't have admin access privileges");
       }
@@ -114,15 +125,19 @@ const SuperAdminSignin = () => {
       const roleDisplay = userRole === 'super_admin' ? 'Super Admin' : 'Admin';
       toast.success(`Welcome back, ${roleDisplay}`);
       
-      // Add the login tracking separately from the direct Supabase call
+      // Save remember me preference
       if (data.rememberMe) {
         localStorage.setItem('rememberLogin', 'true');
       } else {
         localStorage.removeItem('rememberLogin');
       }
       
-      // Navigate directly to admin dashboard
-      navigate("/admin/dashboard");
+      console.log("Admin authentication successful, navigating to dashboard");
+      
+      // Give a small delay to ensure toast is visible
+      setTimeout(() => {
+        navigate("/admin/dashboard");
+      }, 100);
       
     } catch (error: any) {
       console.error("Login error:", error);

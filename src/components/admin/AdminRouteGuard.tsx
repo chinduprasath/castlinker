@@ -12,7 +12,13 @@ interface AdminRouteGuardProps {
 const AdminRouteGuard = ({ children, requiredPermission }: AdminRouteGuardProps) => {
   const { isAdmin, adminUser, can, loading } = useAdminAuth();
   
-  console.log('AdminRouteGuard check:', { isAdmin, adminUser, requiredPermission, loading });
+  console.log('AdminRouteGuard check:', { 
+    isAdmin, 
+    adminUserRole: adminUser?.role,
+    requiredPermission,
+    loading,
+    hasPermission: requiredPermission ? can(requiredPermission) : 'not required'
+  });
   
   // Show loading state while checking admin status
   if (loading) {
@@ -27,6 +33,7 @@ const AdminRouteGuard = ({ children, requiredPermission }: AdminRouteGuardProps)
   
   // Check if user is an admin
   if (!isAdmin) {
+    console.log("Access denied: User is not an admin");
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background">
         <Shield className="h-12 w-12 text-red-500 mb-4" />
@@ -48,6 +55,7 @@ const AdminRouteGuard = ({ children, requiredPermission }: AdminRouteGuardProps)
   
   // If a specific permission is required, check for it
   if (requiredPermission && !can(requiredPermission)) {
+    console.log(`Permission denied: User lacks "${requiredPermission}" permission`);
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background">
         <Shield className="h-12 w-12 text-orange-500 mb-4" />
@@ -62,6 +70,7 @@ const AdminRouteGuard = ({ children, requiredPermission }: AdminRouteGuardProps)
     );
   }
   
+  console.log("Admin access granted");
   // User has access, render the children
   return <>{children}</>;
 };
