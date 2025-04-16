@@ -12,7 +12,7 @@ import { roles, permissions } from "@/lib/adminPermissions";
 interface NewMemberData {
   name: string;
   email: string;
-  role: AdminTeamRole;
+  role: string;
   permissions: string[];
 }
 
@@ -93,14 +93,14 @@ const AddMemberDialog = ({ isOpen, onClose, onSubmit }: AddMemberDialogProps) =>
             <Label>Role</Label>
             <Select 
               value={newMemberData.role}
-              onValueChange={(value: AdminTeamRole) => setNewMemberData({...newMemberData, role: value})}
+              onValueChange={(value: string) => setNewMemberData({...newMemberData, role: value})}
             >
               <SelectTrigger className="bg-background/50 border-gold/10">
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
               <SelectContent>
                 {roles.map(role => (
-                  <SelectItem key={role.id} value={role.id as AdminTeamRole}>
+                  <SelectItem key={role.id} value={role.id}>
                     {role.name}
                   </SelectItem>
                 ))}

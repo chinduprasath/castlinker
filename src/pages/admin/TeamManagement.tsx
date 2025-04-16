@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { toast } from "sonner";
 import RoleEditor from "@/components/admin/RoleEditor";
-import { AdminTeamRole, TeamMember } from "@/types/adminTypes";
+import { AdminTeamRole, AdminUserRole, TeamMember } from "@/types/adminTypes";
 import TeamMemberList from "@/components/admin/team/TeamMemberList";
 import AddMemberDialog from "@/components/admin/team/AddMemberDialog";
 import RoleDialog from "@/components/admin/team/RoleDialog";
@@ -50,15 +50,15 @@ const TeamManagement = () => {
 
   const handleAddMember = async (newMemberData: any) => {
     try {
-      // Explicitly cast the role to AdminTeamRole to ensure type safety
-      const roleValue = newMemberData.role as AdminTeamRole;
+      // Cast the role appropriately for the database
+      const role = newMemberData.role as string;
       
       const { data, error } = await supabase
         .from('users_management')
         .insert({
           name: newMemberData.name,
           email: newMemberData.email,
-          role: roleValue,
+          role: role,
           verified: true,
           status: 'active'
         })
@@ -81,18 +81,18 @@ const TeamManagement = () => {
     if (!currentMember) return;
     
     try {
-      // Explicitly cast the role to AdminTeamRole to ensure type safety
-      const roleValue = selectedRole as AdminTeamRole;
+      // Cast the role appropriately for the database
+      const role = selectedRole as string;
       
       const { error } = await supabase
         .from('users_management')
-        .update({ role: roleValue })
+        .update({ role: role })
         .eq('id', currentMember.id);
       
       if (error) throw error;
       
       setTeamMembers(prev => prev.map(member => 
-        member.id === currentMember.id ? { ...member, role: roleValue } : member
+        member.id === currentMember.id ? { ...member, role: selectedRole } : member
       ));
       setShowRoleDialog(false);
       toast.success(`${currentMember.name}'s role updated to ${selectedRole}`);
