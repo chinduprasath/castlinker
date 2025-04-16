@@ -34,14 +34,15 @@ export type AdminUserRole = 'actor' | 'director' | 'producer' | 'writer' | 'cine
 export type AdminTeamRole = 'super_admin' | 'moderator' | 'content_manager' | 'recruiter';
 
 // Define all possible role types for user_management table
-export type UserManagementRole = AdminUserRole | AdminTeamRole | string;
+export type UserManagementRole = AdminUserRole | AdminTeamRole;
 
 // This interface matches the database structure
 export interface TeamMember {
   id: string;
   name: string;
   email: string;
-  role: string; // Use string to be more flexible with the database schema
+  // Change role to use AdminUserRole or AdminTeamRole, ensuring it matches the types allowed in the database
+  role: AdminUserRole | AdminTeamRole;
   joined_date: string;
   avatar_url?: string;
 }

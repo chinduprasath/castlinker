@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { toast } from "sonner";
 import RoleEditor from "@/components/admin/RoleEditor";
-import { TeamMember, AdminUserRole } from "@/types/adminTypes";
+import { TeamMember, AdminUserRole, AdminTeamRole, UserManagementRole } from "@/types/adminTypes";
 import TeamMemberList from "@/components/admin/team/TeamMemberList";
 import AddMemberDialog from "@/components/admin/team/AddMemberDialog";
 import RoleDialog from "@/components/admin/team/RoleDialog";
@@ -39,7 +39,13 @@ const TeamManagement = () => {
       
       if (error) throw error;
       
-      setTeamMembers(data as unknown as TeamMember[] || []);
+      // Ensure the data is properly typed as TeamMember[]
+      const typedData = data?.map(item => ({
+        ...item,
+        role: item.role as UserManagementRole
+      })) as TeamMember[] || [];
+      
+      setTeamMembers(typedData);
     } catch (error) {
       console.error("Error fetching team members:", error);
       toast.error("Failed to load team members");
@@ -50,13 +56,15 @@ const TeamManagement = () => {
 
   const handleAddMember = async (newMemberData: any) => {
     try {
-      // Using newMemberData.role as a string, which matches the database expectation
+      // Ensure the role is of the correct type before inserting
+      const roleValue = newMemberData.role as UserManagementRole;
+      
       const { data, error } = await supabase
         .from('users_management')
         .insert({
           name: newMemberData.name,
           email: newMemberData.email,
-          role: newMemberData.role as string,
+          role: roleValue,
           verified: true,
           status: 'active'
         })
@@ -65,7 +73,13 @@ const TeamManagement = () => {
       if (error) throw error;
       
       if (data) {
-        setTeamMembers(prev => [...prev, ...(data as unknown as TeamMember[])]);
+        // Ensure the data is properly typed as TeamMember[]
+        const typedData = data.map(item => ({
+          ...item,
+          role: item.role as UserManagementRole
+        })) as TeamMember[];
+        
+        setTeamMembers(prev => [...prev, ...typedData]);
         setShowAddMemberDialog(false);
         toast.success("Team member added successfully!");
       }
@@ -75,14 +89,13 @@ const TeamManagement = () => {
     }
   };
 
-  const handleUpdateRole = async (selectedRole: string) => {
+  const handleUpdateRole = async (selectedRole: UserManagementRole) => {
     if (!currentMember) return;
     
     try {
-      // Cast the role to a string explicitly for the database update
       const { error } = await supabase
         .from('users_management')
-        .update({ role: selectedRole as string })
+        .update({ role: selectedRole })
         .eq('id', currentMember.id);
       
       if (error) throw error;

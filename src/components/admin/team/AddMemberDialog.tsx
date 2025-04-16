@@ -7,11 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { roles, permissions } from "@/lib/adminPermissions";
+import { UserManagementRole } from "@/types/adminTypes";
 
 interface NewMemberData {
   name: string;
   email: string;
-  role: string;
+  role: UserManagementRole;
   permissions: string[];
 }
 
@@ -25,7 +26,7 @@ const AddMemberDialog = ({ isOpen, onClose, onSubmit }: AddMemberDialogProps) =>
   const [newMemberData, setNewMemberData] = useState<NewMemberData>({
     name: "",
     email: "",
-    role: "moderator",
+    role: "moderator" as UserManagementRole,
     permissions: []
   });
 
@@ -49,8 +50,15 @@ const AddMemberDialog = ({ isOpen, onClose, onSubmit }: AddMemberDialogProps) =>
     setNewMemberData({ 
       name: "", 
       email: "", 
-      role: "moderator", 
+      role: "moderator" as UserManagementRole, 
       permissions: [] 
+    });
+  };
+
+  const handleRoleChange = (value: string) => {
+    setNewMemberData({
+      ...newMemberData,
+      role: value as UserManagementRole
     });
   };
 
@@ -92,7 +100,7 @@ const AddMemberDialog = ({ isOpen, onClose, onSubmit }: AddMemberDialogProps) =>
             <Label>Role</Label>
             <Select 
               value={newMemberData.role}
-              onValueChange={(value: string) => setNewMemberData({...newMemberData, role: value})}
+              onValueChange={handleRoleChange}
             >
               <SelectTrigger className="bg-background/50 border-gold/10">
                 <SelectValue placeholder="Select role" />
