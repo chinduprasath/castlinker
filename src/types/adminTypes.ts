@@ -1,4 +1,3 @@
-
 export interface User {
   id: string;
   name: string;
@@ -31,3 +30,11 @@ export interface UserFilters {
 export type AdminUserRole = 'actor' | 'director' | 'producer' | 'writer' | 'cinematographer' | 'agency';
 export type AdminTeamRole = 'super_admin' | 'moderator' | 'content_manager' | 'recruiter';
 
+export interface TeamMember {
+  id: string;
+  name: string;
+  email: string;
+  role: AdminTeamRole;
+  joined_date: string;
+  avatar_url?: string;
+}
