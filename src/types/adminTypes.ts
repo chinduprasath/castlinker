@@ -12,7 +12,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: string;
+  role: UserManagementRole;
   status: 'active' | 'suspended' | 'pending';
   verified: boolean;
   joined_date: string;
@@ -23,7 +23,7 @@ export interface User {
 export interface UserFormData {
   name: string;
   email: string;
-  role: string;
+  role: UserManagementRole;
   status: string;
   verified: boolean;
   avatar_url?: string;
@@ -41,7 +41,7 @@ export interface TeamMember {
   id: string;
   name: string;
   email: string;
-  role: string; // Use string type to accommodate all possible role values
+  role: UserManagementRole; // Use UserManagementRole to support all possible role values
   joined_date: string;
   avatar_url?: string;
 }

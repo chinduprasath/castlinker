@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { toast } from "sonner";
 import RoleEditor from "@/components/admin/RoleEditor";
-import { TeamMember } from "@/types/adminTypes";
+import { TeamMember, UserManagementRole } from "@/types/adminTypes";
 import TeamMemberList from "@/components/admin/team/TeamMemberList";
 import AddMemberDialog from "@/components/admin/team/AddMemberDialog";
 import RoleDialog from "@/components/admin/team/RoleDialog";
@@ -54,7 +54,7 @@ const TeamManagement = () => {
   const handleAddMember = async (newMemberData: any) => {
     try {
       // Store the role value as is
-      const roleValue = newMemberData.role;
+      const roleValue = newMemberData.role as UserManagementRole;
       
       // Type assertion for database operation
       const { data, error } = await supabase
@@ -62,7 +62,7 @@ const TeamManagement = () => {
         .insert({
           name: newMemberData.name,
           email: newMemberData.email,
-          role: roleValue, // Plain string works with Supabase
+          role: roleValue, // Now correctly typed
           verified: true,
           status: 'active'
         })
@@ -84,13 +84,13 @@ const TeamManagement = () => {
     }
   };
 
-  const handleUpdateRole = async (selectedRole: string) => {
+  const handleUpdateRole = async (selectedRole: UserManagementRole) => {
     if (!currentMember) return;
     
     try {
       const { error } = await supabase
         .from('users_management')
-        .update({ role: selectedRole }) // Use as string for database
+        .update({ role: selectedRole }) // Now correctly typed
         .eq('id', currentMember.id);
       
       if (error) throw error;
