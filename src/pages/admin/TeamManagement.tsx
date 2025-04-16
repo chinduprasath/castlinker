@@ -3,12 +3,12 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { UserPlus } from "lucide-react";
+import { UserPlus, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { toast } from "sonner";
 import RoleEditor from "@/components/admin/RoleEditor";
-import { TeamMember, UserManagementRole } from "@/types/adminTypes";
+import { TeamMember } from "@/types/adminTypes";
 import TeamMemberList from "@/components/admin/team/TeamMemberList";
 import AddMemberDialog from "@/components/admin/team/AddMemberDialog";
 import RoleDialog from "@/components/admin/team/RoleDialog";
@@ -53,18 +53,16 @@ const TeamManagement = () => {
 
   const handleAddMember = async (newMemberData: any) => {
     try {
-      // Use the role value as is - it will be properly typed with our UserManagementRole
+      // Store the role value as is
       const roleValue = newMemberData.role;
       
-      // Type assertion to satisfy TypeScript
+      // Type assertion for database operation
       const { data, error } = await supabase
         .from('users_management')
         .insert({
           name: newMemberData.name,
           email: newMemberData.email,
-          // Use as any to bypass TypeScript's type checking since we know our 
-          // roles are compatible with what the database expects
-          role: roleValue as any,
+          role: roleValue, // Plain string works with Supabase
           verified: true,
           status: 'active'
         })
@@ -73,7 +71,7 @@ const TeamManagement = () => {
       if (error) throw error;
       
       if (data) {
-        // Now typing as TeamMember[]
+        // Typing as TeamMember[]
         const typedData = data as TeamMember[];
         
         setTeamMembers(prev => [...prev, ...typedData]);
@@ -92,13 +90,13 @@ const TeamManagement = () => {
     try {
       const { error } = await supabase
         .from('users_management')
-        .update({ role: selectedRole as any }) // Use type assertion to bypass TypeScript's checks
+        .update({ role: selectedRole }) // Use as string for database
         .eq('id', currentMember.id);
       
       if (error) throw error;
       
       setTeamMembers(prev => prev.map(member => 
-        member.id === currentMember.id ? { ...member, role: selectedRole as UserManagementRole } : member
+        member.id === currentMember.id ? { ...member, role: selectedRole } : member
       ));
       setShowRoleDialog(false);
       toast.success(`${currentMember.name}'s role updated to ${selectedRole}`);
@@ -155,6 +153,17 @@ const TeamManagement = () => {
             canEditRoles={canEditRoles}
             onEditRole={handleEditRole}
           />
+          
+          {/* Add a fixed action button for mobile */}
+          {canEditRoles && (
+            <Button 
+              className="fixed bottom-6 right-6 rounded-full h-14 w-14 shadow-lg bg-gold text-black hover:bg-gold/90 md:hidden"
+              onClick={() => setShowAddMemberDialog(true)}
+            >
+              <Plus className="h-6 w-6" />
+              <span className="sr-only">Add Team Member</span>
+            </Button>
+          )}
         </CardContent>
       </Card>
 
