@@ -19,10 +19,11 @@ interface AdminProfileData {
   id: string;
   name: string;
   email: string;
-  phone: string | null;
-  bio: string | null;
   avatar_url: string | null;
-  location: string | null;
+  // Using optional fields for ones that might not exist in the table
+  bio?: string | null;
+  phone?: string | null;
+  location?: string | null;
 }
 
 const AdminProfile = () => {
@@ -48,9 +49,10 @@ const AdminProfile = () => {
   const fetchAdminProfile = async () => {
     setIsLoading(true);
     try {
+      // Only select columns that exist in the users_management table
       const { data, error } = await supabase
         .from('users_management')
-        .select('id, name, email, avatar_url, bio, phone, location')
+        .select('id, name, email, avatar_url')
         .eq('email', user?.email)
         .single();
       
@@ -58,6 +60,7 @@ const AdminProfile = () => {
         throw error;
       }
       
+      // Set the profile with the data we got
       setProfile(data as AdminProfileData);
     } catch (error) {
       console.error("Error fetching admin profile:", error);
@@ -77,13 +80,11 @@ const AdminProfile = () => {
 
     setIsSaving(true);
     try {
+      // Only update fields that exist in the users_management table
       const { error } = await supabase
         .from('users_management')
         .update({
-          name: profile.name,
-          phone: profile.phone,
-          bio: profile.bio,
-          location: profile.location
+          name: profile.name
         })
         .eq('id', profile.id);
 
@@ -372,39 +373,6 @@ const AdminProfile = () => {
                           className="bg-muted"
                         />
                       </div>
-                    </div>
-                    
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="phone">Phone Number</Label>
-                        <Input
-                          id="phone"
-                          value={profile?.phone || ''}
-                          onChange={(e) => setProfile(prev => prev ? {...prev, phone: e.target.value} : prev)}
-                          placeholder="Your phone number"
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="location">Location</Label>
-                        <Input
-                          id="location"
-                          value={profile?.location || ''}
-                          onChange={(e) => setProfile(prev => prev ? {...prev, location: e.target.value} : prev)}
-                          placeholder="Your location"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="bio">Bio / About</Label>
-                      <Textarea
-                        id="bio"
-                        value={profile?.bio || ''}
-                        onChange={(e) => setProfile(prev => prev ? {...prev, bio: e.target.value} : prev)}
-                        placeholder="Write a little about yourself"
-                        rows={4}
-                      />
                     </div>
                   </CardContent>
                   
