@@ -51,7 +51,6 @@ import Analytics from '@/pages/admin/Analytics';
 import AdminNotifications from '@/pages/admin/AdminNotifications';
 import AdminSettings from '@/pages/admin/AdminSettings';
 import TeamManagement from "./pages/admin/TeamManagement";
-import AdminProfile from "./pages/admin/AdminProfile";
 
 // Guards
 import PrivateRoute from '@/components/auth/PrivateRoute';
@@ -267,18 +266,6 @@ const App = () => {
                   <AdminRouteGuard>
                     <AdminLayout>
                       <AdminDashboard />
-                    </AdminLayout>
-                  </AdminRouteGuard>
-                </PrivateRoute>
-              } 
-            />
-            <Route 
-              path="/admin/profile" 
-              element={
-                <PrivateRoute>
-                  <AdminRouteGuard requiredModule="team" requiredAction="view">
-                    <AdminLayout>
-                      <AdminProfile />
                     </AdminLayout>
                   </AdminRouteGuard>
                 </PrivateRoute>
