@@ -42,6 +42,7 @@ import AdminLogin from '@/pages/AdminLogin';
 import SuperAdminSignin from '@/pages/SuperAdminSignin';
 import SuperAdminSignup from '@/pages/SuperAdminSignup';
 import AdminDashboard from '@/pages/admin/AdminDashboard';
+import AdminProfile from '@/pages/admin/AdminProfile';
 import UserManagement from '@/pages/admin/UserManagement';
 import JobManagement from '@/pages/admin/JobManagement';
 import PostManagement from '@/pages/admin/PostManagement';
@@ -266,6 +267,18 @@ const App = () => {
                   <AdminRouteGuard>
                     <AdminLayout>
                       <AdminDashboard />
+                    </AdminLayout>
+                  </AdminRouteGuard>
+                </PrivateRoute>
+              } 
+            />
+            <Route 
+              path="/admin/profile" 
+              element={
+                <PrivateRoute>
+                  <AdminRouteGuard requiredModule="team" requiredAction="view">
+                    <AdminLayout>
+                      <AdminProfile />
                     </AdminLayout>
                   </AdminRouteGuard>
                 </PrivateRoute>

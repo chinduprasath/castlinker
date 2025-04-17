@@ -1,1 +1,44 @@
+
+# This is your Supabase project config.
+# Only use this if you're self-hosting Supabase on your server.
+# If you're using app.supabase.com, this file is not used.
+
 project_id = "qnpdieomxraerzgocofk"
+web_url = "https://qnpdieomxraerzgocofk.supabase.co"
+api_url = "https://qnpdieomxraerzgocofk.supabase.co"
+storage_url = "https://qnpdieomxraerzgocofk.supabase.co/storage/v1"
+functions_url = "https://qnpdieomxraerzgocofk.supabase.co/functions/v1"
+
+[organization]
+name = "Lovable Inc."
+
+[database]
+engine = "postgres"
+version = "14"
+
+# Configuring various storage buckets
+[[storage.buckets]]
+name = "avatars"
+public = true
+file_size_limit = "5MB"
+
+# Configuring storage policies for the avatars bucket
+[[storage.buckets.policies]]
+name = "public_read"
+definition = {type = "bridge", policy = "read"}
+allow = true
+
+[[storage.buckets.policies]]
+name = "authenticated_upload" 
+definition = {type = "bridge", policy = "upload" }
+allow = true
+
+[[storage.buckets.policies]]
+name = "update_own_avatar"
+definition = {type = "bridge", policy = "update"}
+allow = true
+
+[[storage.buckets.policies]]
+name = "delete_own_avatar"
+definition = {type = "bridge", policy = "remove"}
+allow = true
