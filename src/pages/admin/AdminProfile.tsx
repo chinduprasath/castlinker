@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Edit, Mail, Phone, MapPin, Shield } from "lucide-react";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { AdminPermission } from "@/types/rbacTypes";
 
 const AdminProfile = () => {
   const { user } = useAuth();
@@ -66,7 +67,7 @@ const AdminProfile = () => {
                 <Phone className="h-5 w-5 text-muted-foreground mt-0.5" />
                 <div>
                   <p className="text-sm font-medium">Phone</p>
-                  <p className="text-sm text-muted-foreground">{user.phone || 'Not set'}</p>
+                  <p className="text-sm text-muted-foreground">Not set</p>
                 </div>
               </div>
               
@@ -74,7 +75,7 @@ const AdminProfile = () => {
                 <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
                 <div>
                   <p className="text-sm font-medium">Location</p>
-                  <p className="text-sm text-muted-foreground">{user.location || 'Not set'}</p>
+                  <p className="text-sm text-muted-foreground">Not set</p>
                 </div>
               </div>
             </div>
@@ -104,9 +105,12 @@ const AdminProfile = () => {
               <div>
                 <h4 className="font-medium mb-3">Access Controls</h4>
                 <div className="grid gap-2">
-                  {(adminUser?.permissions || []).map((permission: string, index: number) => (
+                  {(adminUser?.permissions || []).map((permission: AdminPermission, index: number) => (
                     <div key={index} className="flex items-center justify-between bg-background p-2 rounded-md border">
-                      <span>{permission}</span>
+                      <span>{permission.module} ({permission.can_view ? 'view' : ''} 
+                        {permission.can_create ? ' create' : ''}
+                        {permission.can_edit ? ' edit' : ''}
+                        {permission.can_delete ? ' delete' : ''})</span>
                       <Shield className="h-4 w-4 text-green-500" />
                     </div>
                   ))}
@@ -126,3 +130,4 @@ const AdminProfile = () => {
 };
 
 export default AdminProfile;
+
