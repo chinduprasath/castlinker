@@ -16,8 +16,11 @@ import { User, UserFilters, UserFormData, AdminUserRole } from "@/types/adminTyp
 import UserForm from "@/components/admin/UserForm";
 import { formatDistanceToNow } from "date-fns";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const UserManagement = () => {
+  const { theme } = useTheme();
+  
   // State for users and filters
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
@@ -426,7 +429,7 @@ const UserManagement = () => {
           )}
 
           <Tabs defaultValue="all-users" className="w-full">
-            <TabsList className="bg-gold/10 mb-6">
+            <TabsList className="bg-background/20 border border-border/20 mb-6">
               <TabsTrigger value="all-users">All Users</TabsTrigger>
               <TabsTrigger value="verified">Verified</TabsTrigger>
               <TabsTrigger value="pending-verification">Pending Verification</TabsTrigger>
@@ -435,7 +438,7 @@ const UserManagement = () => {
             <TabsContent value="all-users" className="mt-0">
               <div className="rounded-md border border-gold/10 overflow-hidden">
                 <Table>
-                  <TableHeader className="bg-card">
+                  <TableHeader className="bg-background/40">
                     <TableRow>
                       <TableHead className="w-[50px]">
                         <Checkbox 
@@ -455,7 +458,7 @@ const UserManagement = () => {
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
-                  <TableBody>
+                  <TableBody className={theme === 'dark' ? 'bg-background/20' : 'bg-background/60'}>
                     {loading ? (
                       <TableRow>
                         <TableCell colSpan={8} className="text-center py-6">
@@ -479,7 +482,7 @@ const UserManagement = () => {
             <TabsContent value="verified" className="mt-0">
               <div className="rounded-md border border-gold/10 overflow-hidden">
                 <Table>
-                  <TableHeader className="bg-card">
+                  <TableHeader className="bg-background/40">
                     <TableRow>
                       <TableHead className="w-[50px]">
                         <Checkbox 
@@ -504,7 +507,7 @@ const UserManagement = () => {
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
-                  <TableBody>
+                  <TableBody className={theme === 'dark' ? 'bg-background/20' : 'bg-background/60'}>
                     {loading ? (
                       <TableRow>
                         <TableCell colSpan={7} className="text-center py-6">
@@ -581,7 +584,7 @@ const UserManagement = () => {
             <TabsContent value="pending-verification" className="mt-0">
               <div className="rounded-md border border-gold/10 overflow-hidden">
                 <Table>
-                  <TableHeader className="bg-card">
+                  <TableHeader className="bg-background/40">
                     <TableRow>
                       <TableHead className="w-[50px]">
                         <Checkbox 
@@ -605,7 +608,7 @@ const UserManagement = () => {
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
-                  <TableBody>
+                  <TableBody className={theme === 'dark' ? 'bg-background/20' : 'bg-background/60'}>
                     {loading ? (
                       <TableRow>
                         <TableCell colSpan={6} className="text-center py-6">
