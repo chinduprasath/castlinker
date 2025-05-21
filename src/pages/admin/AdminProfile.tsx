@@ -12,33 +12,52 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/use-toast";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Upload, Check, UserCog, ShieldCheck, Key } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import ThemeToggle from "@/components/ThemeToggle";
+import { Loader2, Upload, Check, UserCog, ShieldCheck, Key, Phone, Mail, Globe, Lock, Bell, Settings, LogOut } from "lucide-react";
 import { AdminPermission } from "@/types/rbacTypes";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface AdminProfileData {
   id: string;
   name: string;
   email: string;
   avatar_url: string | null;
-  // Using optional fields for ones that might not exist in the table
-  bio?: string | null;
   phone?: string | null;
   location?: string | null;
+  bio?: string | null;
 }
 
 const AdminProfile = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { adminUser, adminRole } = useAdminAuth();
   const { toast } = useToast();
+  const { theme } = useTheme();
 
   const [profile, setProfile] = useState<AdminProfileData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   
+  // Password state
   const [currentPassword, setCurrentPassword] = useState<string>("");
   const [newPassword, setNewPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
+
+  // Notification preferences
+  const [notifyNewReports, setNotifyNewReports] = useState<boolean>(true);
+  const [notifyJobApprovals, setNotifyJobApprovals] = useState<boolean>(true);
+  const [notifyUserVerifications, setNotifyUserVerifications] = useState<boolean>(true);
+
+  // Last login info
+  const [lastLogin, setLastLogin] = useState<{date: string, ip: string, device: string}>({
+    date: "2023-05-20 14:30:25",
+    ip: "192.168.1.1",
+    device: "Chrome / macOS"
+  });
+
+  // 2FA state
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState<boolean>(false);
 
   useEffect(() => {
     if (user && user.email) {
@@ -52,7 +71,7 @@ const AdminProfile = () => {
       // Only select columns that exist in the users_management table
       const { data, error } = await supabase
         .from('users_management')
-        .select('id, name, email, avatar_url')
+        .select('id, name, email, avatar_url, phone, location, bio')
         .eq('email', user?.email)
         .single();
       
@@ -84,7 +103,10 @@ const AdminProfile = () => {
       const { error } = await supabase
         .from('users_management')
         .update({
-          name: profile.name
+          name: profile.name,
+          phone: profile.phone,
+          location: profile.location,
+          bio: profile.bio
         })
         .eq('id', profile.id);
 
@@ -213,6 +235,51 @@ const AdminProfile = () => {
     }
   };
 
+  const handleToggle2FA = () => {
+    setTwoFactorEnabled(!twoFactorEnabled);
+    toast({
+      title: twoFactorEnabled ? "2FA Disabled" : "2FA Enabled",
+      description: twoFactorEnabled 
+        ? "Two-factor authentication has been disabled for your account." 
+        : "Two-factor authentication has been enabled for your account.",
+      variant: "default"
+    });
+  };
+
+  const handleToggleNotification = (type: string, value: boolean) => {
+    if (type === 'reports') {
+      setNotifyNewReports(value);
+    } else if (type === 'jobs') {
+      setNotifyJobApprovals(value);
+    } else if (type === 'users') {
+      setNotifyUserVerifications(value);
+    }
+
+    toast({
+      title: "Notification settings updated",
+      description: "Your notification preferences have been saved.",
+      variant: "default"
+    });
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out.",
+        variant: "default"
+      });
+    } catch (error) {
+      console.error("Error logging out:", error);
+      toast({
+        title: "Logout failed",
+        description: "There was an issue logging you out. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const renderPermissions = () => {
     if (!adminUser?.permissions || adminUser.permissions.length === 0) {
       return (
@@ -276,70 +343,123 @@ const AdminProfile = () => {
   }
 
   return (
-    <div className="container max-w-5xl py-6">
-      <div className="flex flex-col md:flex-row gap-6 items-start">
-        {/* Avatar Section */}
-        <Card className="w-full md:w-auto md:min-w-[300px]">
-          <CardHeader>
-            <CardTitle>Profile Picture</CardTitle>
-            <CardDescription>Update your profile image</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center">
-            <Avatar className="h-32 w-32 mb-4 border-2 border-gold/20">
-              <AvatarImage src={profile?.avatar_url || ""} alt={profile?.name || "Admin"} />
-              <AvatarFallback className="text-3xl bg-gold/10 text-gold">
-                {profile?.name?.split(" ").map((n) => n[0]).join("") || "A"}
-              </AvatarFallback>
-            </Avatar>
-            <div className="w-full">
-              <Label htmlFor="avatar-upload" className="w-full">
-                <div className="flex items-center justify-center w-full cursor-pointer">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={isUploading}
-                    className="w-full"
-                  >
-                    {isUploading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Uploading...
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="mr-2 h-4 w-4" />
-                        Upload New Image
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </Label>
-              <Input
-                id="avatar-upload"
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarUpload}
-                className="hidden"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Main Content */}
-        <div className="flex-1 w-full">
-          <Tabs defaultValue="profile">
-            <TabsList className="mb-4">
+    <div className="container max-w-6xl py-8">
+      <h1 className="text-3xl font-bold mb-6">My Profile</h1>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left sidebar - Avatar and basic info */}
+        <div className="lg:col-span-1 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Profile Picture</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center">
+              <Avatar className="h-40 w-40 mb-6 border-2 border-gold/20">
+                <AvatarImage src={profile?.avatar_url || ""} alt={profile?.name || "Admin"} />
+                <AvatarFallback className="text-5xl bg-gold/10 text-gold">
+                  {profile?.name?.split(" ").map((n) => n[0]).join("") || "A"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="w-full">
+                <Label htmlFor="avatar-upload" className="w-full">
+                  <div className="flex items-center justify-center w-full cursor-pointer">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={isUploading}
+                      className="w-full"
+                    >
+                      {isUploading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="mr-2 h-4 w-4" />
+                          Change Picture
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </Label>
+                <Input
+                  id="avatar-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  className="hidden"
+                />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Account Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <h3 className="font-medium flex items-center gap-1">
+                  <UserCog size={16} />
+                  <span>Role</span>
+                </h3>
+                <p className="text-muted-foreground">{adminRole?.name || adminUser?.role || "Administrator"}</p>
+              </div>
+              
+              <Separator />
+              
+              <div>
+                <h3 className="font-medium flex items-center gap-1">
+                  <Mail size={16} />
+                  <span>Email</span>
+                </h3>
+                <p className="text-muted-foreground">{profile?.email}</p>
+              </div>
+              
+              <Separator />
+              
+              <div>
+                <Button 
+                  variant="outline" 
+                  className="w-full border-red-500/20 text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                  onClick={handleLogout}
+                >
+                  <LogOut size={16} className="mr-2" />
+                  Logout
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Theme Preference</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <Label>Theme Mode</Label>
+                <ThemeToggle showTooltip={false} />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* Main content area */}
+        <div className="lg:col-span-2">
+          <Tabs defaultValue="profile" className="w-full">
+            <TabsList className="bg-background/20 border border-border/20 mb-6">
               <TabsTrigger value="profile" className="gap-1">
                 <UserCog size={16} />
                 <span>Profile</span>
               </TabsTrigger>
               <TabsTrigger value="security" className="gap-1">
-                <Key size={16} />
+                <ShieldCheck size={16} />
                 <span>Security</span>
               </TabsTrigger>
-              <TabsTrigger value="permissions" className="gap-1">
-                <ShieldCheck size={16} />
-                <span>Permissions</span>
+              <TabsTrigger value="notifications" className="gap-1">
+                <Bell size={16} />
+                <span>Notifications</span>
               </TabsTrigger>
             </TabsList>
             
@@ -348,7 +468,7 @@ const AdminProfile = () => {
               <Card>
                 <CardHeader>
                   <CardTitle>Personal Information</CardTitle>
-                  <CardDescription>Update your personal details</CardDescription>
+                  <CardDescription>Update your profile details</CardDescription>
                 </CardHeader>
                 <form onSubmit={handleProfileUpdate}>
                   <CardContent className="space-y-4">
@@ -364,15 +484,35 @@ const AdminProfile = () => {
                       </div>
                       
                       <div className="space-y-2">
-                        <Label htmlFor="email">Email Address</Label>
+                        <Label htmlFor="phone">Phone Number</Label>
                         <Input
-                          id="email"
-                          type="email"
-                          value={profile?.email || ''}
-                          disabled
-                          className="bg-muted"
+                          id="phone"
+                          value={profile?.phone || ''}
+                          onChange={(e) => setProfile(prev => prev ? {...prev, phone: e.target.value} : prev)}
+                          placeholder="Your phone number"
                         />
                       </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="location">Location</Label>
+                      <Input
+                        id="location"
+                        value={profile?.location || ''}
+                        onChange={(e) => setProfile(prev => prev ? {...prev, location: e.target.value} : prev)}
+                        placeholder="City, Country"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="bio">Bio</Label>
+                      <Textarea
+                        id="bio"
+                        value={profile?.bio || ''}
+                        onChange={(e) => setProfile(prev => prev ? {...prev, bio: e.target.value} : prev)}
+                        placeholder="A short bio about yourself"
+                        rows={4}
+                      />
                     </div>
                   </CardContent>
                   
@@ -396,94 +536,195 @@ const AdminProfile = () => {
             
             {/* Security Tab */}
             <TabsContent value="security">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Change Password</CardTitle>
-                  <CardDescription>Update your account password</CardDescription>
-                </CardHeader>
-                <form onSubmit={handlePasswordChange}>
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Change Password</CardTitle>
+                    <CardDescription>Update your account password</CardDescription>
+                  </CardHeader>
+                  <form onSubmit={handlePasswordChange}>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="current-password">Current Password</Label>
+                        <Input
+                          id="current-password"
+                          type="password"
+                          value={currentPassword}
+                          onChange={(e) => setCurrentPassword(e.target.value)}
+                          placeholder="Enter current password"
+                        />
+                      </div>
+                      
+                      <Separator />
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="new-password">New Password</Label>
+                        <Input
+                          id="new-password"
+                          type="password"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          placeholder="Enter new password"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="confirm-password">Confirm New Password</Label>
+                        <Input
+                          id="confirm-password"
+                          type="password"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          placeholder="Confirm new password"
+                        />
+                      </div>
+                    </CardContent>
+                    
+                    <CardFooter>
+                      <Button 
+                        type="submit" 
+                        disabled={isSaving || !currentPassword || !newPassword || !confirmPassword}
+                        className="ml-auto"
+                      >
+                        {isSaving ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Updating...
+                          </>
+                        ) : "Update Password"}
+                      </Button>
+                    </CardFooter>
+                  </form>
+                </Card>
+              
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Two-Factor Authentication</CardTitle>
+                    <CardDescription>Add an extra layer of security to your account</CardDescription>
+                  </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="current-password">Current Password</Label>
-                      <Input
-                        id="current-password"
-                        type="password"
-                        value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
-                        placeholder="Enter current password"
-                      />
-                    </div>
-                    
-                    <Separator />
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="new-password">New Password</Label>
-                      <Input
-                        id="new-password"
-                        type="password"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="Enter new password"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="confirm-password">Confirm New Password</Label>
-                      <Input
-                        id="confirm-password"
-                        type="password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="Confirm new password"
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">Two-Factor Authentication (2FA)</Label>
+                        <p className="text-sm text-muted-foreground">
+                          {twoFactorEnabled 
+                            ? "Your account is protected with two-factor authentication." 
+                            : "Protect your account with two-factor authentication."}
+                        </p>
+                      </div>
+                      <Switch 
+                        checked={twoFactorEnabled}
+                        onCheckedChange={handleToggle2FA}
                       />
                     </div>
                   </CardContent>
-                  
-                  <CardFooter>
-                    <Button 
-                      type="submit" 
-                      disabled={isSaving || !currentPassword || !newPassword || !confirmPassword}
-                      className="ml-auto"
-                    >
-                      {isSaving ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Updating...
-                        </>
-                      ) : "Update Password"}
-                    </Button>
-                  </CardFooter>
-                </form>
-              </Card>
+                </Card>
+              
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Recent Activity</CardTitle>
+                    <CardDescription>Your recent login activity</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <p className="font-medium">Date/Time</p>
+                          <p className="text-muted-foreground">{lastLogin.date}</p>
+                        </div>
+                        <div>
+                          <p className="font-medium">IP Address</p>
+                          <p className="text-muted-foreground">{lastLogin.ip}</p>
+                        </div>
+                        <div>
+                          <p className="font-medium">Device</p>
+                          <p className="text-muted-foreground">{lastLogin.device}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
             
-            {/* Permissions Tab */}
-            <TabsContent value="permissions">
+            {/* Notifications Tab */}
+            <TabsContent value="notifications">
               <Card>
                 <CardHeader>
-                  <CardTitle>Role & Permissions</CardTitle>
-                  <CardDescription>Your access level and permissions</CardDescription>
+                  <CardTitle>Notification Preferences</CardTitle>
+                  <CardDescription>Manage your notification settings</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="mb-6">
-                    <h3 className="text-lg font-medium">Current Role</h3>
-                    <div className="mt-2 p-3 rounded-lg bg-gold/5 border border-gold/10">
-                      <div className="flex items-center gap-2">
-                        <ShieldCheck className="h-5 w-5 text-gold" />
-                        <span className="font-medium">{adminRole?.name || adminUser?.role || "Administrator"}</span>
-                      </div>
-                      {adminRole?.description && (
-                        <p className="mt-1 text-sm text-muted-foreground">{adminRole.description}</p>
-                      )}
+                <CardContent className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-base">New Reports</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Notifications when new reports are submitted
+                      </p>
                     </div>
+                    <Switch 
+                      checked={notifyNewReports}
+                      onCheckedChange={(value) => handleToggleNotification('reports', value)}
+                    />
                   </div>
                   
-                  <h3 className="text-lg font-medium mb-2">Your Permissions</h3>
-                  {renderPermissions()}
+                  <Separator />
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-base">Job Approvals</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Notifications when jobs need approval
+                      </p>
+                    </div>
+                    <Switch 
+                      checked={notifyJobApprovals}
+                      onCheckedChange={(value) => handleToggleNotification('jobs', value)}
+                    />
+                  </div>
+                  
+                  <Separator />
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-base">User Verifications</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Notifications when users need verification
+                      </p>
+                    </div>
+                    <Switch 
+                      checked={notifyUserVerifications}
+                      onCheckedChange={(value) => handleToggleNotification('users', value)}
+                    />
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
           </Tabs>
+          
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Role & Permissions</CardTitle>
+              <CardDescription>Your access level and permissions</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-6">
+                <h3 className="text-lg font-medium">Current Role</h3>
+                <div className="mt-2 p-3 rounded-lg bg-gold/5 border border-gold/10">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="h-5 w-5 text-gold" />
+                    <span className="font-medium">{adminRole?.name || adminUser?.role || "Administrator"}</span>
+                  </div>
+                  {adminRole?.description && (
+                    <p className="mt-1 text-sm text-muted-foreground">{adminRole.description}</p>
+                  )}
+                </div>
+              </div>
+              
+              <h3 className="text-lg font-medium mb-2">Your Permissions</h3>
+              {renderPermissions()}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
