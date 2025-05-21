@@ -1,23 +1,15 @@
 
-import { useState, useEffect, useRef } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Send, Phone, Video, Info, Plus, Search, Filter } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { ChatMessage as ChatMessageComponent, ChatMessage } from "@/components/chat/ChatMessage";
 import { useChat } from "@/hooks/useChat";
 import { useDebounce } from "@/hooks/useDebounce";
-import { EmojiPicker } from "@/components/chat/EmojiPicker";
-import { Message, MessageReaction as TypedMessageReaction } from "@/types/chat";
-import ChatRequestCard from "@/components/chat/ChatRequestCard";
+import ChatSidebar from "@/components/chat/ChatSidebar";
+import ChatHeader from "@/components/chat/ChatHeader";
+import ChatMessageArea from "@/components/chat/ChatMessageArea";
+import ChatInputBar from "@/components/chat/ChatInputBar";
 
 const Chat = () => {
   const { user } = useAuth();
-  const [inputMessage, setInputMessage] = useState("");
-  const messageEndRef = useRef<HTMLDivElement>(null);
-  
   const { 
     messages,
     sendMessage,
@@ -70,150 +62,55 @@ const Chat = () => {
   const debouncedSearchTerm = useDebounce(searchQuery, 300);
   const [chatRequestResponses, setChatRequestResponses] = useState<Record<string, boolean>>({});
   
-  useEffect(() => {
-    messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-  
-  const handleSendMessage = () => {
-    if (inputMessage.trim()) {
-      sendMessage(inputMessage);
-      setInputMessage("");
-    }
+  const handleSendMessage = (inputMessage: string) => {
+    sendMessage(inputMessage);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
-
-  const handleEmojiSelect = (emoji: string) => {
-    setInputMessage(prev => prev + emoji);
-  };
-
-  const handleAcceptChat = (chatId: string) => {
-    console.log("Chat accepted:", chatId);
+  const handleAcceptChat = () => {
+    console.log("Chat accepted:", activeChat.id);
     setChatRequestResponses(prev => ({
       ...prev,
-      [chatId]: true
+      [activeChat.id]: true
     }));
   };
 
-  const handleDeclineChat = (chatId: string) => {
-    console.log("Chat declined:", chatId);
+  const handleDeclineChat = () => {
+    console.log("Chat declined:", activeChat.id);
     setChatRequestResponses(prev => ({
       ...prev,
-      [chatId]: false
+      [activeChat.id]: false
     }));
   };
 
   // Check if this is the first time viewing this chat and no messages exist
-  const showChatRequest = (chatId: string) => {
+  const showChatRequest = () => {
     // Debug log to help diagnose the issue
     console.log({
-      chatId,
+      chatId: activeChat?.id,
       messagesLength: messages.length,
-      responseExists: chatId in chatRequestResponses,
-      response: chatRequestResponses[chatId]
+      responseExists: activeChat?.id in chatRequestResponses,
+      response: chatRequestResponses[activeChat?.id]
     });
     
     return (
       activeChat && 
-      activeChat.id === chatId && 
       messages.length === 0 && 
-      chatRequestResponses[chatId] === undefined
+      chatRequestResponses[activeChat.id] === undefined
     );
   };
 
+  const isChatDeclined = activeChat?.id ? chatRequestResponses[activeChat.id] === false : false;
+  const shouldDisableInput = showChatRequest() || isChatDeclined;
+
   return (
     <div className="flex h-[calc(100vh-120px)] bg-[#121212] text-white">
-      <div className="w-96 border-r border-white/10 flex flex-col">
-        <div className="p-4 border-b border-white/10 flex justify-between items-center">
-          <h2 className="text-xl font-semibold text-gold">Messages</h2>
-          <div className="flex gap-2">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="text-gold hover:bg-gold/10 rounded-full"
-            >
-              <Plus size={20} />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="text-gold hover:bg-gold/10 rounded-full"
-            >
-              <Filter size={20} />
-            </Button>
-          </div>
-        </div>
-        
-        <div className="p-4">
-          <div className="relative">
-            <Search 
-              size={18} 
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" 
-            />
-            <Input 
-              placeholder="Search conversations..." 
-              className="pl-10 bg-[#222222] border-0 text-white placeholder:text-gray-400 focus-visible:ring-gold/30"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-        </div>
-        
-        <ScrollArea className="flex-1">
-          <div className="space-y-1 p-2">
-            {mockChats.map((chat) => (
-              <div 
-                key={chat.id}
-                onClick={() => setActiveChat(chat)}
-                className={`
-                  flex items-center gap-3 p-3 rounded-lg cursor-pointer
-                  ${activeChat?.id === chat.id ? 'bg-gold/20 border-l-2 border-gold' : 'hover:bg-[#222222]'}
-                `}
-              >
-                <div className="relative">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={chat.avatar} alt={chat.name} />
-                    <AvatarFallback className={`
-                      ${activeChat?.id === chat.id ? 'bg-gold/20 text-gold' : 'bg-[#333333] text-gray-300'}
-                    `}>
-                      {chat.name.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  {chat.online && (
-                    <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#121212] rounded-full"></span>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-center">
-                    <h3 className={`font-medium truncate ${activeChat?.id === chat.id ? 'text-gold' : 'text-white'}`}>
-                      {chat.name}
-                    </h3>
-                    <span className="text-xs text-gray-400">{chat.lastMessageTime}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <p className="text-sm text-gray-400 truncate">
-                      {chat.lastMessage}
-                    </p>
-                    {chat.unread > 0 && (
-                      <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-medium bg-gold text-black rounded-full">
-                        {chat.unread}
-                      </span>
-                    )}
-                  </div>
-                  {chat.role && (
-                    <span className="text-xs text-gray-500">{chat.role}</span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </ScrollArea>
-      </div>
+      <ChatSidebar 
+        chats={mockChats}
+        activeChat={activeChat}
+        onChatSelect={setActiveChat}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
       
       <div className="flex-1 flex flex-col">
         {!activeChat ? (
@@ -222,134 +119,24 @@ const Chat = () => {
           </div>
         ) : (
           <>
-            <div className="p-4 border-b border-white/10 flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <Avatar className="h-12 w-12">
-                  <AvatarImage src={activeChat.avatar} alt={activeChat.name} />
-                  <AvatarFallback className="bg-gold/20 text-gold">{activeChat.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <h2 className="text-lg font-semibold text-gold">{activeChat.name}</h2>
-                  <div className="flex items-center gap-2">
-                    {activeChat.online && (
-                      <>
-                        <span className="h-2 w-2 rounded-full bg-green-500"></span>
-                        <span className="text-sm text-gray-300">Online</span>
-                      </>
-                    )}
-                    {activeChat.role && (
-                      <>
-                        <span className="text-gray-400">•</span>
-                        <span className="text-sm text-gray-300">{activeChat.role}</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  className="rounded-full text-gold hover:bg-gold/10"
-                >
-                  <Phone size={20} />
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  className="rounded-full text-gold hover:bg-gold/10"
-                >
-                  <Video size={20} />
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  className="rounded-full text-gold hover:bg-gold/10"
-                >
-                  <Info size={20} />
-                </Button>
-              </div>
-            </div>
+            <ChatHeader chat={activeChat} />
             
-            <ScrollArea className="flex-1 p-6">
-              {isLoading ? (
-                <div className="flex justify-center p-4">
-                  <span className="text-gray-400">Loading messages...</span>
-                </div>
-              ) : showChatRequest(activeChat.id) ? (
-                <div className="flex justify-center items-center h-full">
-                  <ChatRequestCard 
-                    senderName={activeChat.name}
-                    onAccept={() => handleAcceptChat(activeChat.id)}
-                    onDecline={() => handleDeclineChat(activeChat.id)}
-                  />
-                </div>
-              ) : messages.length === 0 ? (
-                <div className="flex justify-center p-4">
-                  <span className="text-gray-400">
-                    {chatRequestResponses[activeChat.id] === false 
-                      ? "You declined this chat request"
-                      : "No messages yet"}
-                  </span>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {messages.map((message) => {
-                    const typedReactions = message.reactions?.map(reaction => ({
-                      emoji: reaction.emoji,
-                      user_id: reaction.userId || '',
-                      count: 1
-                    }));
-                    
-                    const chatMessage: ChatMessage = {
-                      ...message,
-                      senderName: message.sender_id === user?.id ? user?.email?.split('@')[0] : 'User',
-                      senderRole: message.sender_id === user?.id ? '' : 'Role',
-                      isMe: message.sender_id === user?.id,
-                      status: 'seen' as const,
-                      reactions: typedReactions
-                    };
-                    
-                    return (
-                      <ChatMessageComponent
-                        key={message.id}
-                        message={chatMessage}
-                        showAvatar={true}
-                        isLastInGroup={true}
-                      />
-                    );
-                  })}
-                  <div ref={messageEndRef} />
-                </div>
-              )}
-            </ScrollArea>
+            <ChatMessageArea 
+              messages={messages}
+              isLoading={isLoading}
+              showChatRequest={showChatRequest()}
+              chatRequestDeclined={isChatDeclined}
+              senderName={activeChat.name}
+              onAcceptChat={handleAcceptChat}
+              onDeclineChat={handleDeclineChat}
+            />
             
-            <div className="p-4 border-t border-white/10">
-              {chatRequestResponses[activeChat?.id] !== false && (
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 relative">
-                    <Input 
-                      value={inputMessage}
-                      onChange={(e) => setInputMessage(e.target.value)}
-                      onKeyDown={handleKeyPress}
-                      placeholder="Type a message..."
-                      className="bg-[#222222] border-0 text-white placeholder:text-gray-400 focus-visible:ring-gold/30 pr-10"
-                      disabled={showChatRequest(activeChat?.id)}
-                    />
-                    <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                      <EmojiPicker onSelect={handleEmojiSelect} />
-                    </div>
-                  </div>
-                  <Button 
-                    onClick={handleSendMessage} 
-                    className="rounded-full bg-gold hover:bg-gold/90 text-black"
-                    disabled={showChatRequest(activeChat?.id)}
-                  >
-                    <Send size={18} />
-                  </Button>
-                </div>
-              )}
-            </div>
+            {chatRequestResponses[activeChat?.id] !== false && (
+              <ChatInputBar 
+                onSendMessage={handleSendMessage}
+                disabled={shouldDisableInput}
+              />
+            )}
           </>
         )}
       </div>
