@@ -8,11 +8,11 @@ interface ChatRoom {
   id: string;
   name: string;
   lastMessage: string;
-  lastMessageTime?: string;
-  unread?: number;
-  avatar?: string;
-  role?: string;
-  online?: boolean;
+  lastMessageTime: string;  // Changed from optional to required
+  unread: number;           // Changed from optional to required
+  avatar: string;           // Changed from optional to required
+  role?: string;            // Kept as optional
+  online?: boolean;         // Kept as optional
 }
 
 export const ChatPage: React.FC = () => {
@@ -33,6 +33,7 @@ export const ChatPage: React.FC = () => {
       name: 'Michael Rodriguez', 
       lastMessage: 'How are you?',
       lastMessageTime: 'Yesterday',
+      unread: 0,  // Adding a default value of 0 since unread is now required
       avatar: '/placeholder.svg',
       role: 'Director', 
       online: false
