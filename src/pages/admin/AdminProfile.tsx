@@ -354,12 +354,96 @@ const AdminProfile = () => {
   }
 
   return (
-    <div className="container max-w-6xl py-8">
+    <div className="container max-w-5xl py-8">
       <h1 className="text-3xl font-bold mb-6">My Profile</h1>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left sidebar - Avatar and basic info */}
-        <div className="lg:col-span-1 space-y-6">
+      <Tabs defaultValue="profile" className="w-full">
+        <TabsList className="bg-background/20 border border-border/20 mb-6">
+          <TabsTrigger value="profile" className="gap-1">
+            <UserCog size={16} />
+            <span>Profile</span>
+          </TabsTrigger>
+          <TabsTrigger value="security" className="gap-1">
+            <ShieldCheck size={16} />
+            <span>Security</span>
+          </TabsTrigger>
+          <TabsTrigger value="notifications" className="gap-1">
+            <Bell size={16} />
+            <span>Notifications</span>
+          </TabsTrigger>
+        </TabsList>
+        
+        {/* Profile Tab */}
+        <TabsContent value="profile" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Personal Information</CardTitle>
+              <CardDescription>Update your profile details</CardDescription>
+            </CardHeader>
+            <form onSubmit={handleProfileUpdate}>
+              <CardContent className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Full Name</Label>
+                    <Input
+                      id="name"
+                      value={profile?.name || ''}
+                      onChange={(e) => setProfile(prev => prev ? {...prev, name: e.target.value} : prev)}
+                      placeholder="Your full name"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input
+                      id="phone"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      placeholder="Your phone number"
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="location">Location</Label>
+                  <Input
+                    id="location"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    placeholder="City, Country"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="bio">Bio</Label>
+                  <Textarea
+                    id="bio"
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    placeholder="A short bio about yourself"
+                    rows={4}
+                  />
+                </div>
+              </CardContent>
+              
+              <CardFooter>
+                <Button 
+                  type="submit" 
+                  disabled={isSaving}
+                  className="ml-auto"
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : "Save Changes"}
+                </Button>
+              </CardFooter>
+            </form>
+          </Card>
+
+          {/* Profile Picture - Moved from sidebar */}
           <Card>
             <CardHeader>
               <CardTitle>Profile Picture</CardTitle>
@@ -371,7 +455,7 @@ const AdminProfile = () => {
                   {profile?.name?.split(" ").map((n) => n[0]).join("") || "A"}
                 </AvatarFallback>
               </Avatar>
-              <div className="w-full">
+              <div className="w-full max-w-xs">
                 <Label htmlFor="avatar-upload" className="w-full">
                   <div className="flex items-center justify-center w-full cursor-pointer">
                     <Button
@@ -405,6 +489,7 @@ const AdminProfile = () => {
             </CardContent>
           </Card>
           
+          {/* Account Information - Moved from sidebar */}
           <Card>
             <CardHeader>
               <CardTitle>Account Information</CardTitle>
@@ -443,6 +528,7 @@ const AdminProfile = () => {
             </CardContent>
           </Card>
           
+          {/* Theme Preference - Moved from sidebar */}
           <Card>
             <CardHeader>
               <CardTitle>Theme Preference</CardTitle>
@@ -454,266 +540,9 @@ const AdminProfile = () => {
               </div>
             </CardContent>
           </Card>
-        </div>
-        
-        {/* Main content area */}
-        <div className="lg:col-span-2">
-          <Tabs defaultValue="profile" className="w-full">
-            <TabsList className="bg-background/20 border border-border/20 mb-6">
-              <TabsTrigger value="profile" className="gap-1">
-                <UserCog size={16} />
-                <span>Profile</span>
-              </TabsTrigger>
-              <TabsTrigger value="security" className="gap-1">
-                <ShieldCheck size={16} />
-                <span>Security</span>
-              </TabsTrigger>
-              <TabsTrigger value="notifications" className="gap-1">
-                <Bell size={16} />
-                <span>Notifications</span>
-              </TabsTrigger>
-            </TabsList>
-            
-            {/* Profile Tab */}
-            <TabsContent value="profile">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Personal Information</CardTitle>
-                  <CardDescription>Update your profile details</CardDescription>
-                </CardHeader>
-                <form onSubmit={handleProfileUpdate}>
-                  <CardContent className="space-y-4">
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="name">Full Name</Label>
-                        <Input
-                          id="name"
-                          value={profile?.name || ''}
-                          onChange={(e) => setProfile(prev => prev ? {...prev, name: e.target.value} : prev)}
-                          placeholder="Your full name"
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="phone">Phone Number</Label>
-                        <Input
-                          id="phone"
-                          value={phoneNumber}
-                          onChange={(e) => setPhoneNumber(e.target.value)}
-                          placeholder="Your phone number"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="location">Location</Label>
-                      <Input
-                        id="location"
-                        value={location}
-                        onChange={(e) => setLocation(e.target.value)}
-                        placeholder="City, Country"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="bio">Bio</Label>
-                      <Textarea
-                        id="bio"
-                        value={bio}
-                        onChange={(e) => setBio(e.target.value)}
-                        placeholder="A short bio about yourself"
-                        rows={4}
-                      />
-                    </div>
-                  </CardContent>
-                  
-                  <CardFooter>
-                    <Button 
-                      type="submit" 
-                      disabled={isSaving}
-                      className="ml-auto"
-                    >
-                      {isSaving ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Saving...
-                        </>
-                      ) : "Save Changes"}
-                    </Button>
-                  </CardFooter>
-                </form>
-              </Card>
-            </TabsContent>
-            
-            {/* Security Tab */}
-            <TabsContent value="security">
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Change Password</CardTitle>
-                    <CardDescription>Update your account password</CardDescription>
-                  </CardHeader>
-                  <form onSubmit={handlePasswordChange}>
-                    <CardContent className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="current-password">Current Password</Label>
-                        <Input
-                          id="current-password"
-                          type="password"
-                          value={currentPassword}
-                          onChange={(e) => setCurrentPassword(e.target.value)}
-                          placeholder="Enter current password"
-                        />
-                      </div>
-                      
-                      <Separator />
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="new-password">New Password</Label>
-                        <Input
-                          id="new-password"
-                          type="password"
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                          placeholder="Enter new password"
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="confirm-password">Confirm New Password</Label>
-                        <Input
-                          id="confirm-password"
-                          type="password"
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
-                          placeholder="Confirm new password"
-                        />
-                      </div>
-                    </CardContent>
-                    
-                    <CardFooter>
-                      <Button 
-                        type="submit" 
-                        disabled={isSaving || !currentPassword || !newPassword || !confirmPassword}
-                        className="ml-auto"
-                      >
-                        {isSaving ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Updating...
-                          </>
-                        ) : "Update Password"}
-                      </Button>
-                    </CardFooter>
-                  </form>
-                </Card>
-              
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Two-Factor Authentication</CardTitle>
-                    <CardDescription>Add an extra layer of security to your account</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label className="text-base">Two-Factor Authentication (2FA)</Label>
-                        <p className="text-sm text-muted-foreground">
-                          {twoFactorEnabled 
-                            ? "Your account is protected with two-factor authentication." 
-                            : "Protect your account with two-factor authentication."}
-                        </p>
-                      </div>
-                      <Switch 
-                        checked={twoFactorEnabled}
-                        onCheckedChange={handleToggle2FA}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Recent Activity</CardTitle>
-                    <CardDescription>Your recent login activity</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-3 gap-4 text-sm">
-                        <div>
-                          <p className="font-medium">Date/Time</p>
-                          <p className="text-muted-foreground">{lastLogin.date}</p>
-                        </div>
-                        <div>
-                          <p className="font-medium">IP Address</p>
-                          <p className="text-muted-foreground">{lastLogin.ip}</p>
-                        </div>
-                        <div>
-                          <p className="font-medium">Device</p>
-                          <p className="text-muted-foreground">{lastLogin.device}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-            
-            {/* Notifications Tab */}
-            <TabsContent value="notifications">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Notification Preferences</CardTitle>
-                  <CardDescription>Manage your notification settings</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label className="text-base">New Reports</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Notifications when new reports are submitted
-                      </p>
-                    </div>
-                    <Switch 
-                      checked={notifyNewReports}
-                      onCheckedChange={(value) => handleToggleNotification('reports', value)}
-                    />
-                  </div>
-                  
-                  <Separator />
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label className="text-base">Job Approvals</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Notifications when jobs need approval
-                      </p>
-                    </div>
-                    <Switch 
-                      checked={notifyJobApprovals}
-                      onCheckedChange={(value) => handleToggleNotification('jobs', value)}
-                    />
-                  </div>
-                  
-                  <Separator />
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label className="text-base">User Verifications</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Notifications when users need verification
-                      </p>
-                    </div>
-                    <Switch 
-                      checked={notifyUserVerifications}
-                      onCheckedChange={(value) => handleToggleNotification('users', value)}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
           
-          <Card className="mt-6">
+          {/* Role & Permissions */}
+          <Card>
             <CardHeader>
               <CardTitle>Role & Permissions</CardTitle>
               <CardDescription>Your access level and permissions</CardDescription>
@@ -736,8 +565,175 @@ const AdminProfile = () => {
               {renderPermissions()}
             </CardContent>
           </Card>
-        </div>
-      </div>
+        </TabsContent>
+        
+        {/* Security Tab */}
+        <TabsContent value="security">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Change Password</CardTitle>
+                <CardDescription>Update your account password</CardDescription>
+              </CardHeader>
+              <form onSubmit={handlePasswordChange}>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="current-password">Current Password</Label>
+                    <Input
+                      id="current-password"
+                      type="password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      placeholder="Enter current password"
+                    />
+                  </div>
+                  
+                  <Separator />
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="new-password">New Password</Label>
+                    <Input
+                      id="new-password"
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Enter new password"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="confirm-password">Confirm New Password</Label>
+                    <Input
+                      id="confirm-password"
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Confirm new password"
+                    />
+                  </div>
+                </CardContent>
+                
+                <CardFooter>
+                  <Button 
+                    type="submit" 
+                    disabled={isSaving || !currentPassword || !newPassword || !confirmPassword}
+                    className="ml-auto"
+                  >
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Updating...
+                      </>
+                    ) : "Update Password"}
+                  </Button>
+                </CardFooter>
+              </form>
+            </Card>
+          
+            <Card>
+              <CardHeader>
+                <CardTitle>Two-Factor Authentication</CardTitle>
+                <CardDescription>Add an extra layer of security to your account</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label className="text-base">Two-Factor Authentication (2FA)</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {twoFactorEnabled 
+                        ? "Your account is protected with two-factor authentication." 
+                        : "Protect your account with two-factor authentication."}
+                    </p>
+                  </div>
+                  <Switch 
+                    checked={twoFactorEnabled}
+                    onCheckedChange={handleToggle2FA}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Activity</CardTitle>
+                <CardDescription>Your recent login activity</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <p className="font-medium">Date/Time</p>
+                      <p className="text-muted-foreground">{lastLogin.date}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium">IP Address</p>
+                      <p className="text-muted-foreground">{lastLogin.ip}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium">Device</p>
+                      <p className="text-muted-foreground">{lastLogin.device}</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+        
+        {/* Notifications Tab */}
+        <TabsContent value="notifications">
+          <Card>
+            <CardHeader>
+              <CardTitle>Notification Preferences</CardTitle>
+              <CardDescription>Manage your notification settings</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="text-base">New Reports</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Notifications when new reports are submitted
+                  </p>
+                </div>
+                <Switch 
+                  checked={notifyNewReports}
+                  onCheckedChange={(value) => handleToggleNotification('reports', value)}
+                />
+              </div>
+              
+              <Separator />
+              
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="text-base">Job Approvals</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Notifications when jobs need approval
+                  </p>
+                </div>
+                <Switch 
+                  checked={notifyJobApprovals}
+                  onCheckedChange={(value) => handleToggleNotification('jobs', value)}
+                />
+              </div>
+              
+              <Separator />
+              
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="text-base">User Verifications</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Notifications when users need verification
+                  </p>
+                </div>
+                <Switch 
+                  checked={notifyUserVerifications}
+                  onCheckedChange={(value) => handleToggleNotification('users', value)}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
