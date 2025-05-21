@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { ChatContainer } from './ChatContainer';
-import { ChatSidebar } from './ChatSidebar';
+import ChatSidebar from './ChatSidebar';
 
 interface ChatRoom {
   id: string;
