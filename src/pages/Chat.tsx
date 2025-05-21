@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -104,7 +103,6 @@ const Chat = () => {
       ...prev,
       [chatId]: false
     }));
-    // Optionally remove the chat from the list or mark it as declined
   };
 
   // Check if this is the first time viewing this chat and no messages exist

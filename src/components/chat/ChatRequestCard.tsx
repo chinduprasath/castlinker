@@ -12,17 +12,17 @@ interface ChatRequestCardProps {
 
 export const ChatRequestCard = ({ senderName, onAccept, onDecline }: ChatRequestCardProps) => {
   return (
-    <Card className="w-full max-w-md mx-auto bg-background border-gold/20">
-      <CardHeader>
-        <CardTitle className="text-gold">New Chat Request</CardTitle>
-        <CardDescription>Someone wants to connect with you</CardDescription>
+    <Card className="w-full max-w-md mx-auto bg-[#1E1E1E] border border-gold/20 shadow-lg">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-gold text-xl">New Chat Request</CardTitle>
+        <CardDescription className="text-gray-300">Connect with a new contact</CardDescription>
       </CardHeader>
-      <CardContent>
-        <p className="text-lg">
-          Hey, you got a request from <span className="font-semibold">{senderName}</span>
+      <CardContent className="pb-4">
+        <p className="text-lg text-white">
+          Hey, you got a request from <span className="font-semibold text-gold">{senderName}</span>
         </p>
       </CardContent>
-      <CardFooter className="flex justify-end gap-4">
+      <CardFooter className="flex justify-end gap-4 pt-2">
         <Button 
           variant="outline" 
           className="border-red-500 hover:bg-red-500/10 text-red-500"
