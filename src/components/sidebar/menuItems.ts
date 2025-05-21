@@ -7,7 +7,8 @@ import {
   MessageSquare,
   Bell,
   FolderKanban,
-  FileText
+  FileText,
+  Ticket
 } from 'lucide-react';
 
 export type MenuItem = {
@@ -56,6 +57,11 @@ export const mainMenuItems: MenuItem[] = [
     icon: Bell,
     text: "Notifications",
     path: "/notifications"
+  },
+  {
+    icon: Ticket,
+    text: "Tickets",
+    path: "/tickets"
   }
 ];
 

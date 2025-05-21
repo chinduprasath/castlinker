@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -100,7 +101,7 @@ const AdminSidebar = ({ collapsed, toggleSidebar }: AdminSidebarProps) => {
     },
     {
       title: "Ticket Management",
-      icon: FileText,
+      icon: Ticket,
       href: "/admin/tickets",
       module: 'tickets', // Assuming 'tickets' is a new admin module
       action: 'view'
