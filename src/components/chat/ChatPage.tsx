@@ -43,7 +43,9 @@ export const ChatPage: React.FC = () => {
     },
   ]);
   const [messages, setMessages] = useState<Record<string, any[]>>({
-    // Initially empty - we'll simulate no messages for new chats
+    // Initialize with empty arrays for existing rooms to skip chat request step
+    '1': [],  
+    // Leave room 2 undefined so it will show the chat request
   });
   const [chatRequestResponses, setChatRequestResponses] = useState<Record<string, boolean>>({});
   const { user } = useAuth();
@@ -74,6 +76,12 @@ export const ChatPage: React.FC = () => {
       ...prev,
       [selectedRoom]: true
     }));
+    
+    // Initialize with empty messages array after accepting
+    setMessages(prev => ({
+      ...prev,
+      [selectedRoom]: []
+    }));
   };
 
   const handleDeclineChat = () => {
@@ -97,6 +105,7 @@ export const ChatPage: React.FC = () => {
 
   const isChatDeclined = selectedRoom ? chatRequestResponses[selectedRoom] === false : false;
   const shouldDisableInput = showChatRequest() || isChatDeclined;
+  const isLoading = false; // Set loading state to false by default
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -120,7 +129,7 @@ export const ChatPage: React.FC = () => {
             
             <ChatMessageArea 
               messages={messages[selectedRoom] || []}
-              isLoading={false}
+              isLoading={isLoading}
               showChatRequest={showChatRequest()}
               chatRequestDeclined={isChatDeclined}
               senderName={activeChat?.name || ''}

@@ -60,7 +60,10 @@ const Chat = () => {
   const [activeChat, setActiveChat] = useState(mockChats[0]);
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchTerm = useDebounce(searchQuery, 300);
-  const [chatRequestResponses, setChatRequestResponses] = useState<Record<string, boolean>>({});
+  const [chatRequestResponses, setChatRequestResponses] = useState<Record<string, boolean>>({
+    // Pre-accept chat 1 to show messages immediately
+    "1": true
+  });
   
   const handleSendMessage = (inputMessage: string) => {
     sendMessage(inputMessage);
@@ -84,14 +87,6 @@ const Chat = () => {
 
   // Check if this is the first time viewing this chat and no messages exist
   const showChatRequest = () => {
-    // Debug log to help diagnose the issue
-    console.log({
-      chatId: activeChat?.id,
-      messagesLength: messages.length,
-      responseExists: activeChat?.id in chatRequestResponses,
-      response: chatRequestResponses[activeChat?.id]
-    });
-    
     return (
       activeChat && 
       messages.length === 0 && 
@@ -123,7 +118,7 @@ const Chat = () => {
             
             <ChatMessageArea 
               messages={messages}
-              isLoading={isLoading}
+              isLoading={false} // Set to false by default to prevent showing loading message
               showChatRequest={showChatRequest()}
               chatRequestDeclined={isChatDeclined}
               senderName={activeChat.name}
