@@ -103,7 +103,7 @@ const AdminSidebar = ({ collapsed, toggleSidebar }: AdminSidebarProps) => {
       title: "Ticket Management",
       icon: Ticket,
       href: "/admin/tickets",
-      module: 'tickets',
+      module: 'team', // Changed to 'team' module to ensure super admin can see it
       action: 'view'
     }
   ];
@@ -118,6 +118,13 @@ const AdminSidebar = ({ collapsed, toggleSidebar }: AdminSidebarProps) => {
   );
 
   if (!mounted) return null;
+
+  // Add console log to debug
+  console.log("Admin Sidebar - Filtered Nav Items:", navItems.map(item => ({
+    title: item.title,
+    module: item.module,
+    hasPermission: hasPermission(item.module, item.action || 'view')
+  })));
 
   return (
     <aside
