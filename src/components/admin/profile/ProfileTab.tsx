@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,7 @@ import { AdminProfileData } from "@/types/adminTypes";
 import { supabase } from "@/integrations/supabase/client";
 import ThemeToggle from "@/components/ThemeToggle";
 import { AdminPermission } from "@/types/rbacTypes";
+import PermissionsDisplay from "@/components/admin/profile/PermissionsDisplay";
 
 interface ProfileTabProps {
   profile: AdminProfileData | null;
