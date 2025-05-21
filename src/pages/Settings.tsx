@@ -5,11 +5,40 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Facebook, Instagram, Linkedin, Twitter, Youtube, Edit2, Save } from "lucide-react";
 
 const Settings = () => {
   const [notifications, setNotifications] = useState(true);
   const [marketing, setMarketing] = useState(false);
   const [newsletter, setNewsletter] = useState(true);
+  
+  // Social media links state
+  const [socialMediaLinks, setSocialMediaLinks] = useState({
+    facebook: "",
+    twitter: "",
+    linkedin: "",
+    instagram: "",
+    youtube: "",
+  });
+  
+  // Edit mode state
+  const [isEditingSocial, setIsEditingSocial] = useState(false);
+  
+  // Function to handle social media link changes
+  const handleSocialLinkChange = (platform: string, value: string) => {
+    setSocialMediaLinks(prev => ({
+      ...prev,
+      [platform]: value
+    }));
+  };
+  
+  // Function to save social media links
+  const handleSaveSocialLinks = () => {
+    // Here you would typically save to a database or API
+    console.log("Saving social media links:", socialMediaLinks);
+    setIsEditingSocial(false);
+  };
   
   return (
     <div className="space-y-6">
@@ -29,7 +58,7 @@ const Settings = () => {
         </TabsList>
         
         <TabsContent value="general">
-          <Card className="border-gold/10 shadow-sm">
+          <Card className="border-gold/10 shadow-sm mb-6">
             <CardHeader className="px-6">
               <CardTitle>General Settings</CardTitle>
               <CardDescription>
@@ -68,6 +97,124 @@ const Settings = () => {
             <CardFooter className="px-6">
               <Button className="bg-gold text-black hover:bg-gold/90">Save Changes</Button>
             </CardFooter>
+          </Card>
+          
+          {/* Social Media Links Section */}
+          <Card className="border-gold/10 shadow-sm">
+            <CardHeader className="px-6 flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Social Media Links</CardTitle>
+                <CardDescription>
+                  Connect your profile to your social media accounts
+                </CardDescription>
+              </div>
+              <div>
+                {isEditingSocial ? (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleSaveSocialLinks} 
+                    className="flex items-center gap-1"
+                  >
+                    <Save className="h-4 w-4" />
+                    Save
+                  </Button>
+                ) : (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setIsEditingSocial(true)}
+                    className="flex items-center gap-1"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                    Edit
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4 px-6">
+              <div className="space-y-4">
+                {/* Facebook */}
+                <div className="flex items-center space-x-3">
+                  <div className="flex-shrink-0">
+                    <Facebook className="h-5 w-5 text-[#1877F2]" />
+                  </div>
+                  <div className="flex-grow">
+                    <Input
+                      value={socialMediaLinks.facebook}
+                      onChange={(e) => handleSocialLinkChange("facebook", e.target.value)}
+                      placeholder="https://facebook.com/username"
+                      readOnly={!isEditingSocial}
+                      className={!isEditingSocial ? "bg-muted" : ""}
+                    />
+                  </div>
+                </div>
+                
+                {/* Twitter/X */}
+                <div className="flex items-center space-x-3">
+                  <div className="flex-shrink-0">
+                    <Twitter className="h-5 w-5 text-[#1DA1F2]" />
+                  </div>
+                  <div className="flex-grow">
+                    <Input
+                      value={socialMediaLinks.twitter}
+                      onChange={(e) => handleSocialLinkChange("twitter", e.target.value)}
+                      placeholder="https://twitter.com/username"
+                      readOnly={!isEditingSocial}
+                      className={!isEditingSocial ? "bg-muted" : ""}
+                    />
+                  </div>
+                </div>
+                
+                {/* LinkedIn */}
+                <div className="flex items-center space-x-3">
+                  <div className="flex-shrink-0">
+                    <Linkedin className="h-5 w-5 text-[#0A66C2]" />
+                  </div>
+                  <div className="flex-grow">
+                    <Input
+                      value={socialMediaLinks.linkedin}
+                      onChange={(e) => handleSocialLinkChange("linkedin", e.target.value)}
+                      placeholder="https://linkedin.com/in/username"
+                      readOnly={!isEditingSocial}
+                      className={!isEditingSocial ? "bg-muted" : ""}
+                    />
+                  </div>
+                </div>
+                
+                {/* Instagram */}
+                <div className="flex items-center space-x-3">
+                  <div className="flex-shrink-0">
+                    <Instagram className="h-5 w-5 text-[#E4405F]" />
+                  </div>
+                  <div className="flex-grow">
+                    <Input
+                      value={socialMediaLinks.instagram}
+                      onChange={(e) => handleSocialLinkChange("instagram", e.target.value)}
+                      placeholder="https://instagram.com/username"
+                      readOnly={!isEditingSocial}
+                      className={!isEditingSocial ? "bg-muted" : ""}
+                    />
+                  </div>
+                </div>
+                
+                {/* Youtube */}
+                <div className="flex items-center space-x-3">
+                  <div className="flex-shrink-0">
+                    <Youtube className="h-5 w-5 text-[#FF0000]" />
+                  </div>
+                  <div className="flex-grow">
+                    <Input
+                      value={socialMediaLinks.youtube}
+                      onChange={(e) => handleSocialLinkChange("youtube", e.target.value)}
+                      placeholder="https://youtube.com/channel/username"
+                      readOnly={!isEditingSocial}
+                      className={!isEditingSocial ? "bg-muted" : ""}
+                    />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
           </Card>
         </TabsContent>
         
@@ -202,4 +349,4 @@ const Settings = () => {
   );
 };
 
-export default Settings; 
+export default Settings;
