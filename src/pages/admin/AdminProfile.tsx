@@ -355,7 +355,17 @@ const AdminProfile = () => {
 
   return (
     <div className="container max-w-5xl py-8">
-      <h1 className="text-3xl font-bold mb-6">My Profile</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">My Profile</h1>
+        <Button 
+          variant="ghost" 
+          size="icon"
+          onClick={handleLogout}
+          className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
+        >
+          <LogOut size={20} />
+        </Button>
+      </div>
       
       <Tabs defaultValue="profile" className="w-full">
         <TabsList className="bg-background/20 border border-border/20 mb-6">
@@ -373,8 +383,93 @@ const AdminProfile = () => {
           </TabsTrigger>
         </TabsList>
         
-        {/* Profile Tab */}
+        {/* Profile Tab - Updated with two-column layout at the top */}
         <TabsContent value="profile" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Profile Picture Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Profile Picture</CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col items-center">
+                <Avatar className="h-40 w-40 mb-6 border-2 border-gold/20">
+                  <AvatarImage src={profile?.avatar_url || ""} alt={profile?.name || "Admin"} />
+                  <AvatarFallback className="text-5xl bg-gold/10 text-gold">
+                    {profile?.name?.split(" ").map((n) => n[0]).join("") || "A"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="w-full max-w-xs">
+                  <Label htmlFor="avatar-upload" className="w-full">
+                    <div className="flex items-center justify-center w-full cursor-pointer">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={isUploading}
+                        className="w-full"
+                      >
+                        {isUploading ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Uploading...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="mr-2 h-4 w-4" />
+                            Change Picture
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </Label>
+                  <Input
+                    id="avatar-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarUpload}
+                    className="hidden"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Account Information Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Account Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label className="text-sm text-muted-foreground">Username</Label>
+                  <p className="font-medium">{profile?.name}</p>
+                </div>
+                
+                <div>
+                  <Label className="text-sm text-muted-foreground">Email</Label>
+                  <p className="font-medium flex items-center gap-1">
+                    <Mail size={16} className="text-muted-foreground" />
+                    {profile?.email}
+                  </p>
+                </div>
+                
+                <div>
+                  <Label className="text-sm text-muted-foreground">Role</Label>
+                  <p className="font-medium flex items-center gap-1">
+                    <ShieldCheck size={16} className="text-gold" />
+                    {adminRole?.name || adminUser?.role || "Administrator"}
+                  </p>
+                </div>
+                
+                <div className="pt-4">
+                  <Label className="text-sm">Theme Preference</Label>
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-muted-foreground">Theme Mode</span>
+                    <ThemeToggle showTooltip={false} />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          
           <Card>
             <CardHeader>
               <CardTitle>Personal Information</CardTitle>
@@ -441,104 +536,6 @@ const AdminProfile = () => {
                 </Button>
               </CardFooter>
             </form>
-          </Card>
-
-          {/* Profile Picture - Moved from sidebar */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Profile Picture</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center">
-              <Avatar className="h-40 w-40 mb-6 border-2 border-gold/20">
-                <AvatarImage src={profile?.avatar_url || ""} alt={profile?.name || "Admin"} />
-                <AvatarFallback className="text-5xl bg-gold/10 text-gold">
-                  {profile?.name?.split(" ").map((n) => n[0]).join("") || "A"}
-                </AvatarFallback>
-              </Avatar>
-              <div className="w-full max-w-xs">
-                <Label htmlFor="avatar-upload" className="w-full">
-                  <div className="flex items-center justify-center w-full cursor-pointer">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      disabled={isUploading}
-                      className="w-full"
-                    >
-                      {isUploading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Uploading...
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="mr-2 h-4 w-4" />
-                          Change Picture
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </Label>
-                <Input
-                  id="avatar-upload"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAvatarUpload}
-                  className="hidden"
-                />
-              </div>
-            </CardContent>
-          </Card>
-          
-          {/* Account Information - Moved from sidebar */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Account Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <h3 className="font-medium flex items-center gap-1">
-                  <UserCog size={16} />
-                  <span>Role</span>
-                </h3>
-                <p className="text-muted-foreground">{adminRole?.name || adminUser?.role || "Administrator"}</p>
-              </div>
-              
-              <Separator />
-              
-              <div>
-                <h3 className="font-medium flex items-center gap-1">
-                  <Mail size={16} />
-                  <span>Email</span>
-                </h3>
-                <p className="text-muted-foreground">{profile?.email}</p>
-              </div>
-              
-              <Separator />
-              
-              <div>
-                <Button 
-                  variant="outline" 
-                  className="w-full border-red-500/20 text-red-500 hover:text-red-600 hover:bg-red-500/10"
-                  onClick={handleLogout}
-                >
-                  <LogOut size={16} className="mr-2" />
-                  Logout
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-          
-          {/* Theme Preference - Moved from sidebar */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Theme Preference</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <Label>Theme Mode</Label>
-                <ThemeToggle showTooltip={false} />
-              </div>
-            </CardContent>
           </Card>
           
           {/* Role & Permissions */}
