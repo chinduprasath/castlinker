@@ -8,22 +8,49 @@ interface ChatRoom {
   id: string;
   name: string;
   lastMessage: string;
+  lastMessageTime?: string;
+  unread?: number;
+  avatar?: string;
+  role?: string;
+  online?: boolean;
 }
 
 export const ChatPage: React.FC = () => {
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
   const [rooms, setRooms] = useState<ChatRoom[]>([
-    { id: '1', name: 'Sarah Johnson', lastMessage: 'Hello!' },
-    { id: '2', name: 'Michael Rodriguez', lastMessage: 'How are you?' },
+    { 
+      id: '1', 
+      name: 'Sarah Johnson', 
+      lastMessage: 'Hello!',
+      lastMessageTime: '10:30 AM',
+      unread: 2,
+      avatar: '/placeholder.svg',
+      role: 'Casting Director',
+      online: true
+    },
+    { 
+      id: '2', 
+      name: 'Michael Rodriguez', 
+      lastMessage: 'How are you?',
+      lastMessageTime: 'Yesterday',
+      avatar: '/placeholder.svg',
+      role: 'Director', 
+      online: false
+    },
   ]);
   const { user } = useAuth();
+
+  // Find the active chat based on selectedRoom ID
+  const activeChat = rooms.find(room => room.id === selectedRoom) || null;
 
   return (
     <div className="flex h-screen bg-gray-100">
       <ChatSidebar
-        rooms={rooms}
-        selectedRoom={selectedRoom}
-        onRoomSelect={setSelectedRoom}
+        chats={rooms}
+        activeChat={activeChat}
+        onChatSelect={(chat) => setSelectedRoom(chat.id)}
+        searchQuery=""
+        onSearchChange={() => {}}
       />
       <div className="flex-1">
         {selectedRoom ? (
