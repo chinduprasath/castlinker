@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import { useChat } from "@/hooks/useChat";
 import { useDebounce } from "@/hooks/useDebounce";
 import { EmojiPicker } from "@/components/chat/EmojiPicker";
 import { Message, MessageReaction as TypedMessageReaction } from "@/types/chat";
+import ChatRequestCard from "@/components/chat/ChatRequestCard";
 
 const Chat = () => {
   const { user } = useAuth();
@@ -66,6 +68,7 @@ const Chat = () => {
   const [activeChat, setActiveChat] = useState(mockChats[0]);
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchTerm = useDebounce(searchQuery, 300);
+  const [chatRequestResponses, setChatRequestResponses] = useState<Record<string, boolean>>({});
   
   useEffect(() => {
     messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -87,6 +90,31 @@ const Chat = () => {
 
   const handleEmojiSelect = (emoji: string) => {
     setInputMessage(prev => prev + emoji);
+  };
+
+  const handleAcceptChat = (chatId: string) => {
+    setChatRequestResponses(prev => ({
+      ...prev,
+      [chatId]: true
+    }));
+  };
+
+  const handleDeclineChat = (chatId: string) => {
+    setChatRequestResponses(prev => ({
+      ...prev,
+      [chatId]: false
+    }));
+    // Optionally remove the chat from the list or mark it as declined
+  };
+
+  // Check if this is the first time viewing this chat and no messages exist
+  const showChatRequest = (chatId: string) => {
+    return (
+      activeChat && 
+      activeChat.id === chatId && 
+      messages.length === 0 && 
+      chatRequestResponses[chatId] === undefined
+    );
   };
 
   return (
@@ -239,9 +267,21 @@ const Chat = () => {
                 <div className="flex justify-center p-4">
                   <span className="text-gray-400">Loading messages...</span>
                 </div>
+              ) : showChatRequest(activeChat.id) ? (
+                <div className="flex justify-center items-center h-full">
+                  <ChatRequestCard 
+                    senderName={activeChat.name}
+                    onAccept={() => handleAcceptChat(activeChat.id)}
+                    onDecline={() => handleDeclineChat(activeChat.id)}
+                  />
+                </div>
               ) : messages.length === 0 ? (
                 <div className="flex justify-center p-4">
-                  <span className="text-gray-400">No messages yet</span>
+                  <span className="text-gray-400">
+                    {chatRequestResponses[activeChat.id] === false 
+                      ? "You declined this chat request"
+                      : "No messages yet"}
+                  </span>
                 </div>
               ) : (
                 <div className="space-y-6">
@@ -276,26 +316,30 @@ const Chat = () => {
             </ScrollArea>
             
             <div className="p-4 border-t border-white/10">
-              <div className="flex items-center gap-3">
-                <div className="flex-1 relative">
-                  <Input 
-                    value={inputMessage}
-                    onChange={(e) => setInputMessage(e.target.value)}
-                    onKeyDown={handleKeyPress}
-                    placeholder="Type a message..."
-                    className="bg-[#222222] border-0 text-white placeholder:text-gray-400 focus-visible:ring-gold/30 pr-10"
-                  />
-                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                    <EmojiPicker onSelect={handleEmojiSelect} />
+              {chatRequestResponses[activeChat?.id] !== false && (
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 relative">
+                    <Input 
+                      value={inputMessage}
+                      onChange={(e) => setInputMessage(e.target.value)}
+                      onKeyDown={handleKeyPress}
+                      placeholder="Type a message..."
+                      className="bg-[#222222] border-0 text-white placeholder:text-gray-400 focus-visible:ring-gold/30 pr-10"
+                      disabled={showChatRequest(activeChat?.id)}
+                    />
+                    <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                      <EmojiPicker onSelect={handleEmojiSelect} />
+                    </div>
                   </div>
+                  <Button 
+                    onClick={handleSendMessage} 
+                    className="rounded-full bg-gold hover:bg-gold/90 text-black"
+                    disabled={showChatRequest(activeChat?.id)}
+                  >
+                    <Send size={18} />
+                  </Button>
                 </div>
-                <Button 
-                  onClick={handleSendMessage} 
-                  className="rounded-full bg-gold hover:bg-gold/90 text-black"
-                >
-                  <Send size={18} />
-                </Button>
-              </div>
+              )}
             </div>
           </>
         )}
