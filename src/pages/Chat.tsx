@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -92,6 +93,7 @@ const Chat = () => {
   };
 
   const handleAcceptChat = (chatId: string) => {
+    console.log("Chat accepted:", chatId);
     setChatRequestResponses(prev => ({
       ...prev,
       [chatId]: true
@@ -99,6 +101,7 @@ const Chat = () => {
   };
 
   const handleDeclineChat = (chatId: string) => {
+    console.log("Chat declined:", chatId);
     setChatRequestResponses(prev => ({
       ...prev,
       [chatId]: false
@@ -107,6 +110,14 @@ const Chat = () => {
 
   // Check if this is the first time viewing this chat and no messages exist
   const showChatRequest = (chatId: string) => {
+    // Debug log to help diagnose the issue
+    console.log({
+      chatId,
+      messagesLength: messages.length,
+      responseExists: chatId in chatRequestResponses,
+      response: chatRequestResponses[chatId]
+    });
+    
     return (
       activeChat && 
       activeChat.id === chatId && 
