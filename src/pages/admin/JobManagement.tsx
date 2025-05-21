@@ -400,7 +400,7 @@ const JobManagement = () => {
                           <TableCell>{job.title}</TableCell>
                           <TableCell>{job.company}</TableCell>
                           <TableCell>
-                            <Badge variant="outline">{job.category}</Badge>
+                            <Badge variant="outline">{job.role_category}</Badge>
                           </TableCell>
                           <TableCell>{job.location}</TableCell>
                           <TableCell>{formatDate(job.created_at)}</TableCell>

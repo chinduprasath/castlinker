@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Job } from '@/types/jobTypes';
+import { Job, RoleCategory } from '@/types/jobTypes';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,8 +26,14 @@ const AdminJobDetail = () => {
           .single();
 
         if (error) throw error;
+        
+        // Cast the role_category to ensure it matches the RoleCategory type
+        const formattedJob: Job = {
+          ...data,
+          role_category: data.role_category as RoleCategory
+        };
 
-        setJob(data);
+        setJob(formattedJob);
       } catch (error: any) {
         console.error("Error fetching job details:", error);
         toast({
@@ -243,4 +249,4 @@ const AdminJobDetail = () => {
   );
 };
 
-export default AdminJobDetail; 
+export default AdminJobDetail;

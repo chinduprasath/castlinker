@@ -1,3 +1,4 @@
+
 export type JobType = 'Full-time' | 'Part-time' | 'Contract' | 'Temporary';
 export type LocationType = 'On-site' | 'Remote' | 'Hybrid';
 export type RoleCategory = 'Acting' | 'Directing' | 'Production' | 'Cinematography' | 'Writing' | 'Editing' | 'Sound' | 'VFX' | 'Costume' | 'Makeup' | 'Other';
