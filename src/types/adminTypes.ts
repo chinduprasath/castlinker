@@ -1,4 +1,3 @@
-
 // Define admin user roles (for regular users managed by admins)
 export type AdminUserRole = 'actor' | 'director' | 'producer' | 'writer' | 'cinematographer' | 'agency';
 
@@ -47,4 +46,12 @@ export interface TeamMember {
   role: AdminTeamRole;
   joined_date: string;
   avatar_url?: string;
+}
+
+// Define admin profile data type
+export interface AdminProfileData {
+  id: string;
+  name: string;
+  email: string;
+  avatar_url: string | null;
 }
