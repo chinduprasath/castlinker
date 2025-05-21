@@ -103,7 +103,7 @@ const AdminSidebar = ({ collapsed, toggleSidebar }: AdminSidebarProps) => {
       title: "Ticket Management",
       icon: Ticket,
       href: "/admin/tickets",
-      module: 'tickets', // Assuming 'tickets' is a new admin module
+      module: 'tickets',
       action: 'view'
     }
   ];
