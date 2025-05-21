@@ -1,7 +1,7 @@
 
 import { useRef, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChatMessage, ChatMessage as ChatMessageComponent } from "@/components/chat/ChatMessage";
+import { ChatMessage } from "@/components/chat/ChatMessage";
 import ChatRequestCard from "@/components/chat/ChatRequestCard";
 
 interface ChatMessageAreaProps {
@@ -52,7 +52,7 @@ const ChatMessageArea = ({
       ) : (
         <div className="space-y-6">
           {messages.map((message) => (
-            <ChatMessageComponent
+            <ChatMessage
               key={message.id}
               message={message}
               showAvatar={true}
