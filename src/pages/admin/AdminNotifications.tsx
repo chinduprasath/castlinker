@@ -25,6 +25,11 @@ import {
   Search,
   Filter
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 const AdminNotifications = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -32,7 +37,9 @@ const AdminNotifications = () => {
     title: "",
     message: "",
     type: "info",
-    audience: "all"
+    audience: "all",
+    scheduledDate: undefined as Date | undefined,
+    scheduledTime: "",
   });
   
   // Mock notifications data
@@ -223,6 +230,46 @@ const AdminNotifications = () => {
                 />
               </div>
               
+              {/* Schedule Date and Time */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="scheduledDate">Schedule Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !notificationForm.scheduledDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {notificationForm.scheduledDate ? format(notificationForm.scheduledDate, "PPP") : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={notificationForm.scheduledDate}
+                        onSelect={(date) => setNotificationForm({...notificationForm, scheduledDate: date})}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                 <div className="space-y-2">
+                  <Label htmlFor="scheduledTime">Schedule Time</Label>
+                   <Input
+                     id="scheduledTime"
+                     name="scheduledTime"
+                     type="time"
+                     value={notificationForm.scheduledTime}
+                     onChange={handleInputChange}
+                     className="w-full"
+                   />
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="type">Type</Label>

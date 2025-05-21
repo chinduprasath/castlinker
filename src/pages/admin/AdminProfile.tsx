@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
@@ -103,13 +102,13 @@ const AdminProfile = () => {
     <div className="container max-w-5xl py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">My Profile</h1>
-        <Button 
-          variant="ghost" 
-          size="icon"
+        <Button
+          variant="ghost"
           onClick={handleLogout}
           className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
         >
-          <LogOut size={20} />
+          <LogOut size={20} className="mr-2" />
+          Logout
         </Button>
       </div>
       

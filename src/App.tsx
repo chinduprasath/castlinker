@@ -52,6 +52,13 @@ import Analytics from '@/pages/admin/Analytics';
 import AdminNotifications from '@/pages/admin/AdminNotifications';
 import AdminSettings from '@/pages/admin/AdminSettings';
 import TeamManagement from "./pages/admin/TeamManagement";
+import AdminTicketManagement from '@/pages/admin/AdminTicketManagement';
+import AdminTicketDetail from '@/pages/admin/AdminTicketDetail';
+import AdminJobDetail from '@/pages/admin/AdminJobDetail';
+import AdminPostDetail from '@/pages/admin/AdminPostDetail';
+import ManagePage from '@/pages/ManagePage';
+import UserJobDetail from '@/pages/UserJobDetail';
+import UserPostDetail from '@/pages/UserPostDetail';
 
 // Guards
 import PrivateRoute from '@/components/auth/PrivateRoute';
@@ -230,6 +237,27 @@ const App = () => {
                 </AppLayout>
               </PrivateRoute>
             } />
+            <Route path="/manage" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <ManagePage />
+                </AppLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/manage/jobs/:jobId" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <UserJobDetail />
+                </AppLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/manage/posts/:postId" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <UserPostDetail />
+                </AppLayout>
+              </PrivateRoute>
+            } />
 
             {/* Project Routes */}
             <Route path="/projects" element={
@@ -368,6 +396,65 @@ const App = () => {
                 </AdminRouteGuard>
               </PrivateRoute>
             } />
+
+            {/* Admin Post Detail Route */}
+            <Route
+              path="/admin/posts/:postId"
+              element={(
+                <AdminLayout>
+                  <AdminPostDetail />
+                </AdminLayout>
+              )}
+            />
+
+            {/* Admin Ticket Management Route */}
+            <Route
+              path="/admin/tickets"
+              element={
+                <PrivateRoute>
+                  <AdminRouteGuard>
+                    <AdminLayout>
+                      <AdminTicketManagement />
+                    </AdminLayout>
+                  </AdminRouteGuard>
+                </PrivateRoute>
+              }
+            />
+
+            {/* Admin Ticket Detail Route */}
+            <Route
+              path="/admin/tickets/:ticketId"
+              element={
+                <PrivateRoute>
+                  <AdminRouteGuard>
+                    <AdminLayout>
+                      <AdminTicketDetail />
+                    </AdminLayout>
+                  </AdminRouteGuard>
+                </PrivateRoute>
+              }
+            />
+
+            {/* Admin Job Detail Route */}
+            <Route
+              path="/admin/ticket/:ticketId"
+              element={(
+                <AdminRouteGuard requiredModule="tickets" requiredAction="view">
+                  <AdminLayout>
+                    <AdminTicketDetail />
+                  </AdminLayout>
+                </AdminRouteGuard>
+              )}
+            />
+
+            <Route 
+              path="/admin/jobs/:jobId"
+              element={(
+                <AdminLayout>
+                  <AdminJobDetail />
+                </AdminLayout>
+              )}
+            />
 
             {/* 404 Route */}
             <Route path="*" element={<NotFound />} />

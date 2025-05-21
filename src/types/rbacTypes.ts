@@ -1,5 +1,4 @@
-
-export type AdminModule = 'posts' | 'users' | 'jobs' | 'events' | 'content' | 'team';
+export type AdminModule = 'posts' | 'users' | 'jobs' | 'events' | 'content' | 'team' | 'tickets';
 
 export interface AdminRoleWithPermissions {
   id: string;

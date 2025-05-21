@@ -1,22 +1,40 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { AreaChart, Area, PieChart, Pie, Cell } from "recharts";
 import { Button } from "@/components/ui/button";
-import { ArrowUpRight, Users, FilmIcon, Calendar, Activity, Clock, Download, FileText, CheckCircle2, Eye, MessageSquare } from "lucide-react";
+import { ArrowUpRight, Users, FilmIcon, Calendar, Activity, Clock, Download, FileText, CheckCircle2, Eye, MessageSquare, Folder } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // Mock data for charts
 const postsByCategory = [
-  { name: "Industry", value: 45 },
-  { name: "Reviews", value: 32 },
-  { name: "Interviews", value: 28 },
-  { name: "Guides", value: 20 },
-  { name: "News", value: 15 },
+  { name: "Audition", value: 25 },
+  { name: "Casting Call", value: 40 },
+  { name: "Content Creation", value: 30 },
+  { name: "Collaboration", value: 20 },
+  { name: "Event", value: 15 },
+  { name: "Job Opportunities", value: 35 },
+  { name: "Mentorship", value: 10 },
+  { name: "Others", value: 5 },
+];
+
+// Dummy data for monthly support tickets
+const monthlyTicketData = [
+  { month: "Jan", tickets: 150 },
+  { month: "Feb", tickets: 120 },
+  { month: "Mar", tickets: 250 },
+  { month: "Apr", tickets: 180 },
+  { month: "May", tickets: 220 },
+  { month: "Jun", tickets: 190 },
+  { month: "Jul", tickets: 210 },
+  { month: "Aug", tickets: 240 },
+  { month: "Sep", tickets: 200 },
+  { month: "Oct", tickets: 230 },
+  { month: "Nov", tickets: 260 },
+  { month: "Dec", tickets: 280 },
 ];
 
 const postEngagementData = [
@@ -46,13 +64,13 @@ const recentActivities = [
   { id: 5, type: "event", action: "created", title: "Summer Casting Workshop", user: "Events Team", time: "1d ago" },
 ];
 
-const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088FE', '#00C49F'];
+const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088FE', '#00C49F', '#FF69B4', '#BA55D3'];
 
 const AdminDashboard = () => {
   const [totalUsers, setTotalUsers] = useState<number>(0);
   const [totalPosts, setTotalPosts] = useState<number>(135);
   const [totalJobs, setTotalJobs] = useState<number>(86);
-  const [totalEvents, setTotalEvents] = useState<number>(24);
+  const [totalProjects, setTotalProjects] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [timeRange, setTimeRange] = useState<string>("month");
   
@@ -77,6 +95,25 @@ const AdminDashboard = () => {
     };
     
     fetchUsersData();
+  }, []);
+
+  // Fetch projects data
+  useEffect(() => {
+    const fetchProjectsData = async () => {
+      try {
+        const { count, error: countError } = await supabase
+          .from('projects')
+          .select('*', { count: 'exact', head: true });
+        
+        if (countError) throw countError;
+        setTotalProjects(count || 0);
+      } catch (error) {
+        console.error("Error fetching project data:", error);
+        toast.error("Failed to load project data");
+      }
+    };
+    
+    fetchProjectsData();
   }, []);
 
   // Activity icon based on activity type
@@ -178,17 +215,17 @@ const AdminDashboard = () => {
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <div className="space-y-1">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <span className="text-base font-semibold text-foreground/80">Events</span>
+                <span className="text-base font-semibold text-foreground/80">Total Projects</span>
               </CardTitle>
-              <CardDescription>Scheduled this month</CardDescription>
+              <CardDescription>Created by users</CardDescription>
             </div>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <Folder className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalEvents}</div>
+            <div className="text-2xl font-bold">{loading ? "..." : totalProjects}</div>
             <div className="flex items-center pt-1 text-xs text-green-500">
               <ArrowUpRight className="h-3 w-3 mr-1" />
-              <span>20% from last month</span>
+              <span>N/A (Data needed)</span>
             </div>
           </CardContent>
         </Card>
@@ -226,7 +263,6 @@ const AdminDashboard = () => {
                     cy="50%"
                     labelLine={false}
                     outerRadius={80}
-                    fill="#8884d8"
                     dataKey="value"
                     label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                   >
@@ -246,20 +282,17 @@ const AdminDashboard = () => {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Content Engagement</CardTitle>
-                <CardDescription>Content views, comments, and shares</CardDescription>
+                <CardTitle>Monthly Support Tickets</CardTitle>
+                <CardDescription>Number of support tickets received each month</CardDescription>
               </div>
-              <Select 
-                value={timeRange} 
-                onValueChange={setTimeRange}
-              >
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="Time period" />
+              <Select defaultValue="past-6-months">
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Time Period" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="year">Past Year</SelectItem>
-                  <SelectItem value="month">Past 6 Months</SelectItem>
-                  <SelectItem value="week">Past Week</SelectItem>
+                  <SelectItem value="past-6-months">Past 6 Months</SelectItem>
+                  <SelectItem value="past-year">Past Year</SelectItem>
+                  {/* Add filters for current/previous year and ticket status here later */}
                 </SelectContent>
               </Select>
             </div>
@@ -267,30 +300,19 @@ const AdminDashboard = () => {
           <CardContent>
             <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={postEngagementData}>
-                  <defs>
-                    <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#8884d8" stopOpacity={0.1}/>
-                    </linearGradient>
-                    <linearGradient id="colorComments" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#82ca9d" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#82ca9d" stopOpacity={0.1}/>
-                    </linearGradient>
-                    <linearGradient id="colorShares" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#ffc658" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#ffc658" stopOpacity={0.1}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip />
+                <BarChart data={monthlyTicketData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                  <XAxis dataKey="month" stroke="#888" label={{ value: 'Month', position: 'insideBottom', offset: -5, fill: '#888' }} />
+                  <YAxis stroke="#888" label={{ value: 'Number of Tickets Received', angle: -90, position: 'insideLeft', fill: '#888' }} />
+                  <Tooltip 
+                    formatter={(value) => [`${~~value} Tickets`, 'Count']}
+                    labelFormatter={(label) => `Month: ${label}`}
+                    contentStyle={{ backgroundColor: '#1c1c1c', border: '1px solid #555' }}
+                    labelStyle={{ color: '#888' }}
+                  />
+                  <Bar dataKey="tickets" fill="#8884d8" />
                   <Legend />
-                  <Area type="monotone" dataKey="views" stroke="#8884d8" fillOpacity={1} fill="url(#colorViews)" />
-                  <Area type="monotone" dataKey="comments" stroke="#82ca9d" fillOpacity={1} fill="url(#colorComments)" />
-                  <Area type="monotone" dataKey="shares" stroke="#ffc658" fillOpacity={1} fill="url(#colorShares)" />
-                </AreaChart>
+                </BarChart>
               </ResponsiveContainer>
             </div>
           </CardContent>

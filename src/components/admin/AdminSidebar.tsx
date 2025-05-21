@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,7 +17,8 @@ import {
   BarChart2,
   FileText,
   Shield,
-  FileTextIcon
+  FileTextIcon,
+  Ticket
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AdminModule } from "@/types/rbacTypes";
@@ -92,13 +92,6 @@ const AdminSidebar = ({ collapsed, toggleSidebar }: AdminSidebarProps) => {
       action: 'view'
     },
     {
-      title: "Content Moderation",
-      icon: FileText,
-      href: "/admin/content",
-      module: 'content',
-      action: 'view'
-    },
-    {
       title: "Analytics",
       icon: BarChart2,
       href: "/admin/analytics",
@@ -106,19 +99,12 @@ const AdminSidebar = ({ collapsed, toggleSidebar }: AdminSidebarProps) => {
       action: 'view'
     },
     {
-      title: "Notifications",
-      icon: Bell,
-      href: "/admin/notifications",
-      module: 'team', // Notifications are accessible to anyone with team access
+      title: "Ticket Management",
+      icon: FileText,
+      href: "/admin/tickets",
+      module: 'tickets', // Assuming 'tickets' is a new admin module
       action: 'view'
-    },
-    {
-      title: "Settings",
-      icon: Settings,
-      href: "/admin/settings",
-      module: 'team',
-      action: 'view'
-    },
+    }
   ];
 
   const isActive = (href: string) => {

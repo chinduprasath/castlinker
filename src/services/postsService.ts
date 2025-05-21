@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -15,7 +14,7 @@ export type Post = {
   updated_at: string;
   like_count: number;
   media_url?: string | null;
-  media_type?: 'image' | 'video' | null;
+  media_type?: string | null;
   event_date?: string | null;
   external_url?: string | null;
   place?: string | null;

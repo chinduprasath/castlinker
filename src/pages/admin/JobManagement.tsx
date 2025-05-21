@@ -25,7 +25,10 @@ import {
   Clock, 
   XCircle, 
   Edit,
-  AlertCircle 
+  AlertCircle,
+  MoreHorizontal,
+  Users,
+  Trash2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog } from "@/components/ui/dialog";
@@ -34,6 +37,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Job } from "@/hooks/useJobsData";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { seedJobsData } from "@/utils/seedJobsData";
+import { Link } from "react-router-dom";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const JobManagement = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -247,9 +252,11 @@ const JobManagement = () => {
     }
   };
   
-  const generateJobId = (id: string, company: string) => {
+  const generateJobId = (id: string) => {
     if (!id) return 'N/A';
-    return `JOB-${company?.substring(0, 3).toUpperCase() || 'XXX'}-${id.substring(0, 5).toUpperCase()}`;
+    // Generate a 6-digit code from the UUID
+    const numericPart = id.replace(/[^0-9]/g, '').slice(0, 6).padStart(6, '0');
+    return `JB-${numericPart}`;
   };
   
   return (
@@ -354,79 +361,86 @@ const JobManagement = () => {
                       <TableHead>Job ID</TableHead>
                       <TableHead>Title</TableHead>
                       <TableHead>Company</TableHead>
+                      <TableHead>Category</TableHead>
                       <TableHead>Location</TableHead>
                       <TableHead>Posted Date</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Applications</TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableHead className="w-[80px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {isLoading ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center py-6">
+                        <TableCell colSpan={9} className="text-center py-6">
                           Loading jobs...
                         </TableCell>
                       </TableRow>
-                    ) : filteredJobs.length > 0 ? (
+                    ) : filteredJobs.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={9} className="text-center h-32">
+                          No jobs found.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
                       filteredJobs.map((job) => (
                         <TableRow key={job.id}>
-                          <TableCell className="font-mono text-xs">
-                            {generateJobId(job.id, job.company || '')}
+                          <TableCell className="font-medium">
+                            <Link 
+                              to={`/admin/jobs/${job.id}`} 
+                              className="text-gold hover:underline"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                window.location.href = `/admin/jobs/${job.id}`;
+                              }}
+                            >
+                              {generateJobId(job.id)}
+                            </Link>
                           </TableCell>
-                          <TableCell className="font-medium">{job.title}</TableCell>
+                          <TableCell>{job.title}</TableCell>
                           <TableCell>{job.company}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{job.category}</Badge>
+                          </TableCell>
                           <TableCell>{job.location}</TableCell>
                           <TableCell>{formatDate(job.created_at)}</TableCell>
-                          <TableCell>{getStatusBadge(job.status || 'active')}</TableCell>
+                          <TableCell>{getStatusBadge(job.status)}</TableCell>
                           <TableCell>
-                            {Math.floor(Math.random() * 30)}
+                            <div className="flex items-center">
+                              <Users className="h-4 w-4 mr-1 text-muted-foreground" />
+                              {/* Placeholder for actual application count */}
+                              0 
+                            </div>
                           </TableCell>
                           <TableCell>
-                            <div className="flex gap-2">
-                              <Button variant="outline" size="sm" onClick={() => handleEditJob(job)}>
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              {job.status === 'pending' ? (
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  className="text-green-500" 
-                                  onClick={() => handleApproveJob(job)}
-                                >
-                                  <CheckCircle className="h-4 w-4" />
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  <MoreHorizontal className="h-4 w-4" />
                                 </Button>
-                              ) : (
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  className={job.status === 'active' ? "text-amber-500" : "text-green-500"}
-                                  onClick={() => handleToggleJobStatus(job)}
-                                >
-                                  {job.status === 'active' ? <Clock className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
-                                </Button>
-                              )}
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="text-destructive"
-                                onClick={() => {
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleEditJob(job)} className="cursor-pointer flex items-center">
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => {
                                   setCurrentJob(job);
                                   setIsDeleteDialogOpen(true);
-                                }}
-                              >
-                                <XCircle className="h-4 w-4" />
-                              </Button>
-                            </div>
+                                }} className="text-destructive focus:text-destructive cursor-pointer flex items-center">
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                                 {/* Placeholder for Block action */}
+                                <DropdownMenuItem onClick={() => console.log('Block job:', job.id)} className="text-orange-500 focus:text-orange-500 cursor-pointer flex items-center">
+                                  <AlertCircle className="h-4 w-4 mr-2" />
+                                  Block
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </TableCell>
                         </TableRow>
                       ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
-                          No jobs found. Try adjusting your search or create a new job.
-                        </TableCell>
-                      </TableRow>
                     )}
                   </TableBody>
                 </Table>

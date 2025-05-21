@@ -154,6 +154,10 @@ const Help = () => {
                 placeholder="Please describe your issue in detail"
               ></textarea>
             </div>
+            <div className="space-y-2">
+              <label htmlFor="attachment" className="text-sm font-medium">Attach File(s)</label>
+              <Input id="attachment" type="file" multiple />
+            </div>
             <Button className="w-full md:w-auto">Submit Ticket</Button>
           </form>
         </CardContent>

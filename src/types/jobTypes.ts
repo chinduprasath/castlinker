@@ -1,4 +1,3 @@
-
 export type JobType = 'Full-time' | 'Part-time' | 'Contract' | 'Temporary';
 export type LocationType = 'On-site' | 'Remote' | 'Hybrid';
 export type RoleCategory = 'Acting' | 'Directing' | 'Production' | 'Cinematography' | 'Writing' | 'Editing' | 'Sound' | 'VFX' | 'Costume' | 'Makeup' | 'Other';
@@ -13,7 +12,7 @@ export interface Job {
   description: string;
   requirements?: string[];
   responsibilities?: string[];
-  job_type: JobType;
+  job_type: string;
   role_category: RoleCategory;
   experience_level?: string;
   salary_min?: number;

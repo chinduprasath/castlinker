@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Post } from "@/services/postsService";
@@ -39,6 +38,7 @@ import { toast } from "@/hooks/use-toast";
 import { Edit, MoreHorizontal, Search, Trash2, Users, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
+import CreatePostModal from '@/components/admin/posts/CreatePostModal';
 
 const PostManagement = () => {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -47,6 +47,7 @@ const PostManagement = () => {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [postToDelete, setPostToDelete] = useState<Post | null>(null);
   const [applicationCounts, setApplicationCounts] = useState<Record<string, number>>({});
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   useEffect(() => {
     fetchPosts();
@@ -95,6 +96,22 @@ const PostManagement = () => {
     }
   };
 
+  const handleCreatePostClick = () => {
+    setIsCreateModalOpen(true);
+  };
+
+  const handleCloseCreateModal = () => {
+    setIsCreateModalOpen(false);
+  };
+
+  const handleCreatePostSubmit = (postData: any) => {
+    console.log('New post data:', postData);
+    // In a real app, send this data to your backend to create the post,
+    // then refresh the post list.
+    handleCloseCreateModal();
+    fetchPosts(); // Refresh the list after creating a post
+  };
+
   const confirmDelete = (post: Post) => {
     setPostToDelete(post);
     setDeleteConfirmOpen(true);
@@ -135,6 +152,14 @@ const PostManagement = () => {
     post.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Helper function to generate formatted Post ID
+  const generatePostId = (id: string) => {
+    if (!id) return 'N/A';
+    // Generate a 6-digit code from the UUID
+    const numericPart = id.replace(/[^0-9]/g, '').slice(0, 6).padStart(6, '0');
+    return `PD-${numericPart}`;
+  };
+
   return (
     <div className="p-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
@@ -142,14 +167,17 @@ const PostManagement = () => {
           <h1 className="text-3xl font-bold">Post Management</h1>
           <p className="text-muted-foreground mt-1">Manage all post listings in the platform</p>
         </div>
-        <div className="relative w-full md:w-auto">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search posts..."
-            className="pl-8 w-full md:w-[300px]"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+        <div className="flex items-center gap-4">
+          <div className="relative w-full md:w-auto">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search posts..."
+              className="pl-8 w-full md:w-[300px]"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <Button onClick={handleCreatePostClick}>Create Post</Button>
         </div>
       </div>
 
@@ -170,9 +198,11 @@ const PostManagement = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Post ID</TableHead>
                     <TableHead>Title</TableHead>
                     <TableHead>Category</TableHead>
-                    <TableHead>Date Posted</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead>Posted Date</TableHead>
                     <TableHead>Applications</TableHead>
                     <TableHead>Likes</TableHead>
                     <TableHead className="w-[80px]">Actions</TableHead>
@@ -181,17 +211,23 @@ const PostManagement = () => {
                 <TableBody>
                   {filteredPosts.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center h-32">
+                      <TableCell colSpan={8} className="text-center h-32">
                         No posts found
                       </TableCell>
                     </TableRow>
                   ) : (
                     filteredPosts.map((post) => (
                       <TableRow key={post.id}>
-                        <TableCell className="font-medium">{post.title}</TableCell>
+                        <TableCell className="font-medium">
+                          <Link to={`/admin/posts/${post.id}`} className="text-gold hover:underline">
+                            {generatePostId(post.id)}
+                          </Link>
+                        </TableCell>
+                        <TableCell>{post.title}</TableCell>
                         <TableCell>
                           <Badge variant="outline">{post.category}</Badge>
                         </TableCell>
+                        <TableCell>{post.location || 'N/A'}</TableCell>
                         <TableCell>{format(new Date(post.created_at), "MMM dd, yyyy")}</TableCell>
                         <TableCell>
                           <div className="flex items-center">
@@ -208,15 +244,18 @@ const PostManagement = () => {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem asChild>
-                                <Link to={`/posts/${post.id}`} className="cursor-pointer flex items-center">
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  View
-                                </Link>
+                              <DropdownMenuItem onClick={() => console.log('Edit post:', post.id)} className="cursor-pointer flex items-center">
+                                <Edit className="h-4 w-4 mr-2" />
+                                Edit
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => confirmDelete(post)} className="text-destructive focus:text-destructive">
+                              <DropdownMenuItem onClick={() => confirmDelete(post)} className="text-destructive focus:text-destructive cursor-pointer flex items-center">
                                 <Trash2 className="h-4 w-4 mr-2" />
                                 Delete
+                              </DropdownMenuItem>
+                               {/* Placeholder for Block action */}
+                              <DropdownMenuItem onClick={() => console.log('Block post:', post.id)} className="text-orange-500 focus:text-orange-500 cursor-pointer flex items-center">
+                                <Eye className="h-4 w-4 mr-2" /> {/* Using Eye temporarily, replace with Block icon if available */}
+                                Block
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -258,6 +297,13 @@ const PostManagement = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Create Post Modal */}
+      <CreatePostModal
+        isOpen={isCreateModalOpen}
+        onClose={handleCloseCreateModal}
+        onSubmit={handleCreatePostSubmit}
+      />
     </div>
   );
 };

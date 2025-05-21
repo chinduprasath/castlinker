@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -103,10 +102,6 @@ const AdminHeader = ({
                 <DropdownMenuItem onClick={() => navigate('/admin/profile')} className="rounded-lg hover:bg-gold/5">
                   <User className="mr-2 h-4 w-4" />
                   Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/projects')} className="rounded-lg hover:bg-gold/5">
-                  <FolderKanban className="mr-2 h-4 w-4" />
-                  Projects
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate('/admin/settings')} className="rounded-lg hover:bg-gold/5">
                   <Settings className="mr-2 h-4 w-4" />

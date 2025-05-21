@@ -34,6 +34,7 @@ const JobCreateForm = ({ isOpen, onClose, onJobCreated }: JobCreateFormProps) =>
     responsibilities: [],
     tags: [],
     is_featured: false,
+    experience_level: "Entry level",
   });
   const [currentRequirement, setCurrentRequirement] = useState("");
   const [currentResponsibility, setCurrentResponsibility] = useState("");
@@ -142,13 +143,14 @@ const JobCreateForm = ({ isOpen, onClose, onJobCreated }: JobCreateFormProps) =>
         location: formData.location || "",
         job_type: formData.job_type || "Full-time",
         role_category: formData.role_category || "Acting",
-        location_type: formData.location_type || "On-site"
+        location_type: formData.location_type || "On-site",
+        experience_level: formData.experience_level || "Entry level",
       };
 
       // Cast to any to bypass TypeScript errors with the database schema
       const { data, error } = await supabase
         .from('film_jobs')
-        .insert(jobData)
+        .insert(jobData as any)
         .select();
 
       if (error) throw error;
@@ -171,6 +173,7 @@ const JobCreateForm = ({ isOpen, onClose, onJobCreated }: JobCreateFormProps) =>
         responsibilities: [],
         tags: [],
         is_featured: false,
+        experience_level: "Entry level",
       });
       setDeadlineDate(undefined);
       onJobCreated();
@@ -328,40 +331,25 @@ const JobCreateForm = ({ isOpen, onClose, onJobCreated }: JobCreateFormProps) =>
               />
             </div>
 
+            {/* New Experience Level Select */}
             <div>
-              <Label htmlFor="salary_currency" className="block mb-2">Currency</Label>
+              <Label htmlFor="experience_level" className="block mb-2">Experience Level*</Label>
               <Select 
-                value={formData.salary_currency || "USD"} 
-                onValueChange={(value) => handleSelectChange("salary_currency", value)}
+                value={formData.experience_level} 
+                onValueChange={(value) => handleSelectChange("experience_level", value)}
               >
                 <SelectTrigger className="bg-cinematic-dark/50 border-gold/10 focus:border-gold">
-                  <SelectValue placeholder="Select currency" />
+                  <SelectValue placeholder="Select experience level" />
                 </SelectTrigger>
                 <SelectContent>
-                  {["USD", "EUR", "GBP", "CAD", "AUD", "INR"].map((currency) => (
-                    <SelectItem key={currency} value={currency}>{currency}</SelectItem>
+                  {["Entry level", "Mid-level", "Senior level"].map((level) => (
+                    <SelectItem key={level} value={level}>{level}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            <div>
-              <Label htmlFor="salary_period" className="block mb-2">Payment Period</Label>
-              <Select 
-                value={formData.salary_period || "yearly"} 
-                onValueChange={(value) => handleSelectChange("salary_period", value)}
-              >
-                <SelectTrigger className="bg-cinematic-dark/50 border-gold/10 focus:border-gold">
-                  <SelectValue placeholder="Select period" />
-                </SelectTrigger>
-                <SelectContent>
-                  {["hourly", "daily", "weekly", "monthly", "yearly", "fixed"].map((period) => (
-                    <SelectItem key={period} value={period}>{period.charAt(0).toUpperCase() + period.slice(1)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
+            {/* Existing Application Deadline */}
             <div>
               <Label className="block mb-2">Application Deadline</Label>
               <Popover>
@@ -477,24 +465,22 @@ const JobCreateForm = ({ isOpen, onClose, onJobCreated }: JobCreateFormProps) =>
           <div>
             <Label className="block mb-2">Tags</Label>
             <div className="space-y-2">
-              <div className="flex flex-wrap gap-2">
-                {formData.tags?.map((tag, index) => (
-                  <div key={index} className="flex items-center gap-1 px-3 py-1 bg-cinematic-dark/50 border border-gold/10 rounded-full">
-                    <span>{tag}</span>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-5 w-5 p-0 hover:bg-transparent text-foreground/60 hover:text-foreground" 
-                      onClick={() => removeTag(index)}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
+              {formData.tags?.map((tag, index) => (
+                <div key={index} className="flex items-center gap-2 p-2 bg-cinematic-dark/30 rounded-md">
+                  <span className="flex-1">{tag}</span>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 w-7 p-0" 
+                    onClick={() => removeTag(index)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
               <div className="flex gap-2">
                 <Input
-                  placeholder="Add a tag (e.g., Feature Film, Voice Over)"
+                  placeholder="Add a tag"
                   value={currentTag}
                   onChange={(e) => setCurrentTag(e.target.value)}
                   className="bg-cinematic-dark/50 border-gold/10 focus:border-gold"
@@ -511,7 +497,7 @@ const JobCreateForm = ({ isOpen, onClose, onJobCreated }: JobCreateFormProps) =>
             </div>
           </div>
 
-          {/* Application Options */}
+          {/* Application Method */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="application_url" className="block mb-2">Application URL</Label>
@@ -553,7 +539,7 @@ const JobCreateForm = ({ isOpen, onClose, onJobCreated }: JobCreateFormProps) =>
           </div>
         </div>
 
-        <DialogFooter className="mt-6 flex flex-col sm:flex-row gap-3">
+        <DialogFooter className="flex justify-end gap-2">
           <Button 
             variant="outline" 
             className="flex-1" 

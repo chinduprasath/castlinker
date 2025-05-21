@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { 
   Card, 
@@ -43,7 +42,12 @@ import {
   RefreshCw,
   HelpCircle,
   Upload,
-  Image
+  Image,
+  Facebook,
+  Instagram,
+  Twitter,
+  Linkedin,
+  Youtube
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import RoleEditor from "@/components/admin/RoleEditor";
@@ -54,6 +58,15 @@ const AdminSettings = () => {
   const { hasPermission } = useAdminAuth();
   const canManageRoles = hasPermission('team', 'edit');
   
+  useEffect(() => {
+    try {
+      // Component logic goes here (or is already here)
+      console.log("AdminSettings component mounted."); // Add a log to confirm mounting
+    } catch (error) {
+      console.error("Error in AdminSettings component:", error); // Log any errors caught
+    }
+  }, []); // Empty dependency array means this runs once on mount
+
   // Site settings form
   const siteSettingsForm = useForm({
     defaultValues: {
@@ -65,6 +78,11 @@ const AdminSettings = () => {
       analyticsEnabled: true,
       primaryColor: "#FFC107",
       secondaryColor: "#6B46C1",
+      facebookUrl: "",
+      instagramUrl: "",
+      twitterUrl: "",
+      linkedinUrl: "",
+      youtubeUrl: ""
     }
   });
 
@@ -91,6 +109,9 @@ const AdminSettings = () => {
     enableNotificationEmails: true,
     emailFooter: "© 2024 CastLinker. All rights reserved."
   });
+
+  // Social media editing state
+  const [isSocialMediaEditing, setIsSocialMediaEditing] = useState(false);
 
   // Handle favicon upload
   const handleFaviconChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -156,6 +177,23 @@ const AdminSettings = () => {
     // Then update the site settings with the file URLs
     
     toast.success("Site settings saved successfully!");
+  };
+
+  // Function to handle canceling social media link editing
+  const handleCancelSocialMediaEdit = () => {
+    setIsSocialMediaEditing(false);
+    siteSettingsForm.resetField("facebookUrl");
+    siteSettingsForm.resetField("instagramUrl");
+    siteSettingsForm.resetField("twitterUrl");
+    siteSettingsForm.resetField("linkedinUrl");
+    siteSettingsForm.resetField("youtubeUrl");
+  };
+
+  // Function to handle saving social media links
+  const handleSaveSocialMediaLinks = () => {
+    // In a real app, save the social media links to the database or server
+    setIsSocialMediaEditing(false);
+    toast.success("Social media links saved successfully!");
   };
 
   return (
@@ -227,26 +265,162 @@ const AdminSettings = () => {
                     />
                   </div>
                   
-                  <FormField
-                    control={siteSettingsForm.control}
-                    name="siteDescription"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Site Description</FormLabel>
-                        <FormControl>
-                          <Textarea {...field} rows={3} />
-                        </FormControl>
-                        <FormDescription>
-                          Brief description of the platform
-                        </FormDescription>
-                      </FormItem>
-                    )}
-                  />
+                  {/* Site Description and Maintenance Mode in Two Columns */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                    {/* Site Description (Left Column) */}
+                    <FormField
+                      control={siteSettingsForm.control}
+                      name="siteDescription"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Site Description</FormLabel>
+                          <FormControl>
+                            <Textarea {...field} rows={4} />
+                          </FormControl>
+                          <FormDescription>
+                            Brief description of the platform
+                          </FormDescription>
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Maintenance Mode (Right Column) */}
+                     <FormField
+                      control={siteSettingsForm.control}
+                      name="maintenance"
+                       render={({ field }) => (
+                         <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">
+                              Maintenance Mode
+                            </FormLabel>
+                            <FormDescription>
+                              Enable to put the site in maintenance mode
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                       )}
+                     />
+                  </div>
                   
                   {/* Branding Section */}
                   <div className="space-y-4">
                     <h3 className="text-lg font-medium">Branding</h3>
                     <Separator />
+                    
+                    {/* Social Media Links */}
+                    <div className="space-y-4">
+                      <h4 className="text-base font-medium">Social Media Links</h4>
+                      <div className="grid grid-cols-1 gap-4">
+                        {/* Facebook */}
+                        <FormField
+                          control={siteSettingsForm.control}
+                          name="facebookUrl"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="flex items-center gap-2">
+                                <Facebook className="h-4 w-4" />
+                                Facebook URL
+                              </FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="https://facebook.com/yourpage" disabled={!isSocialMediaEditing} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        {/* Instagram */}
+                        <FormField
+                          control={siteSettingsForm.control}
+                          name="instagramUrl"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="flex items-center gap-2">
+                                <Instagram className="h-4 w-4" />
+                                Instagram URL
+                              </FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="https://instagram.com/yourpage" disabled={!isSocialMediaEditing} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        {/* Twitter/X */}
+                        <FormField
+                          control={siteSettingsForm.control}
+                          name="twitterUrl"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="flex items-center gap-2">
+                                <Twitter className="h-4 w-4" />
+                                Twitter/X URL
+                              </FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="https://twitter.com/yourpage" disabled={!isSocialMediaEditing} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        {/* LinkedIn */}
+                        <FormField
+                          control={siteSettingsForm.control}
+                          name="linkedinUrl"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="flex items-center gap-2">
+                                <Linkedin className="h-4 w-4" />
+                                LinkedIn URL
+                              </FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="https://linkedin.com/company/yourpage" disabled={!isSocialMediaEditing} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        {/* YouTube */}
+                        <FormField
+                          control={siteSettingsForm.control}
+                          name="youtubeUrl"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="flex items-center gap-2">
+                                <Youtube className="h-4 w-4" />
+                                YouTube URL
+                              </FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="https://youtube.com/yourchannel" disabled={!isSocialMediaEditing} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      {/* Edit/Save Buttons */}
+                      <div className="flex justify-end gap-2">
+                        {!isSocialMediaEditing ? (
+                          <Button type="button" variant="outline" onClick={() => setIsSocialMediaEditing(true)}>
+                            Edit
+                          </Button>
+                        ) : (
+                          <>
+                            <Button type="button" variant="outline" onClick={handleCancelSocialMediaEdit}>Cancel</Button>
+                            <Button type="button" onClick={handleSaveSocialMediaLinks} className="gap-2">
+                              <Save className="h-4 w-4" />
+                              Save
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {/* Favicon Upload */}
@@ -391,71 +565,6 @@ const AdminSettings = () => {
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField
-                      control={siteSettingsForm.control}
-                      name="maxUploadSize"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Maximum Upload Size (MB)</FormLabel>
-                          <FormControl>
-                            <Input {...field} type="number" min="1" max="100" />
-                          </FormControl>
-                          <FormDescription>
-                            Maximum file upload size in MB
-                          </FormDescription>
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <div className="space-y-4">
-                      <FormField
-                        control={siteSettingsForm.control}
-                        name="maintenance"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-base">
-                                Maintenance Mode
-                              </FormLabel>
-                              <FormDescription>
-                                Enable to put the site in maintenance mode
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={siteSettingsForm.control}
-                        name="analyticsEnabled"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-base">
-                                Analytics
-                              </FormLabel>
-                              <FormDescription>
-                                Enable usage tracking and analytics
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </div>
                   <div className="flex justify-end">
                     <Button type="submit" className="gap-2">
                       <Save className="h-4 w-4" />

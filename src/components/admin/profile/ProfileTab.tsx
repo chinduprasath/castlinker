@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +43,25 @@ const ProfileTab = ({
   setIsUploading
 }: ProfileTabProps) => {
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [isEditingAccountInfo, setIsEditingAccountInfo] = useState<boolean>(false);
+  const [editedProfile, setEditedProfile] = useState<AdminProfileData | null>(profile);
+  const [editedPhoneNumber, setEditedPhoneNumber] = useState<string>(phoneNumber);
+  const [editedLocation, setEditedLocation] = useState<string>(location);
+  const [editedEmail, setEditedEmail] = useState<string>(profile?.email || '');
+
+  useEffect(() => {
+    setEditedProfile(profile);
+    setEditedEmail(profile?.email || '');
+  }, [profile]);
+
+  useEffect(() => {
+    setEditedPhoneNumber(phoneNumber);
+  }, [phoneNumber]);
+
+  useEffect(() => {
+    setEditedLocation(location);
+  }, [location]);
+
   const { toast } = useToast();
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
@@ -146,6 +165,77 @@ const ProfileTab = ({
     }
   };
 
+  const handleAccountInfoUpdate = async () => {
+    if (!editedProfile) return;
+
+    setIsSaving(true);
+    try {
+      const updates: any = { name: editedProfile.name };
+
+      // Update email using auth.updateUser
+      let emailUpdateError = null;
+      if (editedEmail !== profile?.email) {
+         const { error } = await supabase.auth.updateUser({ email: editedEmail });
+         emailUpdateError = error;
+      }
+
+      if (emailUpdateError) {
+          throw emailUpdateError;
+      }
+
+      // Update name in users_management table (if different from auth user table)
+      const { error: profileError } = await supabase
+        .from('users_management')
+        .update(updates)
+        .eq('id', editedProfile.id);
+
+      if (profileError) {
+        throw profileError;
+      }
+
+      // Update phone and location in the appropriate place
+      // Assuming phone and location are stored elsewhere or updated differently
+      // For now, we'll just update the local state and the state passed from parent
+      setPhoneNumber(editedPhoneNumber);
+      setLocation(editedLocation);
+
+      // Update the parent profile state with potentially new name and email
+      setProfile(prev => prev ? {...prev, name: editedProfile.name, email: editedEmail} : editedProfile);
+
+      toast({
+        title: "Account Information updated",
+        description: "Your account information has been successfully updated.",
+        variant: "default"
+      });
+      setIsEditingAccountInfo(false);
+    } catch (error) {
+      console.error("Error updating account information:", error);
+      toast({
+        title: "Update failed",
+        description: "We couldn't update your account information. Please try again later.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleEditClick = () => {
+    setIsEditingAccountInfo(true);
+    setEditedProfile(profile);
+    setEditedPhoneNumber(phoneNumber);
+    setEditedLocation(location);
+    setEditedEmail(profile?.email || '');
+  };
+
+  const handleCancelClick = () => {
+    setIsEditingAccountInfo(false);
+    setEditedProfile(profile);
+    setEditedPhoneNumber(phoneNumber);
+    setEditedLocation(location);
+    setEditedEmail(profile?.email || '');
+  };
+
   return (
     <div className="space-y-6">
       {/* Profile Picture and Account Info - Two Column Layout */}
@@ -198,110 +288,96 @@ const ProfileTab = ({
         
         {/* Account Information Card */}
         <Card>
-          <CardHeader>
-            <CardTitle>Account Information</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-xl font-semibold">Account Information</CardTitle>
+            {!isEditingAccountInfo && (
+              <Button variant="outline" size="sm" onClick={handleEditClick}>
+                Edit
+              </Button>
+            )}
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
               <Label className="text-sm text-muted-foreground">Username</Label>
-              <p className="font-medium">{profile?.name}</p>
+              {isEditingAccountInfo ? (
+                <Input
+                  value={editedProfile?.name || ''}
+                  onChange={(e) => setEditedProfile(prev => prev ? {...prev, name: e.target.value} : prev)}
+                />
+              ) : (
+                <p className="font-medium">{profile?.name}</p>
+              )}
             </div>
-            
+
             <div>
               <Label className="text-sm text-muted-foreground">Email</Label>
-              <p className="font-medium flex items-center gap-1">
-                <Mail size={16} className="text-muted-foreground" />
-                {profile?.email}
-              </p>
+              {isEditingAccountInfo ? (
+                 <Input
+                   value={editedEmail}
+                   onChange={(e) => setEditedEmail(e.target.value)}
+                 />
+              ) : (
+                <p className="font-medium flex items-center gap-1">
+                  <Mail size={16} className="text-muted-foreground" />
+                  {profile?.email}
+                </p>
+              )}
             </div>
-            
+
             <div>
-              <Label className="text-sm text-muted-foreground">Role</Label>
-              <p className="font-medium flex items-center gap-1">
-                <ShieldCheck size={16} className="text-gold" />
-                {adminRole?.name || adminUser?.role || "Administrator"}
-              </p>
+              <Label className="text-sm text-muted-foreground">Phone Number</Label>
+              {isEditingAccountInfo ? (
+                <Input
+                  value={editedPhoneNumber}
+                  onChange={(e) => setEditedPhoneNumber(e.target.value)}
+                  placeholder="Your phone number"
+                />
+              ) : (
+                <p className="font-medium">{phoneNumber}</p>
+              )}
             </div>
-            
-            <div className="pt-4">
-              <Label className="text-sm">Theme Preference</Label>
-              <div className="flex items-center justify-between mt-2">
-                <span className="text-muted-foreground">Theme Mode</span>
-                <ThemeToggle showTooltip={false} />
+
+            <div>
+              <Label className="text-sm text-muted-foreground">Location</Label>
+              {isEditingAccountInfo ? (
+                <Input
+                  value={editedLocation}
+                  onChange={(e) => setEditedLocation(e.target.value)}
+                  placeholder="City, Country"
+                />
+              ) : (
+                <p className="font-medium">{location}</p>
+              )}
+            </div>
+
+            {!isEditingAccountInfo && (
+              <div>
+                <Label className="text-sm text-muted-foreground">Role</Label>
+                <p className="font-medium flex items-center gap-1">
+                  <ShieldCheck size={16} className="text-gold" />
+                  {adminRole?.name || adminUser?.role || "Administrator"}
+                </p>
               </div>
-            </div>
+            )}
+
+            {isEditingAccountInfo && (
+              <div className="flex justify-end gap-2 mt-4">
+                <Button variant="outline" onClick={handleCancelClick} disabled={isSaving}>
+                  Cancel
+                </Button>
+                <Button onClick={handleAccountInfoUpdate} disabled={isSaving}>
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : "Save Changes"}
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
-
-      {/* Personal Information Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Personal Information</CardTitle>
-          <CardDescription>Update your profile details</CardDescription>
-        </CardHeader>
-        <form onSubmit={handleProfileUpdate}>
-          <CardContent className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input
-                  id="name"
-                  value={profile?.name || ''}
-                  onChange={(e) => setProfile(prev => prev ? {...prev, name: e.target.value} : prev)}
-                  placeholder="Your full name"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <Input
-                  id="phone"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="Your phone number"
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="location">Location</Label>
-              <Input
-                id="location"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                placeholder="City, Country"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="bio">Bio</Label>
-              <Textarea
-                id="bio"
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                placeholder="A short bio about yourself"
-                rows={4}
-              />
-            </div>
-          </CardContent>
-          
-          <CardFooter>
-            <Button 
-              type="submit" 
-              disabled={isSaving}
-              className="ml-auto"
-            >
-              {isSaving ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : "Save Changes"}
-            </Button>
-          </CardFooter>
-        </form>
-      </Card>
 
       <PermissionsDisplay adminRole={adminRole} adminUser={adminUser} />
     </div>

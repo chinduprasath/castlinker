@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,7 +40,6 @@ const Dashboard = () => {
     ...dashboardData.stats,
     connections: 48,
     likes: 126,
-    ratings: 4.8
   });
   const [recentOpportunities, setRecentOpportunities] = useState(() => {
     return dashboardData.recentOpportunities.map(job => ({
@@ -52,6 +50,7 @@ const Dashboard = () => {
   const [recentMessages, setRecentMessages] = useState(dashboardData.recentMessages);
   const [upcomingEvents, setUpcomingEvents] = useState(dashboardData.upcomingEvents);
   const [loading, setLoading] = useState(true);
+  const [totalPosts, setTotalPosts] = useState<number>(0);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -107,17 +106,20 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-4 pr-1">
-      <div className="flex flex-col space-y-1">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-gold to-gold-light">
-              Hello, {firstName}
-            </span>
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Here's your activity summary and upcoming opportunities
-          </p>
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col space-y-1">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-gold to-gold-light">
+                Hello, {firstName}
+              </span>
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Here's your activity summary and upcoming opportunities
+            </p>
+          </div>
         </div>
+        <Button variant="outline" onClick={() => navigate('/manage')}>Manage</Button>
       </div>
 
       <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
@@ -254,8 +256,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent className="px-4 pb-4">
               <Skeleton className="h-10 w-16 mb-2" />
-              <Skeleton className="h-4 w-full mb-2" />
-              <Skeleton className="h-2 w-full" />
+              <Skeleton className="h-4 w-full" />
             </CardContent>
           </Card>
         ) : (
@@ -263,28 +264,20 @@ const Dashboard = () => {
             <CardHeader className="pb-2 pt-4 px-4">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <span className="text-base font-semibold text-foreground/80">Rating</span>
+                  <span className="text-base font-semibold text-foreground/80">Total Posts</span>
                 </CardTitle>
                 <div className="rounded-full bg-amber-500/10 p-2">
-                  <Star className="h-4 w-4 text-amber-500" />
+                  <Film className="h-4 w-4 text-amber-500" />
                 </div>
               </div>
             </CardHeader>
             <CardContent className="px-4 pb-4">
               <div className="flex flex-col">
-                <div className="text-3xl font-bold">{stats.ratings}</div>
-                <div className="mt-2">
-                  <div className="flex items-center">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star 
-                        key={star} 
-                        className={`h-3 w-3 ${star <= Math.floor(stats.ratings) ? 'text-amber-500 fill-amber-500' : 'text-gray-300'}`} 
-                      />
-                    ))}
-                    <span className="text-xs text-muted-foreground ml-2">
-                      from 24 reviews
-                    </span>
-                  </div>
+                <div className="text-3xl font-bold">{totalPosts}</div>
+                <div className="flex items-center mt-1.5">
+                  <span className="text-xs text-muted-foreground ml-1.5">
+                    total posts created
+                  </span>
                 </div>
               </div>
             </CardContent>
