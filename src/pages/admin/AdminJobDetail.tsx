@@ -1,7 +1,8 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Job, RoleCategory } from '@/types/jobTypes';
+import { Job, RoleCategory, LocationType } from '@/types/jobTypes';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,10 +28,11 @@ const AdminJobDetail = () => {
 
         if (error) throw error;
         
-        // Cast the role_category to ensure it matches the RoleCategory type
+        // Cast both role_category and location_type to ensure they match the required types
         const formattedJob: Job = {
           ...data,
-          role_category: data.role_category as RoleCategory
+          role_category: data.role_category as RoleCategory,
+          location_type: data.location_type as LocationType
         };
 
         setJob(formattedJob);
