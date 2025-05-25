@@ -541,7 +541,7 @@ const CancellationRefundPolicy = () => {
                         © {new Date().getFullYear()} FilmCollab. All rights reserved.
                       </p>
                       <p className="mt-2">
-                        Questions about this policy? Contact us at <strong>refunds@filmcollab.com</strong>
+                        Questions about this policy? Contact us at <strong>support@filmcollab.com</strong>
                       </p>
                     </div>
                   </div>
