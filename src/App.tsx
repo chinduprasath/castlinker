@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -28,6 +29,7 @@ import Billing from '@/pages/Billing';
 import Notifications from '@/pages/Notifications';
 import Help from '@/pages/Help';
 import Privacy from '@/pages/Privacy';
+import TermsAndConditions from '@/pages/TermsAndConditions';
 import NotFound from '@/pages/NotFound';
 import BlogPage from '@/pages/BlogPage';
 import Events from '@/pages/Events';
