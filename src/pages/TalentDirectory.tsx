@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -86,8 +85,13 @@ const TalentDirectory = () => {
   };
   
   const handleViewProfile = (profile: TalentProfile) => {
-    // Instead of opening the dialog, redirect to the user's profile page
-    navigate(`/profile/${profile.userId}`);
+    // Navigate to the user's profile page using their userId
+    const profileUserId = profile.userId || profile.user_id;
+    if (profileUserId) {
+      navigate(`/profile/${profileUserId}`);
+    } else {
+      toast.error("Unable to view profile - user ID not found");
+    }
   };
   
   const handleConnectClick = (profile: TalentProfile) => {
