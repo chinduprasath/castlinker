@@ -285,7 +285,7 @@ const CancellationRefundPolicy = () => {
                             <div>
                               <h3 className="font-medium text-red-800 dark:text-red-200 mb-2">Non-Refundable Services</h3>
                               <ul className="text-sm text-red-700 dark:text-red-300 space-y-1">
-                                <li>• Payment processing fees (typically 2.9% + $0.30)</li>
+                                <li>• Payment processing fees</li>
                                 <li>• Administrative and service charges</li>
                                 <li>• Completed services or delivered content</li>
                                 <li>• Custom development work already performed</li>
