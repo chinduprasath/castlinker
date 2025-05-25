@@ -1,35 +1,59 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-
 const TermsAndConditions = () => {
-  const sections = [
-    { id: "acceptance", title: "1. Acceptance of Terms" },
-    { id: "eligibility", title: "2. User Eligibility" },
-    { id: "registration", title: "3. Account Registration & Security" },
-    { id: "content", title: "4. User Content" },
-    { id: "conduct", title: "5. Conduct Rules" },
-    { id: "collaboration", title: "6. Collaboration & Project Management" },
-    { id: "jobs", title: "7. Job Postings & Applications" },
-    { id: "intellectual", title: "8. Intellectual Property Rights" },
-    { id: "privacy", title: "9. Privacy" },
-    { id: "termination", title: "10. Termination" },
-    { id: "disclaimers", title: "11. Disclaimers & Limitation of Liability" },
-    { id: "governing", title: "12. Governing Law" },
-    { id: "changes", title: "13. Changes to Terms" },
-    { id: "contact", title: "14. Contact Information" }
-  ];
-
+  const sections = [{
+    id: "acceptance",
+    title: "1. Acceptance of Terms"
+  }, {
+    id: "eligibility",
+    title: "2. User Eligibility"
+  }, {
+    id: "registration",
+    title: "3. Account Registration & Security"
+  }, {
+    id: "content",
+    title: "4. User Content"
+  }, {
+    id: "conduct",
+    title: "5. Conduct Rules"
+  }, {
+    id: "collaboration",
+    title: "6. Collaboration & Project Management"
+  }, {
+    id: "jobs",
+    title: "7. Job Postings & Applications"
+  }, {
+    id: "intellectual",
+    title: "8. Intellectual Property Rights"
+  }, {
+    id: "privacy",
+    title: "9. Privacy"
+  }, {
+    id: "termination",
+    title: "10. Termination"
+  }, {
+    id: "disclaimers",
+    title: "11. Disclaimers & Limitation of Liability"
+  }, {
+    id: "governing",
+    title: "12. Governing Law"
+  }, {
+    id: "changes",
+    title: "13. Changes to Terms"
+  }, {
+    id: "contact",
+    title: "14. Contact Information"
+  }];
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+      element.scrollIntoView({
+        behavior: 'smooth'
+      });
     }
   };
-
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
@@ -51,15 +75,9 @@ const TermsAndConditions = () => {
               </CardHeader>
               <CardContent>
                 <nav className="space-y-2">
-                  {sections.map((section) => (
-                    <button
-                      key={section.id}
-                      onClick={() => scrollToSection(section.id)}
-                      className="block w-full text-left text-sm text-muted-foreground hover:text-foreground transition-colors p-2 rounded hover:bg-muted"
-                    >
+                  {sections.map(section => <button key={section.id} onClick={() => scrollToSection(section.id)} className="block w-full text-left text-sm text-muted-foreground hover:text-foreground transition-colors p-2 rounded hover:bg-muted">
                       {section.title}
-                    </button>
-                  ))}
+                    </button>)}
                 </nav>
               </CardContent>
             </Card>
@@ -464,7 +482,7 @@ const TermsAndConditions = () => {
                         
                         <div className="bg-muted p-4 rounded-lg mt-4">
                           <p><strong>FilmCollab Support Team</strong></p>
-                          <p>Email: legal@filmcollab.com</p>
+                          <p>Email: support@filmcollab.com</p>
                           <p>Phone: +1 (555) 123-4567</p>
                           <p>Address: [Company Address]</p>
                           <p>Business Hours: Monday-Friday, 9:00 AM - 6:00 PM EST</p>
@@ -493,8 +511,6 @@ const TermsAndConditions = () => {
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default TermsAndConditions;
