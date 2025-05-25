@@ -137,6 +137,7 @@ const Footer = () => {
               <li><Link to="/terms" className="text-foreground/70 hover:text-gold transition-colors">Terms & Conditions</Link></li>
               <li><Link to="/contact" className="text-foreground/70 hover:text-gold transition-colors">Contact</Link></li>
               <li><Link to="/privacy" className="text-foreground/70 hover:text-gold transition-colors">Privacy Policy</Link></li>
+              <li><Link to="/cancellation-refund" className="text-foreground/70 hover:text-gold transition-colors">Cancellation & Refund Policy</Link></li>
             </ul>
           </div>
         </div>

@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -30,6 +29,7 @@ import Notifications from '@/pages/Notifications';
 import Help from '@/pages/Help';
 import Privacy from '@/pages/Privacy';
 import TermsAndConditions from '@/pages/TermsAndConditions';
+import CancellationRefundPolicy from '@/pages/CancellationRefundPolicy';
 import NotFound from '@/pages/NotFound';
 import BlogPage from '@/pages/BlogPage';
 import Events from '@/pages/Events';
@@ -142,6 +142,14 @@ const App = () => {
               element={
                 <AppLayout>
                   <TermsAndConditions />
+                </AppLayout>
+              }
+            />
+            <Route 
+              path="/cancellation-refund" 
+              element={
+                <AppLayout>
+                  <CancellationRefundPolicy />
                 </AppLayout>
               }
             />
@@ -446,7 +454,7 @@ const App = () => {
             />
 
             {/* Admin Job Detail Route */}
-            <Route
+            <Route 
               path="/admin/ticket/:ticketId"
               element={(
                 <AdminRouteGuard requiredModule="tickets" requiredAction="view">
