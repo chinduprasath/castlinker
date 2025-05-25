@@ -1,31 +1,45 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Mail, Clock, CheckCircle, XCircle } from "lucide-react";
-
 const CancellationRefundPolicy = () => {
-  const sections = [
-    { id: "scope", title: "1. Scope of Policy" },
-    { id: "cancellation", title: "2. Cancellation Terms" },
-    { id: "eligibility", title: "3. Refund Eligibility" },
-    { id: "process", title: "4. Refund Process" },
-    { id: "non-refundable", title: "5. Non-Refundable Items" },
-    { id: "partial", title: "6. Partial Refunds" },
-    { id: "disputes", title: "7. Disputes and Resolution" },
-    { id: "modifications", title: "8. Policy Modifications" },
-    { id: "contact", title: "9. Contact Information" }
-  ];
-
+  const sections = [{
+    id: "scope",
+    title: "1. Scope of Policy"
+  }, {
+    id: "cancellation",
+    title: "2. Cancellation Terms"
+  }, {
+    id: "eligibility",
+    title: "3. Refund Eligibility"
+  }, {
+    id: "process",
+    title: "4. Refund Process"
+  }, {
+    id: "non-refundable",
+    title: "5. Non-Refundable Items"
+  }, {
+    id: "partial",
+    title: "6. Partial Refunds"
+  }, {
+    id: "disputes",
+    title: "7. Disputes and Resolution"
+  }, {
+    id: "modifications",
+    title: "8. Policy Modifications"
+  }, {
+    id: "contact",
+    title: "9. Contact Information"
+  }];
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+      element.scrollIntoView({
+        behavior: 'smooth'
+      });
     }
   };
-
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
@@ -47,15 +61,9 @@ const CancellationRefundPolicy = () => {
               </CardHeader>
               <CardContent>
                 <nav className="space-y-2">
-                  {sections.map((section) => (
-                    <button
-                      key={section.id}
-                      onClick={() => scrollToSection(section.id)}
-                      className="block w-full text-left text-sm text-muted-foreground hover:text-foreground transition-colors p-2 rounded hover:bg-muted"
-                    >
+                  {sections.map(section => <button key={section.id} onClick={() => scrollToSection(section.id)} className="block w-full text-left text-sm text-muted-foreground hover:text-foreground transition-colors p-2 rounded hover:bg-muted">
                       {section.title}
-                    </button>
-                  ))}
+                    </button>)}
                 </nav>
               </CardContent>
             </Card>
@@ -210,7 +218,7 @@ const CancellationRefundPolicy = () => {
                               <div className="bg-gold text-black rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">1</div>
                               <div>
                                 <h4 className="font-medium">Submit Request</h4>
-                                <p className="text-sm text-muted-foreground">Contact our support team via email at refunds@filmcollab.com</p>
+                                <p className="text-sm text-muted-foreground">Contact our support team via email at support@filmcollab.com</p>
                               </div>
                             </div>
                             
@@ -543,8 +551,6 @@ const CancellationRefundPolicy = () => {
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default CancellationRefundPolicy;
