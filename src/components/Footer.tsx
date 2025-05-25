@@ -134,19 +134,7 @@ const Footer = () => {
             <h3 className="text-lg font-semibold mb-4">Company</h3>
             <ul className="space-y-2">
               <li><Link to="/about" className="text-foreground/70 hover:text-gold transition-colors">About Us</Link></li>
-              <li>
-                <Link to="/careers" className="text-foreground/70 hover:text-gold transition-colors"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    toast({
-                      title: "Careers Coming Soon",
-                      description: "We're growing! Check back soon for open positions.",
-                    });
-                  }}
-                >
-                  Careers
-                </Link>
-              </li>
+              <li><Link to="/terms" className="text-foreground/70 hover:text-gold transition-colors">Terms & Conditions</Link></li>
               <li><Link to="/contact" className="text-foreground/70 hover:text-gold transition-colors">Contact</Link></li>
               <li><Link to="/privacy" className="text-foreground/70 hover:text-gold transition-colors">Privacy Policy</Link></li>
             </ul>

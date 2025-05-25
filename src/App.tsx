@@ -138,6 +138,14 @@ const App = () => {
               }
             />
             <Route 
+              path="/terms" 
+              element={
+                <AppLayout>
+                  <TermsAndConditions />
+                </AppLayout>
+              }
+            />
+            <Route 
               path="/blog" 
               element={
                 <AppLayout>
