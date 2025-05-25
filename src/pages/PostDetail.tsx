@@ -3,15 +3,13 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { fetchPostById, getApplicantsByPostId, PostApplication, Post, checkIfLiked, togglePostLike } from '@/services/postsService';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Heart, Share2, Calendar, MapPin, Link2, ArrowLeft, Users, Pencil, Trash2, Tag } from 'lucide-react';
+import { Heart, Share2, Calendar, MapPin, Link2, ArrowLeft, Users, Pencil, Trash2, Tag, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
@@ -21,11 +19,11 @@ const PostDetail = () => {
   const { user } = useAuth();
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
-  const [applicants, setApplicants] = useState<PostApplication[] | null>(null);
+  const [applicantCount, setApplicantCount] = useState<number>(0);
   const [isLiked, setIsLiked] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  // Fetch post and applicant data
+  // Fetch post data
   useEffect(() => {
     const loadPostData = async () => {
       if (!id) return;
@@ -41,9 +39,9 @@ const PostDetail = () => {
           setIsLiked(liked);
         }
         
-        // Fetch applicants
+        // Fetch applicant count only
         const applicantsData = await getApplicantsByPostId(id);
-        setApplicants(applicantsData);
+        setApplicantCount(applicantsData?.length || 0);
       } catch (error) {
         console.error('Error loading post:', error);
         toast({
@@ -131,7 +129,6 @@ const PostDetail = () => {
     if (!post || !user) return;
     
     try {
-      // Import and call deletePost function
       const { deletePost } = await import('@/services/postsService');
       const success = await deletePost(post.id);
       
@@ -156,6 +153,31 @@ const PostDetail = () => {
     }
   };
   
+  // Apply to post function
+  const handleApplyToPost = async () => {
+    if (!user || !post) return;
+    
+    try {
+      const { applyToPost } = await import('@/services/postsService');
+      await applyToPost(post.id, user.id);
+      
+      toast({
+        title: "Application Submitted",
+        description: "Your application has been sent successfully.",
+      });
+      
+      // Update applicant count
+      setApplicantCount(prev => prev + 1);
+    } catch (error) {
+      console.error('Error applying:', error);
+      toast({
+        title: "Error",
+        description: "Failed to submit your application. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+  
   // Check if user is creator or admin
   const isCreator = user && post && user.id === post.created_by;
   const isAdmin = user?.email?.includes("admin");
@@ -164,16 +186,13 @@ const PostDetail = () => {
   if (loading) {
     return (
       <div className="container max-w-4xl py-8 space-y-6">
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-10 w-32" />
           <Skeleton className="h-10 w-10 rounded-full" />
-          <div className="space-y-2">
-            <Skeleton className="h-5 w-40" />
-            <Skeleton className="h-4 w-24" />
-          </div>
         </div>
+        <Skeleton className="h-8 w-3/4" />
         <Skeleton className="h-[300px] w-full rounded-lg" />
         <div className="space-y-2">
-          <Skeleton className="h-6 w-1/2" />
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-3/4" />
@@ -204,101 +223,153 @@ const PostDetail = () => {
   
   return (
     <div className="container max-w-4xl py-8">
-      {/* Back button */}
-      <Button 
-        variant="ghost" 
-        size="sm" 
-        className="mb-4 -ml-2 text-muted-foreground"
-        onClick={() => navigate('/posts')}
-      >
-        <ArrowLeft className="h-4 w-4 mr-1" />
-        Back to Posts
-      </Button>
-      
+      {/* Header with Close/Back button */}
+      <div className="flex justify-between items-center mb-6">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="text-muted-foreground"
+          onClick={() => navigate('/posts')}
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Posts
+        </Button>
+        
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={() => navigate('/posts')}
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+
       <div className="space-y-6">
-        {/* Post Header */}
-        <div className="flex justify-between items-start">
-          <div>
-            <h1 className="text-3xl font-bold">{post.title}</h1>
-            <div className="flex items-center mt-2 text-muted-foreground">
-              <p>Posted by {post.creator_name || 'Anonymous'}</p>
-              {post.creator_profession && (
-                <Badge variant="outline" className="ml-2">
-                  {post.creator_profession}
-                </Badge>
-              )}
-              <span className="mx-2">•</span>
-              <p>{formattedDate}</p>
-            </div>
-          </div>
-          
-          {/* Action buttons */}
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className={cn(
-                isLiked && "text-red-500 border-red-500 hover:text-red-600 hover:border-red-600"
-              )}
-              onClick={handleLikeToggle}
-            >
-              <Heart className={cn("h-4 w-4 mr-2", isLiked && "fill-red-500")} />
-              <span>{post.like_count}</span>
-            </Button>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleShare}
-            >
-              <Share2 className="h-4 w-4 mr-2" />
-              Share
-            </Button>
-            
-            {canModify && (
+        {/* Post Information */}
+        <Card>
+          <CardHeader className="pb-4">
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <CardTitle className="text-2xl mb-2">{post.title}</CardTitle>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <span>Posted by {post.creator_name || 'Anonymous'}</span>
+                  <span>•</span>
+                  <span>{formattedDate}</span>
+                  {post.creator_profession && (
+                    <>
+                      <span>•</span>
+                      <Badge variant="outline">{post.creator_profession}</Badge>
+                    </>
+                  )}
+                </div>
+              </div>
+              
+              {/* Action buttons */}
               <div className="flex items-center space-x-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => navigate(`/posts/${post.id}/edit`)}
+                  className={cn(
+                    isLiked && "text-red-500 border-red-500 hover:text-red-600 hover:border-red-600"
+                  )}
+                  onClick={handleLikeToggle}
                 >
-                  <Pencil className="h-4 w-4 mr-2" />
-                  Edit
+                  <Heart className={cn("h-4 w-4 mr-2", isLiked && "fill-red-500")} />
+                  <span>{post.like_count}</span>
                 </Button>
                 
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-destructive hover:text-destructive"
-                  onClick={() => setShowDeleteDialog(true)}
+                  onClick={handleShare}
                 >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
+                  <Share2 className="h-4 w-4 mr-2" />
+                  Share
                 </Button>
+                
+                {canModify && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate(`/posts/${post.id}/edit`)}
+                    >
+                      <Pencil className="h-4 w-4 mr-2" />
+                      Edit
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => setShowDeleteDialog(true)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+          </CardHeader>
+          
+          <CardContent className="space-y-6">
+            {/* Category and Tags */}
+            <div className="space-y-3">
+              <Badge variant="secondary" className="text-sm">
+                {post.category}
+              </Badge>
+              
+              {post.tags && post.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {post.tags.map((tag, index) => (
+                    <Badge key={index} variant="outline" className="text-xs">
+                      <Tag className="h-3 w-3 mr-1" />
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Description */}
+            <div>
+              <h3 className="font-semibold mb-3">Description</h3>
+              <p className="whitespace-pre-wrap text-base leading-relaxed">{post.description}</p>
+            </div>
+
+            {/* Event/Deadline Date */}
+            {eventDate && (
+              <div>
+                <h3 className="font-semibold mb-3 flex items-center">
+                  <Calendar className="h-5 w-5 mr-2" />
+                  Event/Deadline Date
+                </h3>
+                <p className="text-lg font-medium">{eventDate}</p>
               </div>
             )}
-          </div>
-        </div>
-        
-        {/* Post Category and Tags */}
-        <div>
-          <Badge variant="secondary" className="text-sm">
-            {post.category}
-          </Badge>
-          
-          {post.tags && post.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-3">
-              {post.tags.map((tag, index) => (
-                <Badge key={index} variant="outline" className="text-xs">
-                  <Tag className="h-3 w-3 mr-1" />
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-          )}
-        </div>
 
-        {/* Post Media */}
+            {/* External URL */}
+            {post.external_url && (
+              <div>
+                <h3 className="font-semibold mb-3 flex items-center">
+                  <Link2 className="h-5 w-5 mr-2" />
+                  External URL
+                </h3>
+                <a 
+                  href={post.external_url} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-primary hover:underline text-lg break-all"
+                >
+                  {post.external_url}
+                </a>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Media */}
         {post.media_url && (
           <Card>
             <CardHeader>
@@ -322,60 +393,13 @@ const PostDetail = () => {
           </Card>
         )}
 
-        {/* Description */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Description</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="whitespace-pre-wrap text-base leading-relaxed">{post.description}</p>
-          </CardContent>
-        </Card>
-
-        {/* Event/Deadline Date */}
-        {eventDate && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Calendar className="h-5 w-5 mr-2" />
-                Event/Deadline Date
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-lg font-medium">{eventDate}</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* External URL */}
-        {post.external_url && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Link2 className="h-5 w-5 mr-2" />
-                External URL
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <a 
-                href={post.external_url} 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="text-primary hover:underline text-lg break-all"
-              >
-                {post.external_url}
-              </a>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Address Information */}
+        {/* Location Details (Optional Section) */}
         {(post.place || post.location || post.pincode || post.landmark) && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
                 <MapPin className="h-5 w-5 mr-2" />
-                Address Information
+                Location Details
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -412,129 +436,45 @@ const PostDetail = () => {
           </Card>
         )}
 
-        {/* Applications */}
+        {/* Additional Info */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
               <Users className="h-5 w-5 mr-2" />
-              Applications ({applicants?.length || 0})
+              Additional Information
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {(!applicants || applicants.length === 0) ? (
-              <div className="text-center py-8">
-                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium">No Applications Yet</h3>
-                <p className="text-muted-foreground mt-1">
-                  Be the first to apply for this post!
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {applicants.map((applicant) => (
-                  <Card key={applicant.id} className="overflow-hidden">
-                    <CardContent className="p-4">
-                      <div className="flex items-center">
-                        <Avatar className="h-12 w-12">
-                          {applicant.profile?.avatar_url && (
-                            <AvatarImage 
-                              src={applicant.profile.avatar_url} 
-                              alt={applicant.profile.full_name || "User"} 
-                            />
-                          )}
-                          <AvatarFallback>
-                            {applicant.profile?.full_name?.[0] || "U"}
-                          </AvatarFallback>
-                        </Avatar>
-                        
-                        <div className="ml-4 flex-1">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h4 className="font-medium">
-                                {applicant.profile?.full_name || "User"}
-                              </h4>
-                              <p className="text-sm text-muted-foreground">
-                                {applicant.profile?.profession_type || "Unknown profession"}
-                              </p>
-                            </div>
-                            <div>
-                              {applicant.profile?.location && (
-                                <Badge variant="outline" className="ml-2">
-                                  {applicant.profile.location}
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                          
-                          <div className="flex justify-between items-center mt-2">
-                            <p className="text-sm text-muted-foreground">
-                              Applied {format(new Date(applicant.applied_at), 'MMM dd, yyyy')}
-                            </p>
-                            
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                if (applicant.user_id) {
-                                  navigate(`/profile/${applicant.user_id}`);
-                                } else {
-                                  toast({
-                                    title: "Error",
-                                    description: "Could not find user profile",
-                                    variant: "destructive"
-                                  });
-                                }
-                              }}
-                            >
-                              View Profile
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Total Applicants:</span>
+              <Badge variant="secondary" className="text-lg px-3 py-1">
+                {applicantCount}
+              </Badge>
+            </div>
           </CardContent>
         </Card>
 
-        {/* Apply button */}
-        {user && (
-          <div className="mt-8 flex justify-center">
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Button 
+            variant="outline"
+            size="lg"
+            onClick={() => navigate('/posts')}
+            className="flex-1 sm:flex-none"
+          >
+            Back to Posts
+          </Button>
+          
+          {user && (
             <Button 
-              className="w-full max-w-xs bg-gold hover:bg-gold/90 text-black dark:text-black"
+              className="flex-1 sm:flex-none bg-gold hover:bg-gold/90 text-black dark:text-black"
               size="lg"
-              disabled={applicants?.some(app => app.user_id === user.id)}
-              onClick={async () => {
-                try {
-                  const { applyToPost } = await import('@/services/postsService');
-                  await applyToPost(post.id, user.id);
-                  
-                  toast({
-                    title: "Application Submitted",
-                    description: "Your application has been sent successfully.",
-                  });
-                  
-                  // Refresh applicants list
-                  const updatedApplicants = await getApplicantsByPostId(post.id);
-                  setApplicants(updatedApplicants);
-                } catch (error) {
-                  console.error('Error applying:', error);
-                  toast({
-                    title: "Error",
-                    description: "Failed to submit your application. Please try again.",
-                    variant: "destructive"
-                  });
-                }
-              }}
+              onClick={handleApplyToPost}
             >
-              {applicants?.some(app => app.user_id === user.id) 
-                ? 'Already Applied' 
-                : 'Apply Now'}
+              Apply Now
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
       
       {/* Confirm delete dialog */}
