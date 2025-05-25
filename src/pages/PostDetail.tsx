@@ -11,14 +11,9 @@ import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Heart, Share2, Calendar, MapPin, Link2, ArrowLeft, Users, Pencil, Trash2 } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { Heart, Share2, Calendar, MapPin, Link2, ArrowLeft, Users, Pencil, Trash2, Tag } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useApplicantFilters } from '@/hooks/useApplicantFilters';
-import { ProfessionFilter } from '@/components/filters/ProfessionFilter';
-import { LocationFilter } from '@/components/filters/LocationFilter';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const PostDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -29,7 +24,6 @@ const PostDetail = () => {
   const [applicants, setApplicants] = useState<PostApplication[] | null>(null);
   const [isLiked, setIsLiked] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [activeTab, setActiveTab] = useState('details');
 
   // Fetch post and applicant data
   useEffect(() => {
@@ -64,20 +58,6 @@ const PostDetail = () => {
     
     loadPostData();
   }, [id, user]);
-  
-  // Set up applicant filters
-  const {
-    selectedProfessions,
-    setSelectedProfessions,
-    selectedLocations,
-    setSelectedLocations,
-    searchTerm,
-    setSearchTerm,
-    availableProfessions,
-    availableLocations,
-    filteredApplicants,
-    resetFilters
-  } = useApplicantFilters(applicants);
   
   // Handle post like/unlike
   const handleLikeToggle = async () => {
@@ -300,7 +280,7 @@ const PostDetail = () => {
           </div>
         </div>
         
-        {/* Post Category */}
+        {/* Post Category and Tags */}
         <div>
           <Badge variant="secondary" className="text-sm">
             {post.category}
@@ -310,329 +290,251 @@ const PostDetail = () => {
             <div className="flex flex-wrap gap-2 mt-3">
               {post.tags.map((tag, index) => (
                 <Badge key={index} variant="outline" className="text-xs">
+                  <Tag className="h-3 w-3 mr-1" />
                   {tag}
                 </Badge>
               ))}
             </div>
           )}
         </div>
-        
-        {/* Tabs */}
-        <Tabs 
-          defaultValue="details" 
-          value={activeTab} 
-          onValueChange={setActiveTab}
-          className="mt-6"
-        >
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="details">Post Details</TabsTrigger>
-            <TabsTrigger value="applicants">
-              Applicants
-              {applicants && applicants.length > 0 && (
-                <Badge variant="outline" className="ml-2">
-                  {applicants.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="details" className="space-y-6 mt-6">
-            {/* Post Image */}
-            {post.media_url && post.media_type === 'image' && (
-              <div className="rounded-lg overflow-hidden">
+
+        {/* Post Media */}
+        {post.media_url && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Media</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {post.media_type === 'image' ? (
                 <img
                   src={post.media_url}
                   alt={post.title}
-                  className="w-full h-auto max-h-[500px] object-cover"
+                  className="w-full h-auto max-h-[500px] object-cover rounded-lg"
                 />
-              </div>
-            )}
-            
-            {/* Post Video */}
-            {post.media_url && post.media_type === 'video' && (
-              <div className="rounded-lg overflow-hidden">
+              ) : post.media_type === 'video' ? (
                 <video 
                   src={post.media_url} 
                   controls 
-                  className="w-full"
+                  className="w-full rounded-lg"
                 />
+              ) : null}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Description */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Description</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="whitespace-pre-wrap text-base leading-relaxed">{post.description}</p>
+          </CardContent>
+        </Card>
+
+        {/* Event/Deadline Date */}
+        {eventDate && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Calendar className="h-5 w-5 mr-2" />
+                Event/Deadline Date
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-lg font-medium">{eventDate}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* External URL */}
+        {post.external_url && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Link2 className="h-5 w-5 mr-2" />
+                External URL
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <a 
+                href={post.external_url} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-primary hover:underline text-lg break-all"
+              >
+                {post.external_url}
+              </a>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Address Information */}
+        {(post.place || post.location || post.pincode || post.landmark) && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <MapPin className="h-5 w-5 mr-2" />
+                Address Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {post.place && (
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Place Name</p>
+                  <p className="text-base">{post.place}</p>
+                </div>
+              )}
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {post.location && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Location</p>
+                    <p className="text-base">{post.location}</p>
+                  </div>
+                )}
+                
+                {post.pincode && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Pincode</p>
+                    <p className="text-base">{post.pincode}</p>
+                  </div>
+                )}
               </div>
-            )}
-            
-            {/* Post Body */}
-            <div className="prose prose-lg max-w-none dark:prose-invert">
-              <p className="whitespace-pre-wrap">{post.description}</p>
-            </div>
-            
-            {/* Post Metadata */}
-            <div className="bg-muted/40 rounded-lg p-4 space-y-3 mt-6">
-              {eventDate && (
-                <div className="flex items-center">
-                  <Calendar className="h-5 w-5 mr-3 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">Event Date</p>
-                    <p className="text-sm text-muted-foreground">{eventDate}</p>
-                  </div>
-                </div>
-              )}
               
-              {(post.place || post.location || post.pincode) && (
-                <div className="flex items-center">
-                  <MapPin className="h-5 w-5 mr-3 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">Location</p>
-                    <p className="text-sm text-muted-foreground">
-                      {[
-                        post.place, 
-                        post.location, 
-                        post.pincode
-                      ].filter(Boolean).join(', ')}
-                    </p>
-                  </div>
+              {post.landmark && (
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Landmark</p>
+                  <p className="text-base">{post.landmark}</p>
                 </div>
               )}
-              
-              {post.external_url && (
-                <div className="flex items-center">
-                  <Link2 className="h-5 w-5 mr-3 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">External Link</p>
-                    <a 
-                      href={post.external_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="text-sm text-primary hover:underline"
-                    >
-                      {post.external_url.replace(/^https?:\/\//, '')}
-                    </a>
-                  </div>
-                </div>
-              )}
-              
-              {applicants && (
-                <div className="flex items-center">
-                  <Users className="h-5 w-5 mr-3 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">Applications</p>
-                    <p className="text-sm text-muted-foreground">
-                      {applicants.length} {applicants.length === 1 ? 'person' : 'people'} applied
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            {/* Apply button */}
-            {user && (
-              <div className="mt-8 flex justify-center">
-                <Button 
-                  className="w-full max-w-xs bg-gold hover:bg-gold/90 text-black dark:text-black"
-                  size="lg"
-                  disabled={applicants?.some(app => app.user_id === user.id)}
-                  onClick={async () => {
-                    try {
-                      const { applyToPost } = await import('@/services/postsService');
-                      await applyToPost(post.id, user.id);
-                      
-                      toast({
-                        title: "Application Submitted",
-                        description: "Your application has been sent successfully.",
-                      });
-                      
-                      // Refresh applicants list
-                      const updatedApplicants = await getApplicantsByPostId(post.id);
-                      setApplicants(updatedApplicants);
-                      
-                      // Switch to applicants tab
-                      setActiveTab('applicants');
-                    } catch (error) {
-                      console.error('Error applying:', error);
-                      toast({
-                        title: "Error",
-                        description: "Failed to submit your application. Please try again.",
-                        variant: "destructive"
-                      });
-                    }
-                  }}
-                >
-                  {applicants?.some(app => app.user_id === user.id) 
-                    ? 'Already Applied' 
-                    : 'Apply Now'}
-                </Button>
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="applicants" className="space-y-6 mt-6">
-            {/* Applicants section */}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Applications */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Users className="h-5 w-5 mr-2" />
+              Applications ({applicants?.length || 0})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
             {(!applicants || applicants.length === 0) ? (
-              <div className="text-center py-12">
+              <div className="text-center py-8">
                 <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-medium">No Applications Yet</h3>
                 <p className="text-muted-foreground mt-1">
                   Be the first to apply for this post!
                 </p>
-                {user && (
-                  <Button 
-                    className="mt-4 bg-gold hover:bg-gold/90 text-black"
-                    onClick={async () => {
-                      try {
-                        const { applyToPost } = await import('@/services/postsService');
-                        await applyToPost(post.id, user.id);
-                        
-                        toast({
-                          title: "Application Submitted",
-                          description: "Your application has been sent successfully.",
-                        });
-                        
-                        // Refresh applicants list
-                        const updatedApplicants = await getApplicantsByPostId(post.id);
-                        setApplicants(updatedApplicants);
-                      } catch (error) {
-                        console.error('Error applying:', error);
-                        toast({
-                          title: "Error",
-                          description: "Failed to submit your application. Please try again.",
-                          variant: "destructive"
-                        });
-                      }
-                    }}
-                  >
-                    Apply Now
-                  </Button>
-                )}
               </div>
             ) : (
-              <>
-                {/* Applicant filters */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Filter Applicants</h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="relative">
-                      <Input
-                        placeholder="Search by name..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full"
-                      />
-                    </div>
-                    
-                    <div>
-                      <ProfessionFilter
-                        selectedProfessions={selectedProfessions as any[]}
-                        onProfessionChange={setSelectedProfessions as any}
-                      />
-                    </div>
-                    
-                    <div>
-                      <LocationFilter
-                        selectedLocations={selectedLocations}
-                        onLocationChange={setSelectedLocations}
-                        availableLocations={availableLocations}
-                      />
-                    </div>
-                  </div>
-                  
-                  {(selectedProfessions.length > 0 || selectedLocations.length > 0 || searchTerm) && (
-                    <div className="flex justify-end">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={resetFilters}
-                      >
-                        Clear Filters
-                      </Button>
-                    </div>
-                  )}
-                </div>
-                
-                <Separator />
-                
-                {/* Applicant list */}
-                <div>
-                  <h3 className="text-lg font-medium mb-4">
-                    Applicants ({filteredApplicants.length})
-                  </h3>
-                  
-                  <div className="space-y-4">
-                    {filteredApplicants.length === 0 ? (
-                      <div className="text-center py-8">
-                        <p className="text-muted-foreground">
-                          No applicants match your filter criteria.
-                        </p>
-                      </div>
-                    ) : (
-                      filteredApplicants.map((applicant) => (
-                        <Card key={applicant.id} className="overflow-hidden">
-                          <CardContent className="p-4">
-                            <div className="flex items-center">
-                              <Avatar className="h-12 w-12">
-                                {applicant.profile?.avatar_url && (
-                                  <AvatarImage 
-                                    src={applicant.profile.avatar_url} 
-                                    alt={applicant.profile.full_name || "User"} 
-                                  />
-                                )}
-                                <AvatarFallback>
-                                  {applicant.profile?.full_name?.[0] || "U"}
-                                </AvatarFallback>
-                              </Avatar>
-                              
-                              <div className="ml-4 flex-1">
-                                <div className="flex items-center justify-between">
-                                  <div>
-                                    <h4 className="font-medium">
-                                      {applicant.profile?.full_name || "User"}
-                                    </h4>
-                                    <p className="text-sm text-muted-foreground">
-                                      {applicant.profile?.profession_type || "Unknown profession"}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    {applicant.profile?.location && (
-                                      <Badge variant="outline" className="ml-2">
-                                        {applicant.profile.location}
-                                      </Badge>
-                                    )}
-                                  </div>
-                                </div>
-                                
-                                <div className="flex justify-between items-center mt-2">
-                                  <p className="text-sm text-muted-foreground">
-                                    Applied {format(new Date(applicant.applied_at), 'MMM dd, yyyy')}
-                                  </p>
-                                  
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => {
-                                      if (applicant.user_id) {
-                                        navigate(`/profile/${applicant.user_id}`);
-                                      } else {
-                                        toast({
-                                          title: "Error",
-                                          description: "Could not find user profile",
-                                          variant: "destructive"
-                                        });
-                                      }
-                                    }}
-                                  >
-                                    View Profile
-                                  </Button>
-                                </div>
-                              </div>
+              <div className="space-y-4">
+                {applicants.map((applicant) => (
+                  <Card key={applicant.id} className="overflow-hidden">
+                    <CardContent className="p-4">
+                      <div className="flex items-center">
+                        <Avatar className="h-12 w-12">
+                          {applicant.profile?.avatar_url && (
+                            <AvatarImage 
+                              src={applicant.profile.avatar_url} 
+                              alt={applicant.profile.full_name || "User"} 
+                            />
+                          )}
+                          <AvatarFallback>
+                            {applicant.profile?.full_name?.[0] || "U"}
+                          </AvatarFallback>
+                        </Avatar>
+                        
+                        <div className="ml-4 flex-1">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="font-medium">
+                                {applicant.profile?.full_name || "User"}
+                              </h4>
+                              <p className="text-sm text-muted-foreground">
+                                {applicant.profile?.profession_type || "Unknown profession"}
+                              </p>
                             </div>
-                          </CardContent>
-                        </Card>
-                      ))
-                    )}
-                  </div>
-                </div>
-              </>
+                            <div>
+                              {applicant.profile?.location && (
+                                <Badge variant="outline" className="ml-2">
+                                  {applicant.profile.location}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="flex justify-between items-center mt-2">
+                            <p className="text-sm text-muted-foreground">
+                              Applied {format(new Date(applicant.applied_at), 'MMM dd, yyyy')}
+                            </p>
+                            
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                if (applicant.user_id) {
+                                  navigate(`/profile/${applicant.user_id}`);
+                                } else {
+                                  toast({
+                                    title: "Error",
+                                    description: "Could not find user profile",
+                                    variant: "destructive"
+                                  });
+                                }
+                              }}
+                            >
+                              View Profile
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             )}
-          </TabsContent>
-        </Tabs>
+          </CardContent>
+        </Card>
+
+        {/* Apply button */}
+        {user && (
+          <div className="mt-8 flex justify-center">
+            <Button 
+              className="w-full max-w-xs bg-gold hover:bg-gold/90 text-black dark:text-black"
+              size="lg"
+              disabled={applicants?.some(app => app.user_id === user.id)}
+              onClick={async () => {
+                try {
+                  const { applyToPost } = await import('@/services/postsService');
+                  await applyToPost(post.id, user.id);
+                  
+                  toast({
+                    title: "Application Submitted",
+                    description: "Your application has been sent successfully.",
+                  });
+                  
+                  // Refresh applicants list
+                  const updatedApplicants = await getApplicantsByPostId(post.id);
+                  setApplicants(updatedApplicants);
+                } catch (error) {
+                  console.error('Error applying:', error);
+                  toast({
+                    title: "Error",
+                    description: "Failed to submit your application. Please try again.",
+                    variant: "destructive"
+                  });
+                }
+              }}
+            >
+              {applicants?.some(app => app.user_id === user.id) 
+                ? 'Already Applied' 
+                : 'Apply Now'}
+            </Button>
+          </div>
+        )}
       </div>
       
       {/* Confirm delete dialog */}
