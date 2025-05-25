@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { fetchPostById, getApplicantsByPostId, PostApplication, Post, checkIfLiked, togglePostLike } from '@/services/postsService';
@@ -9,7 +8,7 @@ import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Heart, Share2, Calendar, MapPin, Link2, ArrowLeft, Users, Pencil, Trash2, Tag, X } from 'lucide-react';
+import { Heart, Share2, Calendar, MapPin, Link2, ArrowLeft, Users, Pencil, Trash2, Tag, X, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
@@ -185,17 +184,19 @@ const PostDetail = () => {
   
   if (loading) {
     return (
-      <div className="container max-w-4xl py-8 space-y-6">
+      <div className="container max-w-6xl py-8 space-y-6">
         <div className="flex items-center justify-between">
           <Skeleton className="h-10 w-32" />
           <Skeleton className="h-10 w-10 rounded-full" />
         </div>
         <Skeleton className="h-8 w-3/4" />
-        <Skeleton className="h-[300px] w-full rounded-lg" />
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-3/4" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-4">
+            <Skeleton className="h-[200px] w-full rounded-lg" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+          </div>
+          <Skeleton className="h-[300px] w-full rounded-lg" />
         </div>
       </div>
     );
@@ -203,7 +204,7 @@ const PostDetail = () => {
   
   if (!post) {
     return (
-      <div className="container max-w-4xl py-8 text-center">
+      <div className="container max-w-6xl py-8 text-center">
         <h1 className="text-2xl font-bold">Post not found</h1>
         <p className="text-muted-foreground mt-2">The post you're looking for doesn't exist or has been removed.</p>
         <Button 
@@ -222,7 +223,7 @@ const PostDetail = () => {
   const eventDate = post.event_date ? format(new Date(post.event_date), 'MMM dd, yyyy') : null;
   
   return (
-    <div className="container max-w-4xl py-8">
+    <div className="container max-w-6xl py-8">
       {/* Header with Close/Back button */}
       <div className="flex justify-between items-center mb-6">
         <Button 
@@ -245,23 +246,26 @@ const PostDetail = () => {
       </div>
 
       <div className="space-y-6">
-        {/* Post Information */}
+        {/* Post Header */}
         <Card>
           <CardHeader className="pb-4">
             <div className="flex justify-between items-start">
               <div className="flex-1">
-                <CardTitle className="text-2xl mb-2">{post.title}</CardTitle>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <span>Posted by {post.creator_name || 'Anonymous'}</span>
+                <CardTitle className="text-3xl mb-3 font-bold text-foreground">{post.title}</CardTitle>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+                  <span className="font-medium">Posted by {post.creator_name || 'Anonymous'}</span>
                   <span>•</span>
                   <span>{formattedDate}</span>
                   {post.creator_profession && (
                     <>
                       <span>•</span>
-                      <Badge variant="outline">{post.creator_profession}</Badge>
+                      <Badge variant="outline" className="text-xs">{post.creator_profession}</Badge>
                     </>
                   )}
                 </div>
+                <Badge variant="secondary" className="text-sm font-medium">
+                  {post.category}
+                </Badge>
               </div>
               
               {/* Action buttons */}
@@ -312,150 +316,175 @@ const PostDetail = () => {
               </div>
             </div>
           </CardHeader>
-          
-          <CardContent className="space-y-6">
-            {/* Category and Tags */}
-            <div className="space-y-3">
-              <Badge variant="secondary" className="text-sm">
-                {post.category}
-              </Badge>
-              
-              {post.tags && post.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {post.tags.map((tag, index) => (
-                    <Badge key={index} variant="outline" className="text-xs">
-                      <Tag className="h-3 w-3 mr-1" />
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-              )}
-            </div>
+        </Card>
 
+        {/* Main Content - Two Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - Post Details (60% width) */}
+          <div className="lg:col-span-2 space-y-6">
             {/* Description */}
-            <div>
-              <h3 className="font-semibold mb-3">Description</h3>
-              <p className="whitespace-pre-wrap text-base leading-relaxed">{post.description}</p>
-            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl">Description</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="whitespace-pre-wrap text-base leading-relaxed text-foreground">{post.description}</p>
+              </CardContent>
+            </Card>
 
             {/* Event/Deadline Date */}
             {eventDate && (
-              <div>
-                <h3 className="font-semibold mb-3 flex items-center">
-                  <Calendar className="h-5 w-5 mr-2" />
-                  Event/Deadline Date
-                </h3>
-                <p className="text-lg font-medium">{eventDate}</p>
-              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-xl flex items-center">
+                    <Calendar className="h-5 w-5 mr-2 text-primary" />
+                    Event/Deadline Date
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-lg font-semibold text-foreground">{eventDate}</p>
+                </CardContent>
+              </Card>
             )}
 
             {/* External URL */}
             {post.external_url && (
-              <div>
-                <h3 className="font-semibold mb-3 flex items-center">
-                  <Link2 className="h-5 w-5 mr-2" />
-                  External URL
-                </h3>
-                <a 
-                  href={post.external_url} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="text-primary hover:underline text-lg break-all"
-                >
-                  {post.external_url}
-                </a>
-              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-xl flex items-center">
+                    <Link2 className="h-5 w-5 mr-2 text-primary" />
+                    External URL
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <a 
+                    href={post.external_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="inline-flex items-center text-primary hover:text-primary/80 text-lg font-medium transition-colors group"
+                  >
+                    <span className="break-all">{post.external_url}</span>
+                    <ExternalLink className="h-4 w-4 ml-2 group-hover:translate-x-0.5 transition-transform" />
+                  </a>
+                </CardContent>
+              </Card>
             )}
-          </CardContent>
-        </Card>
 
-        {/* Media */}
-        {post.media_url && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Media</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {post.media_type === 'image' ? (
-                <img
-                  src={post.media_url}
-                  alt={post.title}
-                  className="w-full h-auto max-h-[500px] object-cover rounded-lg"
-                />
-              ) : post.media_type === 'video' ? (
-                <video 
-                  src={post.media_url} 
-                  controls 
-                  className="w-full rounded-lg"
-                />
-              ) : null}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Location Details (Optional Section) */}
-        {(post.place || post.location || post.pincode || post.landmark) && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <MapPin className="h-5 w-5 mr-2" />
-                Location Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {post.place && (
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Place Name</p>
-                  <p className="text-base">{post.place}</p>
-                </div>
-              )}
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {post.location && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Location</p>
-                    <p className="text-base">{post.location}</p>
+            {/* Address Information */}
+            {(post.place || post.location || post.pincode || post.landmark) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-xl flex items-center">
+                    <MapPin className="h-5 w-5 mr-2 text-primary" />
+                    Address Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {post.place && (
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Place Name</p>
+                      <p className="text-base font-medium text-foreground bg-muted/30 px-3 py-2 rounded-md border">{post.place}</p>
+                    </div>
+                  )}
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {post.location && (
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Location</p>
+                        <p className="text-base font-medium text-foreground bg-muted/30 px-3 py-2 rounded-md border">{post.location}</p>
+                      </div>
+                    )}
+                    
+                    {post.pincode && (
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Pincode</p>
+                        <p className="text-base font-medium text-foreground bg-muted/30 px-3 py-2 rounded-md border">{post.pincode}</p>
+                      </div>
+                    )}
                   </div>
-                )}
-                
-                {post.pincode && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Pincode</p>
-                    <p className="text-base">{post.pincode}</p>
-                  </div>
-                )}
-              </div>
-              
-              {post.landmark && (
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Landmark</p>
-                  <p className="text-base">{post.landmark}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
+                  
+                  {post.landmark && (
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Landmark</p>
+                      <p className="text-base font-medium text-foreground bg-muted/30 px-3 py-2 rounded-md border">{post.landmark}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
-        {/* Additional Info */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Users className="h-5 w-5 mr-2" />
-              Additional Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Total Applicants:</span>
-              <Badge variant="secondary" className="text-lg px-3 py-1">
-                {applicantCount}
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
+            {/* Tags */}
+            {post.tags && post.tags.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-xl flex items-center">
+                    <Tag className="h-5 w-5 mr-2 text-primary" />
+                    Tags
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {post.tags.map((tag, index) => (
+                      <Badge key={index} variant="outline" className="text-sm px-3 py-1 font-medium">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Additional Info */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl flex items-center">
+                  <Users className="h-5 w-5 mr-2 text-primary" />
+                  Additional Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border">
+                  <span className="text-base font-medium text-foreground">Total Applicants:</span>
+                  <Badge variant="secondary" className="text-lg px-4 py-2 font-bold">
+                    {applicantCount}
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Column - Media (40% width) */}
+          <div className="lg:col-span-1">
+            {post.media_url && (
+              <Card className="sticky top-8">
+                <CardHeader>
+                  <CardTitle className="text-xl">Media</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="aspect-square w-full overflow-hidden rounded-lg border bg-muted/10">
+                    {post.media_type === 'image' ? (
+                      <img
+                        src={post.media_url}
+                        alt={post.title}
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : post.media_type === 'video' ? (
+                      <video 
+                        src={post.media_url} 
+                        controls 
+                        className="w-full h-full object-cover"
+                        poster=""
+                      />
+                    ) : null}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
           <Button 
             variant="outline"
             size="lg"
