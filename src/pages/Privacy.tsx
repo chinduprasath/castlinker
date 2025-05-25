@@ -1,9 +1,7 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-
 const Privacy = () => {
-  return (
-    <div className="min-h-screen flex flex-col">
+  return <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-1 container mx-auto px-4 py-12 space-y-8">
         <div className="max-w-4xl mx-auto">
@@ -93,17 +91,13 @@ const Privacy = () => {
               <h2 className="text-xl font-semibold mb-3 text-gold">Contact Us</h2>
               <p>
                 If you have any questions about this Privacy Policy, please contact us at: 
-                <a href="mailto:privacy@castlinker.com" className="text-gold ml-1 hover:underline">
-                  privacy@castlinker.com
-                </a>
+                <a href="mailto:privacy@castlinker.com" className="text-gold ml-1 hover:underline">support@castlinker.com</a>
               </p>
             </section>
           </div>
         </div>
       </main>
       <Footer />
-    </div>
-  );
+    </div>;
 };
-
-export default Privacy; 
+export default Privacy;
