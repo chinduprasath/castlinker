@@ -482,7 +482,7 @@ const CancellationRefundPolicy = () => {
                               <div className="space-y-2">
                                 <div className="flex items-center space-x-2">
                                   <Mail className="h-4 w-4 text-muted-foreground" />
-                                  <span className="text-sm">refunds@filmcollab.com</span>
+                                  <span className="text-sm">support@filmcollab.com</span>
                                 </div>
                                 <div className="flex items-center space-x-2">
                                   <Clock className="h-4 w-4 text-muted-foreground" />
