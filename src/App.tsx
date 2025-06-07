@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -11,6 +12,8 @@ import AdminLayout from '@/components/admin/AdminLayout';
 import Index from '@/pages/Index';
 import Login from '@/pages/Login';
 import Signup from '@/pages/Signup';
+import ForgotPassword from '@/pages/ForgotPassword';
+import ResetPassword from '@/pages/ResetPassword';
 import About from '@/pages/About';
 import Features from '@/pages/Features';
 import Pricing from '@/pages/Pricing';
@@ -95,6 +98,18 @@ const App = () => {
                 <AppLayout>
                   <Signup />
                 </AppLayout>
+              }
+            />
+            <Route 
+              path="/forgot-password" 
+              element={
+                <ForgotPassword />
+              }
+            />
+            <Route 
+              path="/reset-password" 
+              element={
+                <ResetPassword />
               }
             />
             <Route 
