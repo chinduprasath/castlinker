@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import DashboardSidebar from '@/components/DashboardSidebar';
-import { useAuth } from '@/contexts/AuthContext';
 import TopBar from '@/components/TopBar';
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTheme } from '@/contexts/ThemeContext';
@@ -15,11 +14,10 @@ interface AppLayoutProps {
 const AppLayout = ({ children }: AppLayoutProps) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const location = useLocation();
-  const { user } = useAuth();
   const isMobile = useIsMobile();
   const { theme } = useTheme();
   
-  // Public pages (don't need authentication and don't show sidebar)
+  // Public pages (don't show sidebar)
   const publicPages = ['/', '/login', '/signup', '/about', '/features', '/pricing', '/contact', '/privacy', '/help'];
   
   // Check if current path is an admin path
@@ -31,12 +29,12 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   }
   
   const isPublicPage = publicPages.includes(location.pathname);
-  // Only show the navbar on true public pages when not logged in
-  const showNavbar = isPublicPage && !user && location.pathname !== '/';
-  // Show sidebar when logged in and not on a public page
-  const showSidebar = user && !isPublicPage;
-  // Show topbar when user is logged in
-  const showTopBar = user && !isPublicPage;
+  // Show the navbar on public pages
+  const showNavbar = isPublicPage;
+  // Show sidebar when not on a public page
+  const showSidebar = !isPublicPage;
+  // Show topbar when not on public pages
+  const showTopBar = !isPublicPage;
   // Special case for landing page - show navbar but with different styling
   const isLandingPage = location.pathname === '/';
 
@@ -55,8 +53,8 @@ const AppLayout = ({ children }: AppLayoutProps) => {
 
   return (
     <div className={`min-h-screen ${theme === 'light' ? 'bg-gray-50' : 'bg-background'} text-foreground transition-colors duration-300`}>
-      {/* Show Navbar on landing page or public pages without user logged in */}
-      {(showNavbar || isLandingPage && !user) && <Navbar />}
+      {/* Show Navbar on public pages */}
+      {(showNavbar || isLandingPage) && <Navbar />}
       
       {showSidebar ? (
         <div className="flex min-h-screen w-full">

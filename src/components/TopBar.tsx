@@ -14,7 +14,6 @@ import {
   Menu,
   X
 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,28 +27,25 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 const TopBar = () => {
-  const { user, logout } = useAuth();
-  const { isAdmin } = useAdminAuth();
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState(3); // Mock notification count
   const [isSearchOpen, setIsSearchOpen] = useState(false); // For mobile view
   
-  if (!user) return null;
-  
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
+  // Mock user data since authentication is removed
+  const mockUser = {
+    name: "John Doe",
+    role: "Actor",
+    avatar: "/images/avatar.png"
   };
   
-  const initials = user.name
-    ? user.name
+  const initials = mockUser.name
+    ? mockUser.name
         .split(' ')
         .map((n: string) => n[0])
         .join('')
-    : '?';
+    : 'JD';
   
   return (
     <div className="w-full border-b border-gold/10 bg-background/90 backdrop-blur-sm">
@@ -135,14 +131,14 @@ const TopBar = () => {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-9 gap-1 sm:gap-2 px-1 sm:px-2 rounded-xl hover:bg-gold/5">
                 <Avatar className="h-7 w-7 sm:h-8 sm:w-8 border border-gold/20">
-                  <AvatarImage src={user.avatar} alt={user.name} />
+                  <AvatarImage src={mockUser.avatar} alt={mockUser.name} />
                   <AvatarFallback className="bg-gold/10 text-gold text-xs sm:text-sm">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
                 <div className="hidden sm:flex flex-col items-start text-left">
-                  <span className="text-sm font-medium leading-none">{user.name}</span>
-                  <span className="text-xs text-muted-foreground">{user.role}</span>
+                  <span className="text-sm font-medium leading-none">{mockUser.name}</span>
+                  <span className="text-xs text-muted-foreground">{mockUser.role}</span>
                 </div>
                 <ChevronDown className="h-4 w-4 text-muted-foreground hidden sm:block" />
               </Button>
@@ -165,15 +161,11 @@ const TopBar = () => {
                 </DropdownMenuItem>
               </DropdownMenuGroup>
               
-              {isAdmin && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate('/admin/dashboard')} className="rounded-lg">
-                    <Shield className="mr-2 h-4 w-4" />
-                    Admin Dashboard
-                  </DropdownMenuItem>
-                </>
-              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate('/admin/dashboard')} className="rounded-lg">
+                <Shield className="mr-2 h-4 w-4" />
+                Admin Dashboard
+              </DropdownMenuItem>
               
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => navigate('/privacy')} className="rounded-lg">
@@ -185,9 +177,9 @@ const TopBar = () => {
                 Help & Support
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout} className="text-red-500 focus:text-red-500 rounded-lg">
+              <DropdownMenuItem onClick={() => navigate('/')} className="text-red-500 focus:text-red-500 rounded-lg">
                 <LogOut className="mr-2 h-4 w-4" />
-                Logout
+                Back to Home
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
