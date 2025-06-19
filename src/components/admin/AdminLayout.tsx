@@ -33,10 +33,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       <AdminSidebar collapsed={collapsed} toggleSidebar={toggleSidebar} />
       
       <div className={`flex-1 flex flex-col transition-all duration-300 ease-in-out ${
-        collapsed ? "ml-[70px]" :
-
-
-ml-[250px]"
+        collapsed ? "ml-[70px]" : "ml-[250px]"
       }`}>
         <AdminHeader toggleSidebar={toggleSidebar} />
         
