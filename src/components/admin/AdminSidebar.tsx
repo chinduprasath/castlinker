@@ -54,7 +54,7 @@ const AdminSidebar = ({ collapsed, toggleSidebar }: AdminSidebarProps) => {
       title: "Dashboard",
       icon: LayoutDashboard,
       href: "/admin/dashboard",
-      module: 'team', // Dashboard is accessible to anyone with team view access
+      module: 'team',
       action: 'view'
     },
     {
@@ -93,17 +93,38 @@ const AdminSidebar = ({ collapsed, toggleSidebar }: AdminSidebarProps) => {
       action: 'view'
     },
     {
+      title: "Content Moderation",
+      icon: FileText,
+      href: "/admin/content",
+      module: 'content',
+      action: 'view'
+    },
+    {
       title: "Analytics",
       icon: BarChart2,
       href: "/admin/analytics",
-      module: 'content', // Analytics is part of content module for permission purposes
+      module: 'content',
       action: 'view'
     },
     {
       title: "Ticket Management",
       icon: Ticket,
       href: "/admin/tickets",
-      module: 'team', // Changed to 'team' module to ensure super admin can see it
+      module: 'team',
+      action: 'view'
+    },
+    {
+      title: "Notifications",
+      icon: Bell,
+      href: "/admin/notifications",
+      module: 'team',
+      action: 'view'
+    },
+    {
+      title: "Settings",
+      icon: Settings,
+      href: "/admin/settings",
+      module: 'team',
       action: 'view'
     }
   ];
@@ -112,19 +133,19 @@ const AdminSidebar = ({ collapsed, toggleSidebar }: AdminSidebarProps) => {
     return location.pathname === href;
   };
 
-  // Filter items based on permissions
-  const filteredNavItems = navItems.filter(
-    (item) => hasPermission(item.module, item.action || 'view')
-  );
+  // Check if user is hardcoded admin
+  const isHardcodedAdmin = user?.email === 'admin@gmail.com' && user?.role === 'super_admin';
+
+  // Filter items based on permissions - if hardcoded admin, show all items
+  const filteredNavItems = isHardcodedAdmin 
+    ? navItems 
+    : navItems.filter(item => hasPermission(item.module, item.action || 'view'));
 
   if (!mounted) return null;
 
-  // Add console log to debug
-  console.log("Admin Sidebar - Filtered Nav Items:", navItems.map(item => ({
-    title: item.title,
-    module: item.module,
-    hasPermission: hasPermission(item.module, item.action || 'view')
-  })));
+  console.log("Admin Sidebar - User:", user);
+  console.log("Admin Sidebar - Is Hardcoded Admin:", isHardcodedAdmin);
+  console.log("Admin Sidebar - Filtered Nav Items Count:", filteredNavItems.length);
 
   return (
     <aside
@@ -164,13 +185,13 @@ const AdminSidebar = ({ collapsed, toggleSidebar }: AdminSidebarProps) => {
               key={index}
               to={item.href}
               className={cn(
-                "flex h-10 items-center rounded-md text-muted-foreground hover:bg-muted",
+                "flex h-10 items-center rounded-md text-muted-foreground hover:bg-muted transition-colors",
                 isActive(item.href) && "bg-gold/10 text-gold hover:bg-gold/20",
                 collapsed ? "justify-center" : "px-4"
               )}
             >
               <item.icon className={cn("h-5 w-5", isActive(item.href) && "text-gold")} />
-              {!collapsed && <span className="ml-2">{item.title}</span>}
+              {!collapsed && <span className="ml-3">{item.title}</span>}
             </Link>
           ))}
         </nav>
