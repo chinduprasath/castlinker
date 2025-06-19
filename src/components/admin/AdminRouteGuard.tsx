@@ -32,7 +32,7 @@ const AdminRouteGuard = ({
         
         if (!sessionData.session) {
           console.log("No active Supabase session found");
-          navigate("/superadmin-signin");
+          navigate("/admin/login");
           return;
         }
         
@@ -41,7 +41,7 @@ const AdminRouteGuard = ({
       } catch (err) {
         console.error("Error verifying Supabase session:", err);
         setAuthChecking(false);
-        navigate("/superadmin-signin");
+        navigate("/admin/login");
       }
     };
     
@@ -94,7 +94,7 @@ const AdminRouteGuard = ({
           <Button onClick={() => navigate("/")}>Return to Home</Button>
           <Button 
             variant="outline"
-            onClick={() => navigate("/superadmin-signin")} 
+            onClick={() => navigate("/admin/login")} 
           >
             Admin Sign In
           </Button>

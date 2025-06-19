@@ -44,7 +44,6 @@ import ProjectDetail from '@/pages/ProjectDetail';
 
 // Admin Pages
 import AdminLogin from '@/pages/AdminLogin';
-import SuperAdminSignin from '@/pages/SuperAdminSignin';
 import SuperAdminSignup from '@/pages/SuperAdminSignup';
 import AdminDashboard from '@/pages/admin/AdminDashboard';
 import AdminProfile from '@/pages/admin/AdminProfile';
@@ -318,7 +317,6 @@ const App = () => {
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminLogin />} />
             <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/superadmin-signin" element={<SuperAdminSignin />} />
             <Route path="/superadmin-signup" element={<SuperAdminSignup />} />
             
             <Route 
