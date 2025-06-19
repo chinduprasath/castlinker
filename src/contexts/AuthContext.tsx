@@ -23,6 +23,34 @@ interface AuthContextType {
   error: string | null;
 }
 
+// Hardcoded credentials
+const HARDCODED_CREDENTIALS = {
+  user: {
+    email: 'user@gmail.com',
+    password: '123456',
+    userData: {
+      id: 'hardcoded-user-1',
+      name: 'Demo User',
+      email: 'user@gmail.com',
+      role: 'Actor',
+      avatar: '/images/avatar.png',
+      isLoggedIn: true
+    }
+  },
+  admin: {
+    email: 'admin@gmail.com',
+    password: '123456',
+    userData: {
+      id: 'hardcoded-admin-1',
+      name: 'Demo Admin',
+      email: 'admin@gmail.com',
+      role: 'super_admin',
+      avatar: '/images/avatar.png',
+      isLoggedIn: true
+    }
+  }
+};
+
 // Create context with default values
 const AuthContext = createContext<AuthContextType>({
   user: null,
@@ -61,6 +89,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Check for existing session on mount
   useEffect(() => {
+    // Check for hardcoded user in localStorage first
+    const savedUser = localStorage.getItem('hardcodedUser');
+    if (savedUser) {
+      try {
+        const userData = JSON.parse(savedUser);
+        setUser(userData);
+        setIsLoading(false);
+        return;
+      } catch (err) {
+        localStorage.removeItem('hardcodedUser');
+      }
+    }
+
     // First set up the auth state listener to prevent missing auth events
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -113,6 +154,35 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsLoading(true);
       setError(null);
       
+      // Check if credentials match hardcoded ones
+      const emailLower = email.toLowerCase();
+      if (emailLower === HARDCODED_CREDENTIALS.user.email && password === HARDCODED_CREDENTIALS.user.password) {
+        // User login
+        setUser(HARDCODED_CREDENTIALS.user.userData);
+        if (rememberMe) {
+          localStorage.setItem('hardcodedUser', JSON.stringify(HARDCODED_CREDENTIALS.user.userData));
+        }
+        toast({
+          title: "Welcome back!",
+          description: `You are logged in as ${HARDCODED_CREDENTIALS.user.userData.name}`,
+        });
+        return;
+      }
+      
+      if (emailLower === HARDCODED_CREDENTIALS.admin.email && password === HARDCODED_CREDENTIALS.admin.password) {
+        // Admin login
+        setUser(HARDCODED_CREDENTIALS.admin.userData);
+        if (rememberMe) {
+          localStorage.setItem('hardcodedUser', JSON.stringify(HARDCODED_CREDENTIALS.admin.userData));
+        }
+        toast({
+          title: "Welcome back, Admin!",
+          description: `You are logged in as ${HARDCODED_CREDENTIALS.admin.userData.name}`,
+        });
+        return;
+      }
+      
+      // If not hardcoded credentials, try Supabase authentication
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -248,8 +318,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const logout = async () => {
     setIsLoading(true);
     try {
+      // Clear hardcoded user from localStorage
+      localStorage.removeItem('hardcodedUser');
+      
+      // Also try to sign out from Supabase in case there's a session
       await supabase.auth.signOut();
       localStorage.removeItem('rememberLogin');
+      
+      // Clear user state
+      setUser(null);
+      
+      toast({
+        title: "Signed out",
+        description: "You have been logged out successfully",
+      });
     } catch (error: any) {
       console.error('Error signing out:', error);
       toast({
