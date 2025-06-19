@@ -43,23 +43,18 @@ const AdminLoginForm = () => {
     setError(null);
     
     try {
-      // For demonstration, we're adapting the existing login but verifying admin role
-      // In a real app, this would use a separate admin auth endpoint
       await login(data.email, data.password, data.rememberMe);
       
-      // Mock admin verification - in a real app, this would be server-validated
-      // For this demo, we're considering emails containing "admin" as admin accounts
-      if (data.email.includes("admin")) {
+      // For admin login, check if it's the hardcoded admin credentials
+      if (data.email.toLowerCase() === "admin@gmail.com") {
         toast({
-          title: "Welcome back, Admin",
+          title: "Welcome back, Admin!",
           description: "You've successfully logged in to the admin dashboard.",
           variant: "default",
         });
-        navigate("/admin/dashboard"); // Ensure consistent redirect to admin dashboard
+        navigate("/admin/dashboard");
       } else {
         setError("You don't have admin access privileges.");
-        // Logout the user if they're not an admin
-        // In a real app, the server would reject non-admin login attempts
       }
     } catch (error) {
       if (error instanceof Error) {
@@ -99,7 +94,7 @@ const AdminLoginForm = () => {
                 <FormLabel>Email</FormLabel>
                 <FormControl>
                   <Input 
-                    placeholder="admin@castlinker.com" 
+                    placeholder="admin@gmail.com" 
                     {...field} 
                     className="bg-background/70"
                   />
