@@ -1,6 +1,7 @@
+
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, User, LogIn, LogOut, Film, Book, Users } from 'lucide-react';
+import { Menu, X, User, LogIn, LogOut, Film, Book, Users, Shield, Layout } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -42,6 +43,16 @@ const Navbar = () => {
             Industry Hub
           </Link>
           <Link to="/contact" className="text-sm font-medium text-foreground/80 hover:text-gold transition-colors">Contact</Link>
+          
+          {/* New Dashboard Links */}
+          <Link to="/dashboard" className="text-sm font-medium text-foreground/80 hover:text-gold transition-colors flex items-center gap-1">
+            <Layout className="h-4 w-4" />
+            User Dashboard
+          </Link>
+          <Link to="/admin/dashboard" className="text-sm font-medium text-foreground/80 hover:text-gold transition-colors flex items-center gap-1">
+            <Shield className="h-4 w-4" />
+            Admin Dashboard
+          </Link>
         </nav>
 
         <div className="hidden md:flex items-center gap-2 lg:gap-4">
@@ -180,6 +191,24 @@ const Navbar = () => {
                 Industry Hub
               </Link>
               <Link to="/contact" className="text-sm font-medium text-foreground/80 hover:text-gold transition-colors py-2" onClick={() => setIsOpen(false)}>Contact</Link>
+              
+              {/* New Dashboard Links for Mobile */}
+              <Link 
+                to="/dashboard" 
+                className="text-sm font-medium text-foreground/80 hover:text-gold transition-colors py-2 flex items-center gap-2"
+                onClick={() => setIsOpen(false)}
+              >
+                <Layout className="h-4 w-4" />
+                User Dashboard
+              </Link>
+              <Link 
+                to="/admin/dashboard" 
+                className="text-sm font-medium text-foreground/80 hover:text-gold transition-colors py-2 flex items-center gap-2"
+                onClick={() => setIsOpen(false)}
+              >
+                <Shield className="h-4 w-4" />
+                Admin Dashboard
+              </Link>
               
               <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-gold/10 mt-auto">
                 {user ? (
