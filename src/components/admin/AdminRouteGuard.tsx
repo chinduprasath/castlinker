@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminModule } from "@/types/rbacTypes";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AdminRouteGuardProps {
   children: React.ReactNode;
@@ -21,6 +22,7 @@ const AdminRouteGuard = ({
   requiredPermission
 }: AdminRouteGuardProps) => {
   const { isAdmin, adminUser, hasPermission, can, loading } = useAdminAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [authChecking, setAuthChecking] = useState(true);
@@ -28,6 +30,13 @@ const AdminRouteGuard = ({
   useEffect(() => {
     const checkSession = async () => {
       try {
+        // Check if user is hardcoded admin first
+        if (user?.email === 'admin@gmail.com' && user?.role === 'super_admin') {
+          console.log("Hardcoded admin user detected, skipping Supabase session check");
+          setAuthChecking(false);
+          return;
+        }
+        
         const { data: sessionData } = await supabase.auth.getSession();
         
         if (!sessionData.session) {
@@ -46,7 +55,7 @@ const AdminRouteGuard = ({
     };
     
     checkSession();
-  }, [navigate]);
+  }, [navigate, user]);
   
   const getCurrentModule = (): AdminModule => {
     const path = location.pathname;
@@ -61,16 +70,21 @@ const AdminRouteGuard = ({
   
   const moduleToCheck = requiredModule || getCurrentModule();
   
+  // For hardcoded admin, grant all permissions
+  const isHardcodedAdmin = user?.email === 'admin@gmail.com' && user?.role === 'super_admin';
+  
   console.log('AdminRouteGuard check:', { 
-    isAdmin, 
-    adminUserRole: adminUser?.role,
+    isAdmin: isAdmin || isHardcodedAdmin, 
+    adminUserRole: adminUser?.role || user?.role,
     requiredModule: moduleToCheck,
     requiredAction,
     requiredPermission,
     loading,
     authChecking,
-    hasModulePermission: !loading && !authChecking ? hasPermission(moduleToCheck, requiredAction) : 'checking',
-    legacyPermission: requiredPermission ? (!loading && !authChecking ? can(requiredPermission) : 'checking') : 'not required'
+    isHardcodedAdmin,
+    userEmail: user?.email,
+    hasModulePermission: !loading && !authChecking ? (isHardcodedAdmin || hasPermission(moduleToCheck, requiredAction)) : 'checking',
+    legacyPermission: requiredPermission ? (!loading && !authChecking ? (isHardcodedAdmin || can(requiredPermission)) : 'checking') : 'not required'
   });
   
   if (loading || authChecking) {
@@ -83,7 +97,7 @@ const AdminRouteGuard = ({
     );
   }
   
-  if (!isAdmin || !adminUser) {
+  if (!isAdmin && !isHardcodedAdmin) {
     console.log("Access denied: User is not an admin");
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background">
@@ -103,7 +117,7 @@ const AdminRouteGuard = ({
     );
   }
   
-  if (requiredPermission && !can(requiredPermission)) {
+  if (requiredPermission && !isHardcodedAdmin && !can(requiredPermission)) {
     console.log(`Legacy Permission denied: User lacks "${requiredPermission}" permission`);
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background">
@@ -117,7 +131,7 @@ const AdminRouteGuard = ({
     );
   }
   
-  if (!hasPermission(moduleToCheck, requiredAction)) {
+  if (!isHardcodedAdmin && !hasPermission(moduleToCheck, requiredAction)) {
     console.log(`Permission denied: User lacks "${requiredAction}" permission on "${moduleToCheck}" module`);
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background">
