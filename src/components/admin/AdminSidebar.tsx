@@ -1,6 +1,8 @@
 
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -20,6 +22,7 @@ import {
   Ticket
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AdminModule } from "@/types/rbacTypes";
 import ThemeToggle from "@/components/ThemeToggle";
 
 interface AdminSidebarProps {
@@ -31,9 +34,13 @@ interface NavItem {
   title: string;
   icon: React.ElementType;
   href: string;
+  module: AdminModule;
+  action?: 'view' | 'create' | 'edit' | 'delete';
 }
 
 const AdminSidebar = ({ collapsed, toggleSidebar }: AdminSidebarProps) => {
+  const { user } = useAuth();
+  const { hasPermission } = useAdminAuth();
   const location = useLocation();
   const [mounted, setMounted] = useState(false);
   
@@ -47,41 +54,57 @@ const AdminSidebar = ({ collapsed, toggleSidebar }: AdminSidebarProps) => {
       title: "Dashboard",
       icon: LayoutDashboard,
       href: "/admin/dashboard",
+      module: 'team', // Dashboard is accessible to anyone with team view access
+      action: 'view'
     },
     {
       title: "User Management",
       icon: Users,
       href: "/admin/users",
+      module: 'users',
+      action: 'view'
     },
     {
       title: "Team Management",
       icon: Shield,
       href: "/admin/team",
+      module: 'team',
+      action: 'view'
     },
     {
       title: "Job Management",
       icon: Briefcase,
       href: "/admin/jobs",
+      module: 'jobs',
+      action: 'view'
     },
     {
       title: "Post Management",
       icon: FileTextIcon,
       href: "/admin/posts",
+      module: 'posts',
+      action: 'view'
     },
     {
       title: "Event Management",
       icon: Calendar,
       href: "/admin/events",
+      module: 'events',
+      action: 'view'
     },
     {
       title: "Analytics",
       icon: BarChart2,
       href: "/admin/analytics",
+      module: 'content', // Analytics is part of content module for permission purposes
+      action: 'view'
     },
     {
       title: "Ticket Management",
       icon: Ticket,
       href: "/admin/tickets",
+      module: 'team', // Changed to 'team' module to ensure super admin can see it
+      action: 'view'
     }
   ];
 
@@ -89,7 +112,19 @@ const AdminSidebar = ({ collapsed, toggleSidebar }: AdminSidebarProps) => {
     return location.pathname === href;
   };
 
+  // Filter items based on permissions
+  const filteredNavItems = navItems.filter(
+    (item) => hasPermission(item.module, item.action || 'view')
+  );
+
   if (!mounted) return null;
+
+  // Add console log to debug
+  console.log("Admin Sidebar - Filtered Nav Items:", navItems.map(item => ({
+    title: item.title,
+    module: item.module,
+    hasPermission: hasPermission(item.module, item.action || 'view')
+  })));
 
   return (
     <aside
@@ -124,7 +159,7 @@ const AdminSidebar = ({ collapsed, toggleSidebar }: AdminSidebarProps) => {
 
       <div className="flex-1 overflow-y-auto pt-4">
         <nav className="grid gap-1 px-2">
-          {navItems.map((item, index) => (
+          {filteredNavItems.map((item, index) => (
             <Link
               key={index}
               to={item.href}

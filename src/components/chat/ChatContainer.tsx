@@ -1,5 +1,6 @@
 
 import React, { useEffect, useState, useRef } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import { useChat, Message, UserPresence } from '@/hooks/useChat';
 
 interface ChatContainerProps {
@@ -38,9 +39,6 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ roomId }) => {
         removeReaction,
         markAsRead,
     } = useChat(roomId);
-
-    // Mock user data
-    const user = { id: "mock-user", name: "Mock User" };
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
 

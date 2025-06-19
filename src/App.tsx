@@ -1,6 +1,7 @@
 
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
+import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 
 // Layouts
@@ -64,334 +65,439 @@ import ManagePage from '@/pages/ManagePage';
 import UserJobDetail from '@/pages/UserJobDetail';
 import UserPostDetail from '@/pages/UserPostDetail';
 
+// Guards
+import PrivateRoute from '@/components/auth/PrivateRoute';
+import AdminRouteGuard from '@/components/admin/AdminRouteGuard';
+
 const App = () => {
   return (
-    <ThemeProvider>
-      <Router>
-        <Routes>
-          {/* Public Routes */}
-          <Route 
-            path="/" 
-            element={
-              <AppLayout>
-                <Index />
-              </AppLayout>
-            }
-          />
-          <Route 
-            path="/login" 
-            element={
-              <AppLayout>
-                <Login />
-              </AppLayout>
-            }
-          />
-          <Route 
-            path="/signup" 
-            element={
-              <AppLayout>
-                <Signup />
-              </AppLayout>
-            }
-          />
-          <Route 
-            path="/forgot-password" 
-            element={
-              <ForgotPassword />
-            }
-          />
-          <Route 
-            path="/reset-password" 
-            element={
-              <ResetPassword />
-            }
-          />
-          <Route 
-            path="/about" 
-            element={
-              <AppLayout>
-                <About />
-              </AppLayout>
-            }
-          />
-          <Route 
-            path="/features" 
-            element={
-              <AppLayout>
-                <Features />
-              </AppLayout>
-            }
-          />
-          <Route 
-            path="/pricing" 
-            element={
-              <AppLayout>
-                <Pricing />
-              </AppLayout>
-            }
-          />
-          <Route 
-            path="/contact" 
-            element={
-              <AppLayout>
-                <Contact />
-              </AppLayout>
-            }
-          />
-          <Route 
-            path="/privacy" 
-            element={
-              <AppLayout>
-                <Privacy />
-              </AppLayout>
-            }
-          />
-          <Route 
-            path="/terms" 
-            element={
-              <AppLayout>
-                <TermsAndConditions />
-              </AppLayout>
-            }
-          />
-          <Route 
-            path="/cancellation-refund" 
-            element={
-              <AppLayout>
-                <CancellationRefundPolicy />
-              </AppLayout>
-            }
-          />
-          <Route 
-            path="/blog" 
-            element={
-              <AppLayout>
-                <BlogPage />
-              </AppLayout>
-            }
-          />
-          <Route 
-            path="/events" 
-            element={
-              <AppLayout>
-                <Events />
-              </AppLayout>
-            }
-          />
+    <AuthProvider>
+      <ThemeProvider>
+        <Router>
+          <Routes>
+            {/* Public Routes */}
+            <Route 
+              path="/" 
+              element={
+                <AppLayout>
+                  <Index />
+                </AppLayout>
+              }
+            />
+            <Route 
+              path="/login" 
+              element={
+                <AppLayout>
+                  <Login />
+                </AppLayout>
+              }
+            />
+            <Route 
+              path="/signup" 
+              element={
+                <AppLayout>
+                  <Signup />
+                </AppLayout>
+              }
+            />
+            <Route 
+              path="/forgot-password" 
+              element={
+                <ForgotPassword />
+              }
+            />
+            <Route 
+              path="/reset-password" 
+              element={
+                <ResetPassword />
+              }
+            />
+            <Route 
+              path="/about" 
+              element={
+                <AppLayout>
+                  <About />
+                </AppLayout>
+              }
+            />
+            <Route 
+              path="/features" 
+              element={
+                <AppLayout>
+                  <Features />
+                </AppLayout>
+              }
+            />
+            <Route 
+              path="/pricing" 
+              element={
+                <AppLayout>
+                  <Pricing />
+                </AppLayout>
+              }
+            />
+            <Route 
+              path="/contact" 
+              element={
+                <AppLayout>
+                  <Contact />
+                </AppLayout>
+              }
+            />
+            <Route 
+              path="/privacy" 
+              element={
+                <AppLayout>
+                  <Privacy />
+                </AppLayout>
+              }
+            />
+            <Route 
+              path="/terms" 
+              element={
+                <AppLayout>
+                  <TermsAndConditions />
+                </AppLayout>
+              }
+            />
+            <Route 
+              path="/cancellation-refund" 
+              element={
+                <AppLayout>
+                  <CancellationRefundPolicy />
+                </AppLayout>
+              }
+            />
+            <Route 
+              path="/blog" 
+              element={
+                <AppLayout>
+                  <BlogPage />
+                </AppLayout>
+              }
+            />
+            <Route 
+              path="/events" 
+              element={
+                <AppLayout>
+                  <Events />
+                </AppLayout>
+              }
+            />
 
-          {/* User Dashboard Routes - Now Public */}
-          <Route path="/dashboard" element={
-            <AppLayout>
-              <Dashboard />
-            </AppLayout>
-          } />
-          <Route path="/jobs" element={
-            <AppLayout>
-              <Jobs />
-            </AppLayout>
-          } />
-          <Route path="/posts" element={
-            <AppLayout>
-              <Posts />
-            </AppLayout>
-          } />
-          <Route path="/posts/:id" element={
-            <AppLayout>
-              <PostDetail />
-            </AppLayout>
-          } />
-          <Route path="/profile" element={
-            <AppLayout>
-              <Profile />
-            </AppLayout>
-          } />
-          <Route path="/settings" element={
-            <AppLayout>
-              <Settings />
-            </AppLayout>
-          } />
-          <Route path="/talent-directory" element={
-            <AppLayout>
-              <TalentDirectory />
-            </AppLayout>
-          } />
-          <Route path="/industry-hub" element={
-            <AppLayout>
-              <IndustryHub />
-            </AppLayout>
-          } />
-          <Route path="/chat" element={
-            <AppLayout>
-              <Chat />
-            </AppLayout>
-          } />
-          <Route path="/billing" element={
-            <AppLayout>
-              <Billing />
-            </AppLayout>
-          } />
-          <Route path="/notifications" element={
-            <AppLayout>
-              <Notifications />
-            </AppLayout>
-          } />
-          <Route path="/help" element={
-            <AppLayout>
-              <Help />
-            </AppLayout>
-          } />
-          <Route path="/manage" element={
-            <AppLayout>
-              <ManagePage />
-            </AppLayout>
-          } />
-          <Route path="/manage/jobs/:jobId" element={
-            <AppLayout>
-              <UserJobDetail />
-            </AppLayout>
-          } />
-          <Route path="/manage/posts/:postId" element={
-            <AppLayout>
-              <UserPostDetail />
-            </AppLayout>
-          } />
+            {/* Protected Routes */}
+            <Route path="/dashboard" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <Dashboard />
+                </AppLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/jobs" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <Jobs />
+                </AppLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/posts" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <Posts />
+                </AppLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/posts/:id" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <PostDetail />
+                </AppLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/profile" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <Profile />
+                </AppLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/settings" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <Settings />
+                </AppLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/talent-directory" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <TalentDirectory />
+                </AppLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/industry-hub" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <IndustryHub />
+                </AppLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/chat" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <Chat />
+                </AppLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/billing" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <Billing />
+                </AppLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/notifications" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <Notifications />
+                </AppLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/help" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <Help />
+                </AppLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/manage" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <ManagePage />
+                </AppLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/manage/jobs/:jobId" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <UserJobDetail />
+                </AppLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/manage/posts/:postId" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <UserPostDetail />
+                </AppLayout>
+              </PrivateRoute>
+            } />
 
-          {/* Project Routes - Now Public */}
-          <Route path="/projects" element={
-            <AppLayout>
-              <Projects />
-            </AppLayout>
-          } />
-          <Route path="/projects/create" element={
-            <AppLayout>
-              <ProjectCreate />
-            </AppLayout>
-          } />
-          <Route path="/projects/:projectId" element={
-            <AppLayout>
-              <ProjectDetail />
-            </AppLayout>
-          } />
+            {/* Project Routes */}
+            <Route path="/projects" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <Projects />
+                </AppLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/projects/create" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <ProjectCreate />
+                </AppLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/projects/:projectId" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <ProjectDetail />
+                </AppLayout>
+              </PrivateRoute>
+            } />
 
-          {/* Admin Routes - Now Public */}
-          <Route path="/admin" element={<AdminLogin />} />
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/superadmin-signin" element={<SuperAdminSignin />} />
-          <Route path="/superadmin-signup" element={<SuperAdminSignup />} />
+            {/* Admin Routes */}
+            <Route path="/admin" element={<AdminLogin />} />
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/superadmin-signin" element={<SuperAdminSignin />} />
+            <Route path="/superadmin-signup" element={<SuperAdminSignup />} />
+            
+            <Route 
+              path="/admin/dashboard" 
+              element={
+                <PrivateRoute>
+                  <AdminRouteGuard>
+                    <AdminLayout>
+                      <AdminDashboard />
+                    </AdminLayout>
+                  </AdminRouteGuard>
+                </PrivateRoute>
+              } 
+            />
+            <Route 
+              path="/admin/profile" 
+              element={
+                <PrivateRoute>
+                  <AdminRouteGuard requiredModule="team" requiredAction="view">
+                    <AdminLayout>
+                      <AdminProfile />
+                    </AdminLayout>
+                  </AdminRouteGuard>
+                </PrivateRoute>
+              } 
+            />
+            <Route 
+              path="/admin/team" 
+              element={
+                <PrivateRoute>
+                  <AdminRouteGuard requiredModule="team" requiredAction="view">
+                    <AdminLayout>
+                      <TeamManagement />
+                    </AdminLayout>
+                  </AdminRouteGuard>
+                </PrivateRoute>
+              } 
+            />
+            <Route path="/admin/users" element={
+              <PrivateRoute>
+                <AdminRouteGuard requiredModule="users" requiredAction="view">
+                  <AdminLayout>
+                    <UserManagement />
+                  </AdminLayout>
+                </AdminRouteGuard>
+              </PrivateRoute>
+            } />
+            <Route path="/admin/jobs" element={
+              <PrivateRoute>
+                <AdminRouteGuard requiredModule="jobs" requiredAction="view">
+                  <AdminLayout>
+                    <JobManagement />
+                  </AdminLayout>
+                </AdminRouteGuard>
+              </PrivateRoute>
+            } />
+            <Route path="/admin/posts" element={
+              <PrivateRoute>
+                <AdminRouteGuard requiredModule="posts" requiredAction="view">
+                  <AdminLayout>
+                    <PostManagement />
+                  </AdminLayout>
+                </AdminRouteGuard>
+              </PrivateRoute>
+            } />
+            <Route path="/admin/events" element={
+              <PrivateRoute>
+                <AdminRouteGuard requiredModule="events" requiredAction="view">
+                  <AdminLayout>
+                    <EventManagement />
+                  </AdminLayout>
+                </AdminRouteGuard>
+              </PrivateRoute>
+            } />
+            <Route path="/admin/content" element={
+              <PrivateRoute>
+                <AdminRouteGuard requiredModule="content" requiredAction="view">
+                  <AdminLayout>
+                    <ContentModeration />
+                  </AdminLayout>
+                </AdminRouteGuard>
+              </PrivateRoute>
+            } />
+            <Route path="/admin/analytics" element={
+              <PrivateRoute>
+                <AdminRouteGuard requiredModule="content" requiredAction="view">
+                  <AdminLayout>
+                    <Analytics />
+                  </AdminLayout>
+                </AdminRouteGuard>
+              </PrivateRoute>
+            } />
+            <Route path="/admin/notifications" element={
+              <PrivateRoute>
+                <AdminRouteGuard requiredModule="team" requiredAction="view">
+                  <AdminLayout>
+                    <AdminNotifications />
+                  </AdminLayout>
+                </AdminRouteGuard>
+              </PrivateRoute>
+            } />
+            <Route path="/admin/settings" element={
+              <PrivateRoute>
+                <AdminRouteGuard requiredModule="team" requiredAction="view">
+                  <AdminLayout>
+                    <AdminSettings />
+                  </AdminLayout>
+                </AdminRouteGuard>
+              </PrivateRoute>
+            } />
+
+            {/* Admin Post Detail Route */}
+            <Route
+              path="/admin/posts/:postId"
+              element={(
+                <AdminLayout>
+                  <AdminPostDetail />
+                </AdminLayout>
+              )}
+            />
+
+            {/* Admin Ticket Management Route */}
+            <Route
+              path="/admin/tickets"
+              element={
+                <PrivateRoute>
+                  <AdminRouteGuard>
+                    <AdminLayout>
+                      <AdminTicketManagement />
+                    </AdminLayout>
+                  </AdminRouteGuard>
+                </PrivateRoute>
+              }
+            />
+
+            {/* Admin Ticket Detail Route */}
+            <Route
+              path="/admin/tickets/:ticketId"
+              element={
+                <PrivateRoute>
+                  <AdminRouteGuard>
+                    <AdminLayout>
+                      <AdminTicketDetail />
+                    </AdminLayout>
+                  </AdminRouteGuard>
+                </PrivateRoute>
+              }
+            />
+
+            {/* Admin Job Detail Route */}
+            <Route 
+              path="/admin/ticket/:ticketId"
+              element={(
+                <AdminRouteGuard requiredModule="tickets" requiredAction="view">
+                  <AdminLayout>
+                    <AdminTicketDetail />
+                  </AdminLayout>
+                </AdminRouteGuard>
+              )}
+            />
+
+            <Route 
+              path="/admin/jobs/:jobId"
+              element={(
+                <AdminLayout>
+                  <AdminJobDetail />
+                </AdminLayout>
+              )}
+            />
+
+            {/* 404 Route */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
           
-          <Route 
-            path="/admin/dashboard" 
-            element={
-              <AdminLayout>
-                <AdminDashboard />
-              </AdminLayout>
-            } 
-          />
-          <Route 
-            path="/admin/profile" 
-            element={
-              <AdminLayout>
-                <AdminProfile />
-              </AdminLayout>
-            } 
-          />
-          <Route 
-            path="/admin/team" 
-            element={
-              <AdminLayout>
-                <TeamManagement />
-              </AdminLayout>
-            } 
-          />
-          <Route path="/admin/users" element={
-            <AdminLayout>
-              <UserManagement />
-            </AdminLayout>
-          } />
-          <Route path="/admin/jobs" element={
-            <AdminLayout>
-              <JobManagement />
-            </AdminLayout>
-          } />
-          <Route path="/admin/posts" element={
-            <AdminLayout>
-              <PostManagement />
-            </AdminLayout>
-          } />
-          <Route path="/admin/events" element={
-            <AdminLayout>
-              <EventManagement />
-            </AdminLayout>
-          } />
-          <Route path="/admin/content" element={
-            <AdminLayout>
-              <ContentModeration />
-            </AdminLayout>
-          } />
-          <Route path="/admin/analytics" element={
-            <AdminLayout>
-              <Analytics />
-            </AdminLayout>
-          } />
-          <Route path="/admin/notifications" element={
-            <AdminLayout>
-              <AdminNotifications />
-            </AdminLayout>
-          } />
-          <Route path="/admin/settings" element={
-            <AdminLayout>
-              <AdminSettings />
-            </AdminLayout>
-          } />
-          <Route
-            path="/admin/posts/:postId"
-            element={(
-              <AdminLayout>
-                <AdminPostDetail />
-              </AdminLayout>
-            )}
-          />
-          <Route
-            path="/admin/tickets"
-            element={
-              <AdminLayout>
-                <AdminTicketManagement />
-              </AdminLayout>
-            }
-          />
-          <Route
-            path="/admin/tickets/:ticketId"
-            element={
-              <AdminLayout>
-                <AdminTicketDetail />
-              </AdminLayout>
-            }
-          />
-          <Route 
-            path="/admin/ticket/:ticketId"
-            element={(
-              <AdminLayout>
-                <AdminTicketDetail />
-              </AdminLayout>
-            )}
-          />
-          <Route 
-            path="/admin/jobs/:jobId"
-            element={(
-              <AdminLayout>
-                <AdminJobDetail />
-              </AdminLayout>
-            )}
-          />
-
-          {/* 404 Route */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        
-        {/* Toast notifications */}
-        <Toaster />
-      </Router>
-    </ThemeProvider>
+          {/* Toast notifications */}
+          <Toaster />
+        </Router>
+      </ThemeProvider>
+    </AuthProvider>
   );
 };
 

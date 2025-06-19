@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
 import { useChat } from "@/hooks/useChat";
 import { useDebounce } from "@/hooks/useDebounce";
 import ChatSidebar from "@/components/chat/ChatSidebar";
@@ -8,9 +9,7 @@ import ChatMessageArea from "@/components/chat/ChatMessageArea";
 import ChatInputBar from "@/components/chat/ChatInputBar";
 
 const Chat = () => {
-  // Mock user data
-  const user = { id: "mock-user", name: "Mock User" };
-  
+  const { user } = useAuth();
   const { 
     messages,
     sendMessage,

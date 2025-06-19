@@ -1,6 +1,7 @@
-
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
@@ -9,15 +10,12 @@ import { AdminProfileData } from "@/types/adminTypes";
 import ProfileTab from "@/components/admin/profile/ProfileTab";
 import SecurityTab from "@/components/admin/profile/SecurityTab";
 import NotificationsTab from "@/components/admin/profile/NotificationsTab";
+import PermissionsDisplay from "@/components/admin/profile/PermissionsDisplay";
 
 const AdminProfile = () => {
-  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const { adminUser, adminRole } = useAdminAuth();
   const { toast } = useToast();
-
-  // Mock user and admin data
-  const user = { id: "mock-user", name: "Mock Admin", email: "admin@castlinker.com" };
-  const adminUser = { role: "super_admin", permissions: ["all"] };
-  const adminRole = { name: "Super Admin", permissions: ["all"] };
 
   const [profile, setProfile] = useState<AdminProfileData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -44,15 +42,19 @@ const AdminProfile = () => {
   const fetchAdminProfile = async () => {
     setIsLoading(true);
     try {
-      // Mock profile data
-      const mockProfile = {
-        id: "mock-admin-id",
-        name: "Mock Admin",
-        email: "admin@castlinker.com",
-        avatar_url: "/placeholder.svg"
-      };
+      // Only select columns that exist in the users_management table
+      const { data, error } = await supabase
+        .from('users_management')
+        .select('id, name, email, avatar_url')
+        .eq('email', user?.email)
+        .single();
       
-      setProfile(mockProfile as AdminProfileData);
+      if (error) {
+        throw error;
+      }
+      
+      // Set the profile with the data we got
+      setProfile(data as AdminProfileData);
       
       // Set default values for additional fields
       setPhoneNumber("+1 (555) 123-4567");
@@ -72,12 +74,12 @@ const AdminProfile = () => {
 
   const handleLogout = async () => {
     try {
+      await logout();
       toast({
         title: "Logged out",
         description: "You have been successfully logged out.",
         variant: "default"
       });
-      navigate("/");
     } catch (error) {
       console.error("Error logging out:", error);
       toast({

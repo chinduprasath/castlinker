@@ -1,11 +1,12 @@
 
+import { useAuth } from '@/contexts/AuthContext';
+
 interface SidebarProfileProps {
   isCollapsed: boolean;
 }
 
 const SidebarProfile = ({ isCollapsed }: SidebarProfileProps) => {
-  // Mock user data since authentication is removed
-  const user = { id: "mock-user", name: "Mock User" };
+  const { user } = useAuth();
   
   if (!user) return null;
   

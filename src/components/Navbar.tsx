@@ -1,12 +1,27 @@
-
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, User, LogIn, Film, Book, Users, Shield, LayoutDashboard } from 'lucide-react';
+import { Menu, X, User, LogIn, LogOut, Film, Book, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useAuth } from '@/contexts/AuthContext';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-cinematic/80 backdrop-blur-md border-b border-gold/10">
@@ -30,18 +45,60 @@ const Navbar = () => {
         </nav>
 
         <div className="hidden md:flex items-center gap-2 lg:gap-4">
-          <Link to="/dashboard">
-            <Button variant="outline" size="sm" className="border-gold/30 hover:border-gold text-foreground">
-              <LayoutDashboard className="h-4 w-4 mr-2" />
-              User Dashboard
-            </Button>
-          </Link>
-          <Link to="/admin/dashboard">
-            <Button size="sm" className="bg-gold hover:bg-gold-dark text-cinematic">
-              <Shield className="h-4 w-4 mr-2" />
-              Admin Dashboard
-            </Button>
-          </Link>
+          {user ? (
+            <div className="flex items-center gap-2 lg:gap-4">
+              <Link to="/jobs">
+                <Button variant="ghost" size="sm" className="text-foreground/80 hover:text-gold">
+                  <Film className="h-4 w-4 mr-2" />
+                  Jobs
+                </Button>
+              </Link>
+              <Link to="/chat">
+                <Button variant="ghost" size="sm" className="text-foreground/80 hover:text-gold">
+                  Messages
+                </Button>
+              </Link>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="rounded-full p-0 h-8 w-8">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={user.avatar} />
+                      <AvatarFallback>{user.name ? user.name.charAt(0) : 'U'}</AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="bg-cinematic-dark border border-gold/10">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuItem className="cursor-pointer" onClick={() => navigate('/dashboard')}>
+                    Dashboard
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer" onClick={() => navigate('/profile')}>
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-gold/10" />
+                  <DropdownMenuItem className="cursor-pointer text-red-500" onClick={handleLogout}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          ) : (
+            <>
+              <Link to="/login">
+                <Button variant="outline" size="sm" className="border-gold/30 hover:border-gold text-foreground">
+                  <LogIn className="h-4 w-4 mr-2" />
+                  Log in
+                </Button>
+              </Link>
+              <Link to="/signup">
+                <Button size="sm" className="bg-gold hover:bg-gold-dark text-cinematic">
+                  <User className="h-4 w-4 mr-2" />
+                  Sign up
+                </Button>
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile Navigation Toggle */}
@@ -59,6 +116,50 @@ const Navbar = () => {
         <div className="md:hidden fixed inset-0 z-10 bg-cinematic pt-16 animate-fade-in overflow-y-auto">
           <div className="container mx-auto px-4 py-4 h-full flex flex-col">
             <nav className="flex flex-col gap-4 flex-grow">
+              {user ? (
+                <>
+                  <div className="flex items-center gap-3 py-2 border-b border-gold/10 mb-2">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={user.avatar} />
+                      <AvatarFallback>{user.name ? user.name.charAt(0) : 'U'}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium">{user.name}</p>
+                      <p className="text-sm text-foreground/60">{user.role}</p>
+                    </div>
+                  </div>
+                  <Link 
+                    to="/dashboard" 
+                    className="text-sm font-medium text-foreground/80 hover:text-gold transition-colors py-2 flex items-center gap-2"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Dashboard
+                  </Link>
+                  <Link 
+                    to="/profile" 
+                    className="text-sm font-medium text-foreground/80 hover:text-gold transition-colors py-2 flex items-center gap-2"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <User className="h-4 w-4" />
+                    Profile
+                  </Link>
+                  <Link 
+                    to="/jobs" 
+                    className="text-sm font-medium text-foreground/80 hover:text-gold transition-colors py-2 flex items-center gap-2"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <Film className="h-4 w-4" />
+                    Jobs
+                  </Link>
+                  <Link 
+                    to="/chat" 
+                    className="text-sm font-medium text-foreground/80 hover:text-gold transition-colors py-2"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Messages
+                  </Link>
+                </>
+              ) : null}
               <Link to="/about" className="text-sm font-medium text-foreground/80 hover:text-gold transition-colors py-2" onClick={() => setIsOpen(false)}>About</Link>
               <Link to="/features" className="text-sm font-medium text-foreground/80 hover:text-gold transition-colors py-2" onClick={() => setIsOpen(false)}>Features</Link>
               <Link to="/pricing" className="text-sm font-medium text-foreground/80 hover:text-gold transition-colors py-2" onClick={() => setIsOpen(false)}>Pricing</Link>
@@ -81,18 +182,30 @@ const Navbar = () => {
               <Link to="/contact" className="text-sm font-medium text-foreground/80 hover:text-gold transition-colors py-2" onClick={() => setIsOpen(false)}>Contact</Link>
               
               <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-gold/10 mt-auto">
-                <Link to="/dashboard" onClick={() => setIsOpen(false)}>
-                  <Button variant="outline" className="w-full border-gold/30 hover:border-gold text-foreground">
-                    <LayoutDashboard className="h-4 w-4 mr-2" />
-                    User Dashboard
+                {user ? (
+                  <Button variant="outline" className="w-full border-gold/30 hover:border-gold text-red-500" onClick={() => {
+                    handleLogout();
+                    setIsOpen(false);
+                  }}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
                   </Button>
-                </Link>
-                <Link to="/admin/dashboard" onClick={() => setIsOpen(false)}>
-                  <Button className="w-full bg-gold hover:bg-gold-dark text-cinematic">
-                    <Shield className="h-4 w-4 mr-2" />
-                    Admin Dashboard
-                  </Button>
-                </Link>
+                ) : (
+                  <>
+                    <Link to="/login" onClick={() => setIsOpen(false)}>
+                      <Button variant="outline" className="w-full border-gold/30 hover:border-gold text-foreground">
+                        <LogIn className="h-4 w-4 mr-2" />
+                        Log in
+                      </Button>
+                    </Link>
+                    <Link to="/signup" onClick={() => setIsOpen(false)}>
+                      <Button className="w-full bg-gold hover:bg-gold-dark text-cinematic">
+                        <User className="h-4 w-4 mr-2" />
+                        Sign up
+                      </Button>
+                    </Link>
+                  </>
+                )}
               </div>
             </nav>
           </div>

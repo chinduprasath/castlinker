@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useJobsData, JobFilters, JobSort } from "@/hooks/useJobsData";
 
 // Import our components
@@ -11,9 +12,7 @@ import JobResults from "@/components/jobs/JobResults";
 import JobCreateForm from "@/components/jobs/JobCreateForm";
 
 const Jobs = () => {
-  // Mock user - always show as logged in
-  const user = { id: "mock-user", name: "Mock User" };
-  
+  const { user } = useAuth();
   const { 
     jobs, 
     isLoading, 

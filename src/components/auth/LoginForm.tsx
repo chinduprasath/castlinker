@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,6 +30,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const LoginForm = () => {
+  const { login, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,18 +50,16 @@ const LoginForm = () => {
     setError(null);
     
     try {
-      // Mock login - just redirect to dashboard
-      setTimeout(() => {
-        toast({
-          title: "Success!",
-          description: "You have been logged in successfully.",
-        });
-        navigate("/dashboard");
-      }, 1000);
+      await login(data.email, data.password, data.rememberMe);
+      navigate("/dashboard");
     } catch (error) {
-      setError("Failed to log in. Please try again.");
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("Failed to log in. Please check your credentials.");
+      }
     } finally {
-      setTimeout(() => setIsLoading(false), 1000);
+      setIsLoading(false);
     }
   };
 
@@ -142,9 +142,9 @@ const LoginForm = () => {
           <Button 
             type="submit" 
             className="w-full bg-gold hover:bg-gold/90 text-black font-medium"
-            disabled={isLoading}
+            disabled={isLoading || authLoading}
           >
-            {isLoading ? (
+            {isLoading || authLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Signing in...
