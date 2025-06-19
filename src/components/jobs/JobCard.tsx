@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Job } from "@/types/jobTypes";
 import { formatDate, formatSalary } from "./utils/jobFormatters";
-import { useAuth } from "@/contexts/AuthContext";
 
 interface JobCardProps {
   job: Job;
@@ -23,7 +22,8 @@ const JobCard = ({
   onViewDetailsClick, 
   onApplyClick 
 }: JobCardProps) => {
-  const { user } = useAuth();
+  // Mock user - always show as logged in
+  const user = { id: "mock-user", name: "Mock User" };
   const isFeatured = job.is_featured;
   const isRemote = job.location_type === 'Remote';
   

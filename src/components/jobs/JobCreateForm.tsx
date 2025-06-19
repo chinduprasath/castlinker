@@ -1,19 +1,16 @@
-import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Plus, X } from "lucide-react";
-import { format } from "date-fns";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
-import { Job, JobType, LocationType, RoleCategory } from "@/hooks/useJobsData";
-import { supabase } from "@/integrations/supabase/client";
+import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Badge } from '@/components/ui/badge';
+import { X, Plus } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface JobCreateFormProps {
   isOpen: boolean;
@@ -22,91 +19,95 @@ interface JobCreateFormProps {
 }
 
 const JobCreateForm = ({ isOpen, onClose, onJobCreated }: JobCreateFormProps) => {
-  const [formData, setFormData] = useState<Partial<Job>>({
-    title: "",
-    company: "",
-    description: "",
-    job_type: "Full-time",
-    role_category: "Acting",
-    location: "",
-    location_type: "On-site",
-    requirements: [],
-    responsibilities: [],
-    tags: [],
-    is_featured: false,
-    experience_level: "Entry level",
+  // Mock user - always show as logged in
+  const user = { id: "mock-user", name: "Mock User" };
+  const { toast } = useToast();
+
+  const schema = z.object({
+    title: z.string().nonempty("Job Title is required"),
+    company: z.string().nonempty("Company/Studio is required"),
+    description: z.string().nonempty("Job Description is required"),
+    location: z.string().nonempty("Location is required"),
+    job_type: z.string().nonempty("Job Type is required"),
+    role_category: z.string().nonempty("Role Category is required"),
+    location_type: z.string().nonempty("Location Type is required"),
+    requirements: z.array(z.string()),
+    responsibilities: z.array(z.string()),
+    tags: z.array(z.string()),
+    is_featured: z.boolean(),
+    experience_level: z.string().nonempty("Experience Level is required"),
   });
+
+  const form = useForm<z.infer<typeof schema>>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      title: "",
+      company: "",
+      description: "",
+      job_type: "Full-time",
+      role_category: "Acting",
+      location: "",
+      location_type: "On-site",
+      requirements: [],
+      responsibilities: [],
+      tags: [],
+      is_featured: false,
+      experience_level: "Entry level",
+    },
+  });
+
+  const { handleSubmit, register, control, formState: { errors } } = form;
+
   const [currentRequirement, setCurrentRequirement] = useState("");
   const [currentResponsibility, setCurrentResponsibility] = useState("");
   const [currentTag, setCurrentTag] = useState("");
   const [deadlineDate, setDeadlineDate] = useState<Date | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  const { toast } = useToast();
-  const { user } = useAuth();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    form.setValue(name, value);
   };
 
   const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
+    form.setValue(name, value);
   };
 
   const handleCheckboxChange = (name: string, checked: boolean) => {
-    setFormData(prev => ({ ...prev, [name]: checked }));
+    form.setValue(name, checked);
   };
 
   const addRequirement = () => {
     if (currentRequirement.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        requirements: [...(prev.requirements || []), currentRequirement.trim()]
-      }));
+      form.setValue("requirements", [...(form.getValues("requirements") || []), currentRequirement.trim()]);
       setCurrentRequirement("");
     }
   };
 
   const removeRequirement = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      requirements: prev.requirements?.filter((_, i) => i !== index)
-    }));
+    form.setValue("requirements", form.getValues("requirements")?.filter((_, i) => i !== index));
   };
 
   const addResponsibility = () => {
     if (currentResponsibility.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        responsibilities: [...(prev.responsibilities || []), currentResponsibility.trim()]
-      }));
+      form.setValue("responsibilities", [...(form.getValues("responsibilities") || []), currentResponsibility.trim()]);
       setCurrentResponsibility("");
     }
   };
 
   const removeResponsibility = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      responsibilities: prev.responsibilities?.filter((_, i) => i !== index)
-    }));
+    form.setValue("responsibilities", form.getValues("responsibilities")?.filter((_, i) => i !== index));
   };
 
   const addTag = () => {
     if (currentTag.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        tags: [...(prev.tags || []), currentTag.trim()]
-      }));
+      form.setValue("tags", [...(form.getValues("tags") || []), currentTag.trim()]);
       setCurrentTag("");
     }
   };
 
   const removeTag = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      tags: prev.tags?.filter((_, i) => i !== index)
-    }));
+    form.setValue("tags", form.getValues("tags")?.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async () => {
@@ -120,7 +121,7 @@ const JobCreateForm = ({ isOpen, onClose, onJobCreated }: JobCreateFormProps) =>
     }
 
     // Basic validation
-    if (!formData.title || !formData.company || !formData.description || !formData.location) {
+    if (!form.getValues("title") || !form.getValues("company") || !form.getValues("description") || !form.getValues("location")) {
       toast({
         title: "Missing required fields",
         description: "Please fill in all required fields",
@@ -133,18 +134,18 @@ const JobCreateForm = ({ isOpen, onClose, onJobCreated }: JobCreateFormProps) =>
 
     try {
       const jobData = {
-        ...formData,
+        ...form.getValues(),
         created_by: user.id,
         application_deadline: deadlineDate?.toISOString(),
         status: "active",
-        title: formData.title || "",
-        company: formData.company || "",
-        description: formData.description || "",
-        location: formData.location || "",
-        job_type: formData.job_type || "Full-time",
-        role_category: formData.role_category || "Acting",
-        location_type: formData.location_type || "On-site",
-        experience_level: formData.experience_level || "Entry level",
+        title: form.getValues("title") || "",
+        company: form.getValues("company") || "",
+        description: form.getValues("description") || "",
+        location: form.getValues("location") || "",
+        job_type: form.getValues("job_type") || "Full-time",
+        role_category: form.getValues("role_category") || "Acting",
+        location_type: form.getValues("location_type") || "On-site",
+        experience_level: form.getValues("experience_level") || "Entry level",
       };
 
       // Cast to any to bypass TypeScript errors with the database schema
@@ -161,7 +162,7 @@ const JobCreateForm = ({ isOpen, onClose, onJobCreated }: JobCreateFormProps) =>
       });
 
       // Reset form and close
-      setFormData({
+      form.reset({
         title: "",
         company: "",
         description: "",
@@ -209,7 +210,7 @@ const JobCreateForm = ({ isOpen, onClose, onJobCreated }: JobCreateFormProps) =>
                 id="title"
                 name="title"
                 placeholder="e.g., Lead Actor for Indie Film"
-                value={formData.title}
+                value={form.getValues("title")}
                 onChange={handleInputChange}
                 className="bg-cinematic-dark/50 border-gold/10 focus:border-gold"
                 required
@@ -222,7 +223,7 @@ const JobCreateForm = ({ isOpen, onClose, onJobCreated }: JobCreateFormProps) =>
                 id="company"
                 name="company"
                 placeholder="e.g., Sunrise Productions"
-                value={formData.company}
+                value={form.getValues("company")}
                 onChange={handleInputChange}
                 className="bg-cinematic-dark/50 border-gold/10 focus:border-gold"
                 required
@@ -235,7 +236,7 @@ const JobCreateForm = ({ isOpen, onClose, onJobCreated }: JobCreateFormProps) =>
                 id="company_logo"
                 name="company_logo"
                 placeholder="https://example.com/logo.png"
-                value={formData.company_logo || ""}
+                value={form.getValues("company_logo") || ""}
                 onChange={handleInputChange}
                 className="bg-cinematic-dark/50 border-gold/10 focus:border-gold"
               />
@@ -244,7 +245,7 @@ const JobCreateForm = ({ isOpen, onClose, onJobCreated }: JobCreateFormProps) =>
             <div>
               <Label htmlFor="job_type" className="block mb-2">Job Type*</Label>
               <Select 
-                value={formData.job_type} 
+                value={form.getValues("job_type")} 
                 onValueChange={(value) => handleSelectChange("job_type", value)}
               >
                 <SelectTrigger className="bg-cinematic-dark/50 border-gold/10 focus:border-gold">
@@ -261,7 +262,7 @@ const JobCreateForm = ({ isOpen, onClose, onJobCreated }: JobCreateFormProps) =>
             <div>
               <Label htmlFor="role_category" className="block mb-2">Role Category*</Label>
               <Select 
-                value={formData.role_category} 
+                value={form.getValues("role_category")} 
                 onValueChange={(value) => handleSelectChange("role_category", value)}
               >
                 <SelectTrigger className="bg-cinematic-dark/50 border-gold/10 focus:border-gold">
@@ -281,7 +282,7 @@ const JobCreateForm = ({ isOpen, onClose, onJobCreated }: JobCreateFormProps) =>
                 id="location"
                 name="location"
                 placeholder="e.g., Los Angeles, CA or Remote"
-                value={formData.location}
+                value={form.getValues("location")}
                 onChange={handleInputChange}
                 className="bg-cinematic-dark/50 border-gold/10 focus:border-gold"
                 required
@@ -291,7 +292,7 @@ const JobCreateForm = ({ isOpen, onClose, onJobCreated }: JobCreateFormProps) =>
             <div>
               <Label htmlFor="location_type" className="block mb-2">Location Type*</Label>
               <Select 
-                value={formData.location_type} 
+                value={form.getValues("location_type")} 
                 onValueChange={(value) => handleSelectChange("location_type", value)}
               >
                 <SelectTrigger className="bg-cinematic-dark/50 border-gold/10 focus:border-gold">
@@ -312,7 +313,7 @@ const JobCreateForm = ({ isOpen, onClose, onJobCreated }: JobCreateFormProps) =>
                 name="salary_min"
                 type="number"
                 placeholder="e.g., 50000"
-                value={formData.salary_min || ""}
+                value={form.getValues("salary_min") || ""}
                 onChange={handleInputChange}
                 className="bg-cinematic-dark/50 border-gold/10 focus:border-gold"
               />
@@ -325,7 +326,7 @@ const JobCreateForm = ({ isOpen, onClose, onJobCreated }: JobCreateFormProps) =>
                 name="salary_max"
                 type="number"
                 placeholder="e.g., 80000"
-                value={formData.salary_max || ""}
+                value={form.getValues("salary_max") || ""}
                 onChange={handleInputChange}
                 className="bg-cinematic-dark/50 border-gold/10 focus:border-gold"
               />
@@ -335,7 +336,7 @@ const JobCreateForm = ({ isOpen, onClose, onJobCreated }: JobCreateFormProps) =>
             <div>
               <Label htmlFor="experience_level" className="block mb-2">Experience Level*</Label>
               <Select 
-                value={formData.experience_level} 
+                value={form.getValues("experience_level")} 
                 onValueChange={(value) => handleSelectChange("experience_level", value)}
               >
                 <SelectTrigger className="bg-cinematic-dark/50 border-gold/10 focus:border-gold">
@@ -382,7 +383,7 @@ const JobCreateForm = ({ isOpen, onClose, onJobCreated }: JobCreateFormProps) =>
               id="description"
               name="description"
               placeholder="Provide a detailed description of the job..."
-              value={formData.description}
+              value={form.getValues("description")}
               onChange={handleInputChange}
               className="min-h-32 bg-cinematic-dark/50 border-gold/10 focus:border-gold"
               required
@@ -393,7 +394,7 @@ const JobCreateForm = ({ isOpen, onClose, onJobCreated }: JobCreateFormProps) =>
           <div>
             <Label className="block mb-2">Requirements</Label>
             <div className="space-y-2">
-              {formData.requirements?.map((req, index) => (
+              {form.getValues("requirements")?.map((req, index) => (
                 <div key={index} className="flex items-center gap-2 p-2 bg-cinematic-dark/30 rounded-md">
                   <span className="flex-1">{req}</span>
                   <Button 
@@ -429,7 +430,7 @@ const JobCreateForm = ({ isOpen, onClose, onJobCreated }: JobCreateFormProps) =>
           <div>
             <Label className="block mb-2">Responsibilities</Label>
             <div className="space-y-2">
-              {formData.responsibilities?.map((resp, index) => (
+              {form.getValues("responsibilities")?.map((resp, index) => (
                 <div key={index} className="flex items-center gap-2 p-2 bg-cinematic-dark/30 rounded-md">
                   <span className="flex-1">{resp}</span>
                   <Button 
@@ -465,7 +466,7 @@ const JobCreateForm = ({ isOpen, onClose, onJobCreated }: JobCreateFormProps) =>
           <div>
             <Label className="block mb-2">Tags</Label>
             <div className="space-y-2">
-              {formData.tags?.map((tag, index) => (
+              {form.getValues("tags")?.map((tag, index) => (
                 <div key={index} className="flex items-center gap-2 p-2 bg-cinematic-dark/30 rounded-md">
                   <span className="flex-1">{tag}</span>
                   <Button 
@@ -505,7 +506,7 @@ const JobCreateForm = ({ isOpen, onClose, onJobCreated }: JobCreateFormProps) =>
                 id="application_url"
                 name="application_url"
                 placeholder="https://example.com/apply"
-                value={formData.application_url || ""}
+                value={form.getValues("application_url") || ""}
                 onChange={handleInputChange}
                 className="bg-cinematic-dark/50 border-gold/10 focus:border-gold"
               />
@@ -517,7 +518,7 @@ const JobCreateForm = ({ isOpen, onClose, onJobCreated }: JobCreateFormProps) =>
                 id="application_email"
                 name="application_email"
                 placeholder="jobs@example.com"
-                value={formData.application_email || ""}
+                value={form.getValues("application_email") || ""}
                 onChange={handleInputChange}
                 className="bg-cinematic-dark/50 border-gold/10 focus:border-gold"
               />
@@ -528,7 +529,7 @@ const JobCreateForm = ({ isOpen, onClose, onJobCreated }: JobCreateFormProps) =>
           <div className="flex items-center gap-2">
             <Checkbox
               id="is_featured"
-              checked={formData.is_featured || false}
+              checked={form.getValues("is_featured") || false}
               onCheckedChange={(checked) => 
                 handleCheckboxChange("is_featured", checked as boolean)
               }

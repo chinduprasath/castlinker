@@ -1,7 +1,5 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
 import { 
   fetchJobs, 
   fetchSavedJobs,
@@ -21,7 +19,9 @@ export const useJobsData = () => {
   const [savedJobs, setSavedJobs] = useState<string[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const { toast } = useToast();
-  const { user } = useAuth();
+  
+  // Mock user - always show as logged in
+  const user = { id: "mock-user", name: "Mock User" };
   
   // Add a ref to track if this is the initial render
   const initialRenderCompleted = useRef(false);

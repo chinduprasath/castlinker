@@ -1,6 +1,5 @@
 
 import React, { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
 import { ChatContainer } from './ChatContainer';
 import ChatSidebar from './ChatSidebar';
 import ChatHeader from './ChatHeader';
@@ -48,7 +47,9 @@ export const ChatPage: React.FC = () => {
     // Leave room 2 undefined so it will show the chat request
   });
   const [chatRequestResponses, setChatRequestResponses] = useState<Record<string, boolean>>({});
-  const { user } = useAuth();
+  
+  // Mock user data
+  const user = { id: "mock-user", name: "Mock User" };
 
   // Find the active chat based on selectedRoom ID
   const activeChat = rooms.find(room => room.id === selectedRoom) || null;
