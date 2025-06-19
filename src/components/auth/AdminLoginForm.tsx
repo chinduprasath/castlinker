@@ -45,8 +45,8 @@ const AdminLoginForm = () => {
     try {
       await login(data.email, data.password, data.rememberMe);
       
-      // For admin login, check if it's the hardcoded admin credentials
-      if (data.email.toLowerCase() === "admin@gmail.com") {
+      // Check if it's the admin credentials
+      if (data.email.toLowerCase() === "admin@gmail.com" && data.password === "123456") {
         toast({
           title: "Welcome back, Admin!",
           description: "You've successfully logged in to the admin dashboard.",
@@ -54,7 +54,7 @@ const AdminLoginForm = () => {
         });
         navigate("/admin/dashboard");
       } else {
-        setError("You don't have admin access privileges.");
+        setError("Invalid admin credentials. Please check your email and password.");
       }
     } catch (error) {
       if (error instanceof Error) {

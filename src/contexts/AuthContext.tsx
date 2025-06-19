@@ -1,3 +1,4 @@
+
 import { createContext, useState, useContext, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User as SupabaseUser } from '@supabase/supabase-js';
@@ -42,7 +43,7 @@ const HARDCODED_CREDENTIALS = {
     password: '123456',
     userData: {
       id: 'hardcoded-admin-1',
-      name: 'Demo Admin',
+      name: 'Super Admin',
       email: 'admin@gmail.com',
       role: 'super_admin',
       avatar: '/images/avatar.png',
@@ -170,13 +171,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
       
       if (emailLower === HARDCODED_CREDENTIALS.admin.email && password === HARDCODED_CREDENTIALS.admin.password) {
-        // Admin login
+        // Admin login with super_admin role
         setUser(HARDCODED_CREDENTIALS.admin.userData);
         if (rememberMe) {
           localStorage.setItem('hardcodedUser', JSON.stringify(HARDCODED_CREDENTIALS.admin.userData));
         }
         toast({
-          title: "Welcome back, Admin!",
+          title: "Welcome back, Super Admin!",
           description: `You are logged in as ${HARDCODED_CREDENTIALS.admin.userData.name}`,
         });
         return;
