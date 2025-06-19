@@ -1,7 +1,6 @@
-
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, User, LogIn, LogOut, Film, Book, Users, Shield, Layout } from 'lucide-react';
+import { Menu, X, User, LogIn, LogOut, Film, Book, Users, Shield, Layout, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -44,15 +43,26 @@ const Navbar = () => {
           </Link>
           <Link to="/contact" className="text-sm font-medium text-foreground/80 hover:text-gold transition-colors">Contact</Link>
           
-          {/* New Dashboard Links */}
-          <Link to="/dashboard" className="text-sm font-medium text-foreground/80 hover:text-gold transition-colors flex items-center gap-1">
-            <Layout className="h-4 w-4" />
-            User Dashboard
-          </Link>
-          <Link to="/admin/dashboard" className="text-sm font-medium text-foreground/80 hover:text-gold transition-colors flex items-center gap-1">
-            <Shield className="h-4 w-4" />
-            Admin Dashboard
-          </Link>
+          {/* Dashboard Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="text-sm font-medium text-foreground/80 hover:text-gold transition-colors flex items-center gap-1">
+                <Layout className="h-4 w-4" />
+                Dashboard
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-cinematic-dark border border-gold/10">
+              <DropdownMenuItem className="cursor-pointer" onClick={() => navigate('/dashboard')}>
+                <Layout className="h-4 w-4 mr-2" />
+                User Dashboard
+              </DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer" onClick={() => navigate('/admin/dashboard')}>
+                <Shield className="h-4 w-4 mr-2" />
+                Admin Dashboard
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </nav>
 
         <div className="hidden md:flex items-center gap-2 lg:gap-4">
@@ -192,23 +202,26 @@ const Navbar = () => {
               </Link>
               <Link to="/contact" className="text-sm font-medium text-foreground/80 hover:text-gold transition-colors py-2" onClick={() => setIsOpen(false)}>Contact</Link>
               
-              {/* New Dashboard Links for Mobile */}
-              <Link 
-                to="/dashboard" 
-                className="text-sm font-medium text-foreground/80 hover:text-gold transition-colors py-2 flex items-center gap-2"
-                onClick={() => setIsOpen(false)}
-              >
-                <Layout className="h-4 w-4" />
-                User Dashboard
-              </Link>
-              <Link 
-                to="/admin/dashboard" 
-                className="text-sm font-medium text-foreground/80 hover:text-gold transition-colors py-2 flex items-center gap-2"
-                onClick={() => setIsOpen(false)}
-              >
-                <Shield className="h-4 w-4" />
-                Admin Dashboard
-              </Link>
+              {/* Dashboard section for Mobile */}
+              <div className="py-2 border-t border-gold/10">
+                <p className="text-xs font-semibold text-foreground/60 mb-2 uppercase tracking-wider">Dashboard</p>
+                <Link 
+                  to="/dashboard" 
+                  className="text-sm font-medium text-foreground/80 hover:text-gold transition-colors py-2 flex items-center gap-2 pl-2"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <Layout className="h-4 w-4" />
+                  User Dashboard
+                </Link>
+                <Link 
+                  to="/admin/dashboard" 
+                  className="text-sm font-medium text-foreground/80 hover:text-gold transition-colors py-2 flex items-center gap-2 pl-2"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <Shield className="h-4 w-4" />
+                  Admin Dashboard
+                </Link>
+              </div>
               
               <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-gold/10 mt-auto">
                 {user ? (
