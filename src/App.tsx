@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -185,14 +184,14 @@ const App = () => {
               }
             />
 
-            {/* Protected Routes */}
+            {/* Dashboard Routes - Now accessible without authentication */}
             <Route path="/dashboard" element={
-              <PrivateRoute>
-                <AppLayout>
-                  <Dashboard />
-                </AppLayout>
-              </PrivateRoute>
+              <AppLayout>
+                <Dashboard />
+              </AppLayout>
             } />
+
+            {/* Other Protected Routes - Keep authentication */}
             <Route path="/jobs" element={
               <PrivateRoute>
                 <AppLayout>
@@ -321,18 +320,16 @@ const App = () => {
             <Route path="/superadmin-signin" element={<SuperAdminSignin />} />
             <Route path="/superadmin-signup" element={<SuperAdminSignup />} />
             
+            {/* Admin Dashboard - Now accessible without authentication */}
             <Route 
               path="/admin/dashboard" 
               element={
-                <PrivateRoute>
-                  <AdminRouteGuard>
-                    <AdminLayout>
-                      <AdminDashboard />
-                    </AdminLayout>
-                  </AdminRouteGuard>
-                </PrivateRoute>
+                <AdminLayout>
+                  <AdminDashboard />
+                </AdminLayout>
               } 
             />
+
             <Route 
               path="/admin/profile" 
               element={
