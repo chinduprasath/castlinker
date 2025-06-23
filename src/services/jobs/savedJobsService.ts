@@ -1,5 +1,14 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { 
+  collection, 
+  doc, 
+  getDocs, 
+  addDoc, 
+  deleteDoc, 
+  query, 
+  where 
+} from 'firebase/firestore';
+import { db } from '@/integrations/firebase/client';
 
 export const fetchSavedJobs = async (userId: string | undefined) => {
   if (!userId) {
@@ -7,14 +16,17 @@ export const fetchSavedJobs = async (userId: string | undefined) => {
   }
   
   try {
-    const { data, error } = await (supabase
-      .from('saved_jobs')
-      .select('job_id')
-      .eq('user_id', userId) as any);
-
-    if (error) throw error;
+    const savedJobsRef = collection(db, 'savedJobs');
+    const q = query(savedJobsRef, where('user_id', '==', userId));
+    const querySnapshot = await getDocs(q);
     
-    return data?.map((record: any) => record.job_id) || [];
+    const savedJobIds: string[] = [];
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      savedJobIds.push(data.job_id);
+    });
+
+    return savedJobIds;
   } catch (error) {
     console.error('Error fetching saved jobs:', error);
     throw error;
@@ -39,13 +51,17 @@ export const toggleSaveJob = async (jobId: string, userId: string | undefined, s
   try {
     if (savedJobs.includes(jobId)) {
       // Delete from saved jobs
-      const { error } = await (supabase
-        .from('saved_jobs')
-        .delete()
-        .eq('user_id', userId)
-        .eq('job_id', jobId) as any);
-
-      if (error) throw error;
+      const savedJobsRef = collection(db, 'savedJobs');
+      const q = query(
+        savedJobsRef,
+        where('user_id', '==', userId),
+        where('job_id', '==', jobId)
+      );
+      const querySnapshot = await getDocs(q);
+      
+      querySnapshot.forEach(async (document) => {
+        await deleteDoc(doc(db, 'savedJobs', document.id));
+      });
       
       return {
         newSavedJobs: savedJobs.filter(id => id !== jobId),
@@ -56,14 +72,12 @@ export const toggleSaveJob = async (jobId: string, userId: string | undefined, s
       };
     } else {
       // Add to saved jobs
-      const { error } = await (supabase
-        .from('saved_jobs')
-        .insert({
-          user_id: userId,
-          job_id: jobId
-        }) as any);
-
-      if (error) throw error;
+      const savedJobsRef = collection(db, 'savedJobs');
+      await addDoc(savedJobsRef, {
+        user_id: userId,
+        job_id: jobId,
+        created_at: new Date()
+      });
       
       return {
         newSavedJobs: [...savedJobs, jobId],

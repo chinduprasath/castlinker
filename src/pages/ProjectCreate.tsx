@@ -13,8 +13,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { supabase } from '@/integrations/supabase/client';
+import { createProject } from '@/services/projectService';
 import { useAuth } from '@/contexts/AuthContext';
+import { collection, addDoc } from 'firebase/firestore';
+import { db } from '@/integrations/firebase/client';
 
 const ProjectCreate = () => {
   const [name, setName] = useState('');
@@ -51,35 +53,29 @@ const ProjectCreate = () => {
       setIsSubmitting(true);
 
       // Insert the project
-      const { data, error } = await supabase
-        .from('projects')
-        .insert({
-          name,
-          description,
-          location,
-          team_head_id: user.id,
-          current_status: status
-        })
-        .select('id')
-        .single();
-
-      if (error) throw error;
+      const projectData = await createProject({
+        name,
+        description,
+        location,
+        team_head_id: user.id,
+        current_status: status
+      });
 
       // Add the creator as a member (automatically accepted)
-      await supabase
-        .from('project_members')
-        .insert({
-          project_id: data.id,
-          user_id: user.id,
-          status: 'accepted'
-        });
+      const projectMembersRef = collection(db, 'projectMembers');
+      await addDoc(projectMembersRef, {
+        project_id: projectData.id,
+        user_id: user.id,
+        status: 'accepted',
+        joined_at: new Date()
+      });
 
       toast({
         title: 'Project created',
         description: 'Your project has been created successfully',
       });
 
-      navigate(`/projects/${data.id}`);
+      navigate(`/projects/${projectData.id}`);
     } catch (error: any) {
       console.error('Error creating project:', error);
       toast({

@@ -1,5 +1,13 @@
-
-import { supabase } from '@/integrations/supabase/client';
+import { 
+  collection, 
+  getDocs, 
+  query, 
+  where, 
+  orderBy, 
+  limit as firestoreLimit,
+  Timestamp 
+} from 'firebase/firestore';
+import { db } from '@/integrations/firebase/client';
 import { JobFilters } from '@/types/jobTypes';
 
 // Set a reasonable limit to prevent timeout issues
@@ -13,6 +21,16 @@ type JobsQueryResult = {
     message: string;
     originalError?: any;
   };
+};
+
+const convertTimestamp = (timestamp: any): string => {
+  if (timestamp && timestamp.toDate) {
+    return timestamp.toDate().toISOString();
+  }
+  if (timestamp instanceof Date) {
+    return timestamp.toISOString();
+  }
+  return timestamp || new Date().toISOString();
 };
 
 export const fetchJobs = async (filters: JobFilters, sort: { field: string; direction: string }): Promise<JobsQueryResult> => {
@@ -45,17 +63,35 @@ const searchJobs = async (searchTerm: string): Promise<JobsQueryResult> => {
   console.log('Using search term:', searchTerm);
   
   try {
-    const { data, error, count } = await supabase.rpc('search_film_jobs', {
-      search_term: searchTerm
-    }).limit(PAGE_SIZE) as any;
+    const jobsRef = collection(db, 'jobs');
+    const q = query(
+      jobsRef,
+      where('status', '==', 'active'),
+      firestoreLimit(PAGE_SIZE)
+    );
     
-    if (error) {
-      console.error('Search error:', error);
-      throw new Error(`Search failed: ${error.message}`);
-    }
+    const querySnapshot = await getDocs(q);
+    const allJobs: any[] = [];
     
-    console.log('Search results:', data?.length || 0, 'jobs found');
-    return { data: data || [], count: count || 0 };
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      allJobs.push({
+        id: doc.id,
+        ...data,
+        created_at: convertTimestamp(data.created_at)
+      });
+    });
+    
+    // Filter jobs that match the search term (client-side filtering for flexibility)
+    const filteredJobs = allJobs.filter(job => 
+      job.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.company?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    
+    console.log('Search results:', filteredJobs.length, 'jobs found');
+    return { data: filteredJobs, count: filteredJobs.length };
   } catch (error: any) {
     console.error('Error in searchJobs:', error);
     throw error;
@@ -65,44 +101,27 @@ const searchJobs = async (searchTerm: string): Promise<JobsQueryResult> => {
 // Specialized function for filtering jobs
 const filterJobs = async (filters: JobFilters, sort: { field: string; direction: string }): Promise<JobsQueryResult> => {
   try {
-    let query = supabase.from('film_jobs').select('*', { count: 'exact' }).limit(PAGE_SIZE) as any;
-
-    // Apply location filters
-    if (filters.location && filters.location !== 'Remote') {
-      query = query.ilike('location', `%${filters.location}%`);
-    }
-
-    if (filters.location === 'Remote') {
-      query = query.eq('location_type', 'Remote');
-    }
+    const jobsRef = collection(db, 'jobs');
+    let constraints: any[] = [where('status', '==', 'active')];
 
     // Apply job type filters
     if (filters.jobTypes && filters.jobTypes.length > 0) {
-      query = query.in('job_type', filters.jobTypes);
+      constraints.push(where('job_type', 'in', filters.jobTypes));
     }
 
     // Apply role category filters
     if (filters.roleCategories && filters.roleCategories.length > 0) {
-      query = query.in('role_category', filters.roleCategories);
+      constraints.push(where('role_category', 'in', filters.roleCategories));
     }
 
     // Apply location type filters
     if (filters.locationTypes && filters.locationTypes.length > 0) {
-      query = query.in('location_type', filters.locationTypes);
+      constraints.push(where('location_type', 'in', filters.locationTypes));
     }
 
     // Apply experience level filters
     if (filters.experienceLevels && filters.experienceLevels.length > 0) {
-      query = query.in('experience_level', filters.experienceLevels);
-    }
-
-    // Apply salary filters
-    if (filters.salaryMin) {
-      query = query.gte('salary_min', filters.salaryMin);
-    }
-
-    if (filters.salaryMax) {
-      query = query.lte('salary_max', filters.salaryMax);
+      constraints.push(where('experience_level', 'in', filters.experienceLevels));
     }
 
     // Apply date filters
@@ -128,47 +147,68 @@ const filterJobs = async (filters: JobFilters, sort: { field: string; direction:
           break;
       }
       
-      query = query.gte('created_at', date.toISOString());
+      constraints.push(where('created_at', '>=', Timestamp.fromDate(date)));
     }
 
     // Apply sorting
     if (sort.field === 'created_at') {
-      query = query.order('created_at', { ascending: sort.direction === 'asc' });
+      constraints.push(orderBy('created_at', sort.direction === 'asc' ? 'asc' : 'desc'));
     } else if (sort.field === 'salary_max') {
-      query = query.order('salary_max', { ascending: sort.direction === 'asc', nullsFirst: false });
+      constraints.push(orderBy('salary_max', sort.direction === 'asc' ? 'asc' : 'desc'));
     } else {
       // Default sorting (relevance) - order by featured first, then created_at
-      query = query.order('is_featured', { ascending: false }).order('created_at', { ascending: false });
+      constraints.push(orderBy('is_featured', 'desc'));
+      constraints.push(orderBy('created_at', 'desc'));
     }
 
-    // Only active jobs
-    query = query.eq('status', 'active');
+    // Add limit
+    constraints.push(firestoreLimit(PAGE_SIZE));
+
+    const q = query(jobsRef, ...constraints);
 
     console.log('Executing query for jobs');
     
-    // Using an AbortController with a timeout for the query
-    const abortController = new AbortController();
-    const timeoutId = setTimeout(() => abortController.abort(), 8000); // 8 second timeout
+    const querySnapshot = await getDocs(q);
+    const jobs: any[] = [];
     
-    const { data, error, count } = await query as any;
-    
-    // Clear the timeout since the query completed
-    clearTimeout(timeoutId);
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      jobs.push({
+        id: doc.id,
+        ...data,
+        created_at: convertTimestamp(data.created_at)
+      });
+    });
 
-    if (error) {
-      console.error('Query error:', error);
-      return { 
-        data: [], 
-        count: 0, 
-        error: {
-          message: `Query failed: ${error.message}`,
-          originalError: error
-        }
-      };
+    // Apply additional client-side filters that can't be done in Firestore
+    let filteredJobs = jobs;
+
+    // Apply location filters
+    if (filters.location && filters.location !== 'Remote') {
+      filteredJobs = filteredJobs.filter(job => 
+        job.location?.toLowerCase().includes(filters.location!.toLowerCase())
+      );
+    }
+
+    if (filters.location === 'Remote') {
+      filteredJobs = filteredJobs.filter(job => job.location_type === 'Remote');
+    }
+
+    // Apply salary filters
+    if (filters.salaryMin) {
+      filteredJobs = filteredJobs.filter(job => 
+        job.salary_min >= filters.salaryMin!
+      );
+    }
+
+    if (filters.salaryMax) {
+      filteredJobs = filteredJobs.filter(job => 
+        job.salary_max <= filters.salaryMax!
+      );
     }
     
-    console.log('Query results:', data?.length || 0, 'jobs found');
-    return { data: data || [], count: count || 0 };
+    console.log('Query results:', filteredJobs.length, 'jobs found');
+    return { data: filteredJobs, count: filteredJobs.length };
   } catch (error: any) {
     console.error('Error in filterJobs:', error);
     throw error;

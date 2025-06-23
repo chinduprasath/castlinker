@@ -1,27 +1,48 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { 
+  collection, 
+  doc, 
+  getDocs, 
+  getDoc, 
+  addDoc, 
+  setDoc, 
+  query, 
+  where, 
+  orderBy 
+} from 'firebase/firestore';
+import { db } from "@/integrations/firebase/client";
 import { AdminPermission, AdminRole, AdminRoleWithPermissions, AdminModule } from "@/types/rbacTypes";
+
+const convertTimestamp = (timestamp: any): string => {
+  if (timestamp && timestamp.toDate) {
+    return timestamp.toDate().toISOString();
+  }
+  if (timestamp instanceof Date) {
+    return timestamp.toISOString();
+  }
+  return timestamp || new Date().toISOString();
+};
 
 export const fetchRoles = async (): Promise<AdminRole[]> => {
   try {
-    const { data, error } = await supabase
-      .from('admin_roles')
-      .select('*')
-      .order('name');
-      
-    if (error) {
-      console.error('Error fetching roles:', error);
-      throw error;
-    }
+    const rolesRef = collection(db, 'adminRoles');
+    const q = query(rolesRef, orderBy('name'));
+    const querySnapshot = await getDocs(q);
     
-    return (data || []).map(role => ({
-      id: role.id,
-      name: role.name,
-      description: role.description,
-      is_system: role.is_system,
-      created_at: role.created_at,
-      updated_at: role.updated_at
-    })) as AdminRole[];
+    const roles: AdminRole[] = [];
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      roles.push({
+        id: doc.id,
+        name: data.name,
+        description: data.description,
+        is_system: data.is_system,
+        created_at: convertTimestamp(data.created_at),
+        updated_at: convertTimestamp(data.updated_at)
+      });
+    });
+    
+    return roles;
   } catch (err) {
     console.error('Error in fetchRoles:', err);
     return [];
@@ -33,22 +54,26 @@ export const createRole = async (role: {
   description?: string;
 }): Promise<AdminRole> => {
   try {
-    const { data, error } = await supabase
-      .from('admin_roles')
-      .insert({
-        name: role.name,
-        description: role.description || null,
-        is_system: false
-      })
-      .select()
-      .single();
-      
-    if (error) {
-      console.error('Error creating role:', error);
-      throw error;
-    }
+    const rolesRef = collection(db, 'adminRoles');
+    const docRef = await addDoc(rolesRef, {
+      name: role.name,
+      description: role.description || '',
+      is_system: false,
+      created_at: new Date(),
+      updated_at: new Date()
+    });
     
-    return data as AdminRole;
+    const newRole = await getDoc(docRef);
+    const data = newRole.data()!;
+    
+    return {
+      id: newRole.id,
+      name: data.name,
+      description: data.description,
+      is_system: data.is_system,
+      created_at: convertTimestamp(data.created_at),
+      updated_at: convertTimestamp(data.updated_at)
+    };
   } catch (err) {
     console.error('Error in createRole:', err);
     throw err;
@@ -66,32 +91,32 @@ export const updateRolePermissions = async (
   }
 ): Promise<AdminPermission> => {
   try {
-    const { data, error } = await supabase
-      .from('admin_permissions')
-      .upsert({
-        role_id: roleId,
-        module: module,
-        ...permissions
-      })
-      .select()
-      .single();
-      
-    if (error) {
-      console.error('Error updating role permissions:', error);
-      throw error;
-    }
+    const permissionId = `${roleId}_${module}`;
+    const permissionRef = doc(db, 'adminPermissions', permissionId);
     
-    // Cast the returned data to ensure it matches the AdminPermission type
+    const permissionData = {
+      role_id: roleId,
+      module: module,
+      can_create: permissions.can_create || false,
+      can_edit: permissions.can_edit || false,
+      can_delete: permissions.can_delete || false,
+      can_view: permissions.can_view || false,
+      created_at: new Date(),
+      updated_at: new Date()
+    };
+    
+    await setDoc(permissionRef, permissionData, { merge: true });
+    
     const typedData: AdminPermission = {
-      id: data.id,
-      role_id: data.role_id,
-      module: data.module as AdminModule,
-      can_create: data.can_create,
-      can_edit: data.can_edit,
-      can_delete: data.can_delete,
-      can_view: data.can_view,
-      created_at: data.created_at,
-      updated_at: data.updated_at
+      id: permissionId,
+      role_id: roleId,
+      module: module,
+      can_create: permissionData.can_create,
+      can_edit: permissionData.can_edit,
+      can_delete: permissionData.can_delete,
+      can_view: permissionData.can_view,
+      created_at: convertTimestamp(permissionData.created_at),
+      updated_at: convertTimestamp(permissionData.updated_at)
     };
     
     return typedData;
@@ -103,53 +128,46 @@ export const updateRolePermissions = async (
 
 export const fetchRoleWithPermissions = async (roleId: string): Promise<AdminRoleWithPermissions | null> => {
   try {
-    // First fetch the role details
-    const { data: roleData, error: roleError } = await supabase
-      .from('admin_roles')
-      .select('*')
-      .eq('id', roleId)
-      .single();
-      
-    if (roleError) {
-      console.error('Error fetching role:', roleError);
-      throw roleError;
+    // Get role data
+    const roleDoc = await getDoc(doc(db, 'adminRoles', roleId));
+    if (!roleDoc.exists()) {
+      return null;
     }
     
-    if (!roleData) return null;
+    const roleData = roleDoc.data();
     
-    // Then fetch the permissions for this role
-    const { data: permissionsData, error: permError } = await supabase
-      .from('admin_permissions')
-      .select('*')
-      .eq('role_id', roleId);
-      
-    if (permError) {
-      console.error('Error fetching permissions:', permError);
-      throw permError;
-    }
+    // Get permissions for this role
+    const permissionsRef = collection(db, 'adminPermissions');
+    const q = query(permissionsRef, where('role_id', '==', roleId));
+    const permissionsSnapshot = await getDocs(q);
     
-    // Type-convert the permissions array
-    const typedPermissions: AdminPermission[] = (permissionsData || []).map(perm => ({
-      id: perm.id,
-      role_id: perm.role_id,
-      module: perm.module as AdminModule,
-      can_create: perm.can_create,
-      can_edit: perm.can_edit,
-      can_delete: perm.can_delete,
-      can_view: perm.can_view,
-      created_at: perm.created_at,
-      updated_at: perm.updated_at
-    }));
+    const permissions: AdminPermission[] = [];
+    permissionsSnapshot.forEach((doc) => {
+      const data = doc.data();
+      permissions.push({
+        id: doc.id,
+        role_id: data.role_id,
+        module: data.module as AdminModule,
+        can_create: data.can_create,
+        can_edit: data.can_edit,
+        can_delete: data.can_delete,
+        can_view: data.can_view,
+        created_at: convertTimestamp(data.created_at),
+        updated_at: convertTimestamp(data.updated_at)
+      });
+    });
     
-    // Build the combined object
-    const roleWithPermissions: AdminRoleWithPermissions = {
-      ...roleData,
-      permissions: typedPermissions
+    return {
+      id: roleDoc.id,
+      name: roleData.name,
+      description: roleData.description,
+      is_system: roleData.is_system,
+      created_at: convertTimestamp(roleData.created_at),
+      updated_at: convertTimestamp(roleData.updated_at),
+      permissions
     };
-    
-    return roleWithPermissions;
   } catch (err) {
     console.error('Error in fetchRoleWithPermissions:', err);
-    return null;
+    throw err;
   }
 };

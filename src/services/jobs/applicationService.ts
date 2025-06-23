@@ -1,5 +1,6 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '@/integrations/firebase/client';
 
 export const applyForJob = async (
   jobId: string, 
@@ -22,15 +23,13 @@ export const applyForJob = async (
   }
 
   try {
-    const { error } = await (supabase
-      .from('job_applications')
-      .insert({
-        user_id: userId,
-        job_id: jobId,
-        ...application
-      }) as any);
-
-    if (error) throw error;
+    const applicationsRef = collection(db, 'jobApplications');
+    await addDoc(applicationsRef, {
+      user_id: userId,
+      job_id: jobId,
+      ...application,
+      applied_at: serverTimestamp()
+    });
     
     return {
       success: true,

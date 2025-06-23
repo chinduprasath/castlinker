@@ -1,7 +1,16 @@
 
 import { createContext, useState, useContext, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { User as SupabaseUser } from '@supabase/supabase-js';
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut, 
+  onAuthStateChanged,
+  sendPasswordResetEmail,
+  updateProfile,
+  User as FirebaseUser
+} from 'firebase/auth';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { auth, db } from '@/integrations/firebase/client';
 import { useToast } from '@/hooks/use-toast';
 
 // Define User interface
@@ -67,18 +76,35 @@ export const useAuth = () => {
   return useContext(AuthContext);
 };
 
-// Convert Supabase user to our User format
-const formatUser = (supabaseUser: SupabaseUser | null): User | null => {
-  if (!supabaseUser) return null;
+// Convert Firebase user to our User format
+const formatUser = async (firebaseUser: FirebaseUser | null): Promise<User | null> => {
+  if (!firebaseUser) return null;
   
-  return {
-    id: supabaseUser.id,
-    name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || '',
-    email: supabaseUser.email || '',
-    role: supabaseUser.user_metadata?.role || 'Actor',
-    avatar: supabaseUser.user_metadata?.avatar_url || '/images/avatar.png',
-    isLoggedIn: true
-  };
+  try {
+    // Get additional user data from Firestore
+    const userDocRef = doc(db, 'users', firebaseUser.uid);
+    const userDoc = await getDoc(userDocRef);
+    const userData = userDoc.data();
+    
+    return {
+      id: firebaseUser.uid,
+      name: userData?.name || firebaseUser.displayName || firebaseUser.email?.split('@')[0] || '',
+      email: firebaseUser.email || '',
+      role: userData?.role || 'Actor',
+      avatar: userData?.avatar || firebaseUser.photoURL || '/images/avatar.png',
+      isLoggedIn: true
+    };
+  } catch (error) {
+    console.error('Error fetching user data:', error);
+    return {
+      id: firebaseUser.uid,
+      name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || '',
+      email: firebaseUser.email || '',
+      role: 'Actor',
+      avatar: firebaseUser.photoURL || '/images/avatar.png',
+      isLoggedIn: true
+    };
+  }
 };
 
 // Auth Provider component
@@ -103,51 +129,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     }
 
-    // First set up the auth state listener to prevent missing auth events
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        const formattedUser = formatUser(session?.user || null);
+    // Set up Firebase auth state listener
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const formattedUser = await formatUser(firebaseUser);
         setUser(formattedUser);
-        setIsLoading(false);
         
-        if (event === 'SIGNED_IN' && formattedUser) {
+        if (formattedUser) {
           toast({
             title: "Welcome back!",
             description: `You are logged in as ${formattedUser.name}`,
           });
         }
-        
-        if (event === 'SIGNED_OUT') {
-          toast({
-            title: "Signed out",
-            description: "You have been logged out successfully",
-          });
-        }
+      } else {
+        setUser(null);
       }
-    );
+      setIsLoading(false);
+    });
 
-    // Then check for existing session
-    const checkSession = async () => {
-      try {
-        const { data, error } = await supabase.auth.getSession();
-        if (error) throw error;
-        
-        if (data.session) {
-          const formattedUser = formatUser(data.session.user);
-          setUser(formattedUser);
-        }
-      } catch (err) {
-        console.error('Error checking auth session:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkSession();
-
-    return () => {
-      subscription?.unsubscribe();
-    };
+    return () => unsubscribe();
   }, [toast]);
 
   const login = async (email: string, password: string, rememberMe: boolean): Promise<void> => {
@@ -183,13 +183,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
       
-      // If not hardcoded credentials, try Supabase authentication
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      
-      if (error) throw error;
+      // If not hardcoded credentials, try Firebase authentication
+      await signInWithEmailAndPassword(auth, email, password);
       
       if (rememberMe) {
         localStorage.setItem('rememberLogin', 'true');
@@ -214,71 +209,45 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsLoading(true);
       setError(null);
       
-      // First, create the auth account
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name,
-            role: role || "Actor",
-            avatar_url: "/images/avatar.png"
-          }
-        }
+      // Create the auth account
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const firebaseUser = userCredential.user;
+      
+      // Update the user's display name
+      await updateProfile(firebaseUser, {
+        displayName: name,
+        photoURL: "/images/avatar.png"
       });
       
-      if (error) throw error;
-      
-      if (data.user) {
-        // Create the user profile
-        const { error: profileError } = await supabase
-          .from('castlinker_escyvd_user_profiles')
-          .insert({
-            user_email: email,
-            display_name: name,
-            role: role || "Actor",
-            avatar_url: "/images/avatar.png",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            verified: false,
-            bio: `Hi, I'm ${name}! I'm a ${role || "Actor"} looking to connect with other film industry professionals.`,
-            headline: `${role || "Actor"} | Available for Projects`,
-            location: "Remote"
-          });
+      // Create the user profile in Firestore
+      await setDoc(doc(db, 'users', firebaseUser.uid), {
+        name,
+        email,
+        role: role || "Actor",
+        avatar: "/images/avatar.png",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        verified: false,
+        bio: `Hi, I'm ${name}! I'm a ${role || "Actor"} looking to connect with other film industry professionals.`,
+        headline: `${role || "Actor"} | Available for Projects`,
+        location: "Remote"
+      });
 
-        if (profileError) {
-          console.error('Error creating user profile:', profileError);
-          // Don't throw here as the auth account is already created
-          toast({
-            title: "Profile Creation Warning",
-            description: "Account created but profile setup incomplete. Please contact support.",
-            variant: "destructive",
-          });
-        } else {
-          // Create initial skills based on role
-          const defaultSkills = getDefaultSkillsForRole(role);
-          if (defaultSkills.length > 0) {
-            const skillsToInsert = defaultSkills.map(skill => ({
-              user_email: email,
-              skill,
-              created_at: new Date().toISOString()
-            }));
-            
-            const { error: skillsError } = await supabase
-              .from('castlinker_escyvd_user_skills')
-              .insert(skillsToInsert);
-
-            if (skillsError) {
-              console.error('Error creating initial skills:', skillsError);
-            }
-          }
-
-          toast({
-            title: "Account created successfully!",
-            description: "Welcome to CastLinker!",
-          });
-        }
+      // Create initial skills based on role
+      const defaultSkills = getDefaultSkillsForRole(role);
+      if (defaultSkills.length > 0) {
+        const skillsData = {
+          skills: defaultSkills,
+          createdAt: new Date().toISOString()
+        };
+        
+        await setDoc(doc(db, 'userSkills', firebaseUser.uid), skillsData);
       }
+
+      toast({
+        title: "Account created successfully!",
+        description: "Welcome to CastLinker!",
+      });
     } catch (error: any) {
       setError(error.message || 'Failed to create account');
       toast({
@@ -322,8 +291,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // Clear hardcoded user from localStorage
       localStorage.removeItem('hardcodedUser');
       
-      // Also try to sign out from Supabase in case there's a session
-      await supabase.auth.signOut();
+      // Sign out from Firebase
+      await signOut(auth);
       localStorage.removeItem('rememberLogin');
       
       // Clear user state

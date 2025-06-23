@@ -4,7 +4,6 @@ import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Shield, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { AdminModule } from "@/types/rbacTypes";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -32,23 +31,17 @@ const AdminRouteGuard = ({
       try {
         // Check if user is hardcoded admin first
         if (user?.email === 'admin@gmail.com' && user?.role === 'super_admin') {
-          console.log("Hardcoded admin user detected, skipping Supabase session check");
+          console.log("Hardcoded admin user detected, granting access");
           setAuthChecking(false);
           return;
         }
         
-        const { data: sessionData } = await supabase.auth.getSession();
-        
-        if (!sessionData.session) {
-          console.log("No active Supabase session found");
-          navigate("/admin/login");
-          return;
-        }
-        
-        console.log("Active Supabase session found");
+        // For Firebase, we don't need to check sessions separately
+        // The auth state is handled by the auth context
+        console.log("Firebase auth state handled by context");
         setAuthChecking(false);
       } catch (err) {
-        console.error("Error verifying Supabase session:", err);
+        console.error("Error verifying auth state:", err);
         setAuthChecking(false);
         navigate("/admin/login");
       }

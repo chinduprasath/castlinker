@@ -1,5 +1,20 @@
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+
+import { 
+  collection, 
+  doc, 
+  getDocs, 
+  getDoc, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  query, 
+  orderBy, 
+  where,
+  serverTimestamp,
+  Timestamp
+} from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from "@/integrations/firebase/client";
 
 export type Post = {
   id: string;
@@ -38,15 +53,34 @@ export type PostApplication = {
   };
 };
 
+const convertTimestamp = (timestamp: any): string => {
+  if (timestamp && timestamp.toDate) {
+    return timestamp.toDate().toISOString();
+  }
+  if (timestamp instanceof Date) {
+    return timestamp.toISOString();
+  }
+  return timestamp || new Date().toISOString();
+};
+
 export const fetchPosts = async () => {
   try {
-    const { data, error } = await supabase
-      .from("castlinker_posts")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (error) throw error;
-    return data as Post[];
+    const postsRef = collection(db, 'posts');
+    const q = query(postsRef, orderBy('created_at', 'desc'));
+    const querySnapshot = await getDocs(q);
+    
+    const posts: Post[] = [];
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      posts.push({
+        id: doc.id,
+        ...data,
+        created_at: convertTimestamp(data.created_at),
+        updated_at: convertTimestamp(data.updated_at)
+      } as Post);
+    });
+    
+    return posts;
   } catch (error) {
     console.error("Error fetching posts:", error);
     return [];
@@ -55,14 +89,19 @@ export const fetchPosts = async () => {
 
 export const fetchPostById = async (id: string) => {
   try {
-    const { data, error } = await supabase
-      .from("castlinker_posts")
-      .select("*")
-      .eq("id", id)
-      .single();
-
-    if (error) throw error;
-    return data as Post;
+    const postDoc = await getDoc(doc(db, 'posts', id));
+    
+    if (postDoc.exists()) {
+      const data = postDoc.data();
+      return {
+        id: postDoc.id,
+        ...data,
+        created_at: convertTimestamp(data.created_at),
+        updated_at: convertTimestamp(data.updated_at)
+      } as Post;
+    }
+    
+    return null;
   } catch (error) {
     console.error("Error fetching post:", error);
     return null;
@@ -71,14 +110,26 @@ export const fetchPostById = async (id: string) => {
 
 export const createPost = async (post: Omit<Post, "id" | "created_at" | "updated_at" | "like_count">) => {
   try {
-    const { data, error } = await supabase
-      .from("castlinker_posts")
-      .insert(post)
-      .select()
-      .single();
+    const postsRef = collection(db, 'posts');
+    const docRef = await addDoc(postsRef, {
+      ...post,
+      created_at: serverTimestamp(),
+      updated_at: serverTimestamp(),
+      like_count: 0
+    });
 
-    if (error) throw error;
-    return data as Post;
+    const newPost = await getDoc(docRef);
+    if (newPost.exists()) {
+      const data = newPost.data();
+      return {
+        id: newPost.id,
+        ...data,
+        created_at: convertTimestamp(data.created_at),
+        updated_at: convertTimestamp(data.updated_at)
+      } as Post;
+    }
+    
+    return null;
   } catch (error) {
     console.error("Error creating post:", error);
     return null;
@@ -87,15 +138,24 @@ export const createPost = async (post: Omit<Post, "id" | "created_at" | "updated
 
 export const updatePost = async (id: string, post: Partial<Post>) => {
   try {
-    const { data, error } = await supabase
-      .from("castlinker_posts")
-      .update(post)
-      .eq("id", id)
-      .select()
-      .single();
+    const postRef = doc(db, 'posts', id);
+    await updateDoc(postRef, {
+      ...post,
+      updated_at: serverTimestamp()
+    });
 
-    if (error) throw error;
-    return data as Post;
+    const updatedPost = await getDoc(postRef);
+    if (updatedPost.exists()) {
+      const data = updatedPost.data();
+      return {
+        id: updatedPost.id,
+        ...data,
+        created_at: convertTimestamp(data.created_at),
+        updated_at: convertTimestamp(data.updated_at)
+      } as Post;
+    }
+    
+    return null;
   } catch (error) {
     console.error("Error updating post:", error);
     return null;
@@ -104,12 +164,7 @@ export const updatePost = async (id: string, post: Partial<Post>) => {
 
 export const deletePost = async (id: string) => {
   try {
-    const { error } = await supabase
-      .from("castlinker_posts")
-      .delete()
-      .eq("id", id);
-
-    if (error) throw error;
+    await deleteDoc(doc(db, 'posts', id));
     return true;
   } catch (error) {
     console.error("Error deleting post:", error);
@@ -119,14 +174,24 @@ export const deletePost = async (id: string) => {
 
 export const applyToPost = async (post_id: string, user_id: string) => {
   try {
-    const { data, error } = await supabase
-      .from("post_applications")
-      .insert({ post_id, user_id })
-      .select()
-      .single();
+    const applicationsRef = collection(db, 'postApplications');
+    const docRef = await addDoc(applicationsRef, {
+      post_id,
+      user_id,
+      applied_at: serverTimestamp()
+    });
 
-    if (error) throw error;
-    return data as PostApplication;
+    const newApplication = await getDoc(docRef);
+    if (newApplication.exists()) {
+      const data = newApplication.data();
+      return {
+        id: newApplication.id,
+        ...data,
+        applied_at: convertTimestamp(data.applied_at)
+      } as PostApplication;
+    }
+    
+    return null;
   } catch (error) {
     console.error("Error applying to post:", error);
     return null;
@@ -135,14 +200,15 @@ export const applyToPost = async (post_id: string, user_id: string) => {
 
 export const checkIfApplied = async (post_id: string, user_id: string) => {
   try {
-    const { data, error } = await supabase
-      .from("post_applications")
-      .select("*")
-      .eq("post_id", post_id)
-      .eq("user_id", user_id);
-
-    if (error) throw error;
-    return data && data.length > 0;
+    const applicationsRef = collection(db, 'postApplications');
+    const q = query(
+      applicationsRef, 
+      where('post_id', '==', post_id),
+      where('user_id', '==', user_id)
+    );
+    const querySnapshot = await getDocs(q);
+    
+    return !querySnapshot.empty;
   } catch (error) {
     console.error("Error checking application:", error);
     return false;
@@ -151,37 +217,59 @@ export const checkIfApplied = async (post_id: string, user_id: string) => {
 
 export const getApplicationsForPost = async (post_id: string) => {
   try {
-    const { data: applications, error: appsError } = await supabase
-      .from("post_applications")
-      .select("*")
-      .eq("post_id", post_id);
-
-    if (appsError) throw appsError;
+    const applicationsRef = collection(db, 'postApplications');
+    const q = query(applicationsRef, where('post_id', '==', post_id));
+    const querySnapshot = await getDocs(q);
     
-    if (!applications || applications.length === 0) {
+    if (querySnapshot.empty) {
       return [];
     }
     
-    const userIds = applications.map(app => app.user_id);
+    const applications: PostApplication[] = [];
+    const userIds: string[] = [];
     
-    const { data: profiles, error: profilesError } = await supabase
-      .from("profiles")
-      .select("id, full_name, avatar_url, profession_type, location, email")
-      .in("id", userIds);
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      applications.push({
+        id: doc.id,
+        ...data,
+        applied_at: convertTimestamp(data.applied_at)
+      } as PostApplication);
+      userIds.push(data.user_id);
+    });
     
-    if (profilesError) {
-      console.error("Error fetching profiles:", profilesError);
+    // Fetch user profiles
+    const profiles: any[] = [];
+    for (const userId of userIds) {
+      try {
+        const userDoc = await getDoc(doc(db, 'users', userId));
+        if (userDoc.exists()) {
+          profiles.push({
+            id: userDoc.id,
+            ...userDoc.data()
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+      }
     }
     
-    const applicantsWithProfiles = applications.map(app => {
-      const profile = profiles?.find(p => p.id === app.user_id) || null;
+    const applicationsWithProfiles = applications.map(app => {
+      const profile = profiles.find(p => p.id === app.user_id) || null;
       return {
         ...app,
-        profile
+        profile: profile ? {
+          id: profile.id,
+          full_name: profile.name,
+          avatar_url: profile.avatar,
+          profession_type: profile.role,
+          location: profile.location,
+          email: profile.email
+        } : null
       };
     });
     
-    return applicantsWithProfiles as PostApplication[];
+    return applicationsWithProfiles;
   } catch (error) {
     console.error("Error fetching applications:", error);
     return [];
@@ -190,29 +278,27 @@ export const getApplicationsForPost = async (post_id: string) => {
 
 export const togglePostLike = async (post_id: string, user_id: string) => {
   try {
-    const { data: existingLike, error: checkError } = await supabase
-      .from("post_likes")
-      .select("*")
-      .eq("post_id", post_id)
-      .eq("user_id", user_id);
+    const likesRef = collection(db, 'postLikes');
+    const q = query(
+      likesRef,
+      where('post_id', '==', post_id),
+      where('user_id', '==', user_id)
+    );
+    const querySnapshot = await getDocs(q);
 
-    if (checkError) throw checkError;
-
-    if (existingLike && existingLike.length > 0) {
-      const { error: deleteError } = await supabase
-        .from("post_likes")
-        .delete()
-        .eq("post_id", post_id)
-        .eq("user_id", user_id);
-
-      if (deleteError) throw deleteError;
+    if (!querySnapshot.empty) {
+      // Remove like
+      querySnapshot.forEach(async (document) => {
+        await deleteDoc(doc(db, 'postLikes', document.id));
+      });
       return false;
     } else {
-      const { error: insertError } = await supabase
-        .from("post_likes")
-        .insert({ post_id, user_id });
-
-      if (insertError) throw insertError;
+      // Add like
+      await addDoc(likesRef, {
+        post_id,
+        user_id,
+        created_at: serverTimestamp()
+      });
       return true;
     }
   } catch (error) {
@@ -223,14 +309,15 @@ export const togglePostLike = async (post_id: string, user_id: string) => {
 
 export const checkIfLiked = async (post_id: string, user_id: string) => {
   try {
-    const { data, error } = await supabase
-      .from("post_likes")
-      .select("*")
-      .eq("post_id", post_id)
-      .eq("user_id", user_id);
-
-    if (error) throw error;
-    return data && data.length > 0;
+    const likesRef = collection(db, 'postLikes');
+    const q = query(
+      likesRef,
+      where('post_id', '==', post_id),
+      where('user_id', '==', user_id)
+    );
+    const querySnapshot = await getDocs(q);
+    
+    return !querySnapshot.empty;
   } catch (error) {
     console.error("Error checking like:", error);
     return false;
@@ -241,22 +328,12 @@ export const uploadPostMedia = async (file: File, userId: string) => {
   try {
     const fileExt = file.name.split('.').pop();
     const fileName = `${userId}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-    const filePath = `${userId}/${fileName}`;
+    const storageRef = ref(storage, `post_media/${userId}/${fileName}`);
     
-    const { data, error } = await supabase.storage
-      .from('post_media')
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: false
-      });
+    await uploadBytes(storageRef, file);
+    const downloadURL = await getDownloadURL(storageRef);
     
-    if (error) throw error;
-    
-    const { data: { publicUrl } } = supabase.storage
-      .from('post_media')
-      .getPublicUrl(filePath);
-      
-    return publicUrl;
+    return downloadURL;
   } catch (error) {
     console.error("Error uploading file:", error);
     return null;
@@ -264,63 +341,21 @@ export const uploadPostMedia = async (file: File, userId: string) => {
 };
 
 export const getApplicantsByPostId = async (postId: string) => {
-  try {
-    const { data: applications, error: appsError } = await supabase
-      .from("post_applications")
-      .select("*")
-      .eq("post_id", postId);
-
-    if (appsError) throw appsError;
-    
-    if (!applications || applications.length === 0) {
-      return [];
-    }
-    
-    const userIds = applications.map(app => app.user_id);
-    
-    const { data: profiles, error: profilesError } = await supabase
-      .from("profiles")
-      .select("id, full_name, avatar_url, profession_type, location, email")
-      .in("id", userIds);
-    
-    if (profilesError) throw profilesError;
-    
-    // Make sure we have profiles before we try to use them
-    const profileData = profiles || [];
-    
-    const applicantsWithProfiles = applications.map(app => {
-      const profile = profileData.find(p => p.id === app.user_id) || {
-        id: app.user_id,
-        full_name: "User",
-        avatar_url: "",
-        profession_type: "Unknown",
-        location: "",
-        email: ""
-      };
-      
-      return {
-        ...app,
-        profile
-      };
-    });
-    
-    return applicantsWithProfiles;
-  } catch (error) {
-    console.error("Error fetching applicants:", error);
-    return [];
-  }
+  return await getApplicationsForPost(postId);
 };
 
 export const getUserProfileById = async (userId: string) => {
   try {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .single();
-
-    if (error) throw error;
-    return data;
+    const userDoc = await getDoc(doc(db, 'users', userId));
+    
+    if (userDoc.exists()) {
+      return {
+        id: userDoc.id,
+        ...userDoc.data()
+      };
+    }
+    
+    return null;
   } catch (error) {
     console.error("Error fetching user profile:", error);
     return null;

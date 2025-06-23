@@ -1,7 +1,8 @@
 
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { sendPasswordResetEmail } from "firebase/auth";
+import { auth } from "@/integrations/firebase/client";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -43,13 +44,7 @@ const ForgotPassword = () => {
     setError(null);
     
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-
-      if (error) {
-        throw error;
-      }
+      await sendPasswordResetEmail(auth, data.email);
 
       setIsSuccess(true);
       toast({
