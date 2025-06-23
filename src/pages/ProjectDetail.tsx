@@ -1,36 +1,22 @@
+
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { 
-  Film, 
-  MapPin, 
-  Calendar, 
-  Users, 
-  Settings, 
   ArrowLeft, 
-  Edit,
-  Clock,
-  Star,
   MessageSquare,
-  Share2,
-  UserPlus,
-  CheckCircle,
-  XCircle
+  Users,
+  Clock,
+  Send
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
 import { fetchProjectById } from '@/services/projectService';
-import { fetchTeamMembers, requestToJoinTeam, respondToTeamRequest, removeTeamMember } from '@/services/teamMemberService';
+import { fetchTeamMembers } from '@/services/teamMemberService';
 
 interface Project {
   id: string;
@@ -47,14 +33,8 @@ const ProjectDetail = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const [project, setProject] = useState<Project | null>(null);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
-  const [pendingRequests, setPendingRequests] = useState<any[]>([]);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isDescriptionEditOpen, setIsDescriptionEditOpen] = useState(false);
-  const [editedDescription, setEditedDescription] = useState('');
-  const [isApplying, setIsApplying] = useState(false);
-  const [isResponding, setIsResponding] = useState(false);
-  const [isRemoving, setIsRemoving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [message, setMessage] = useState('');
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -70,7 +50,6 @@ const ProjectDetail = () => {
     try {
       const projectData = await fetchProjectById(projectId);
       if (projectData) {
-        // Cast the project data to include all needed properties
         const projectWithDefaults = {
           id: projectData.id,
           name: (projectData as any).name || '',
@@ -82,7 +61,6 @@ const ProjectDetail = () => {
           updated_at: projectData.updated_at || ''
         } as Project;
         setProject(projectWithDefaults);
-        setEditedDescription(projectWithDefaults.description || '');
       } else {
         toast({
           title: 'Project not found',
@@ -96,10 +74,8 @@ const ProjectDetail = () => {
       const teamData = await fetchTeamMembers(projectId);
       if (teamData && typeof teamData === 'object' && 'accepted' in teamData) {
         setTeamMembers(teamData.accepted);
-        setPendingRequests(teamData.pending);
       } else {
         setTeamMembers([]);
-        setPendingRequests([]);
       }
     } catch (error: any) {
       console.error('Error fetching project details:', error);
@@ -113,86 +89,13 @@ const ProjectDetail = () => {
     }
   };
 
-  const handleApplyToTeam = async () => {
-    if (!user || !projectId) return;
-
-    setIsApplying(true);
-    try {
-      await requestToJoinTeam(projectId, user.id);
-      toast({
-        title: 'Request sent',
-        description: 'Your request to join the team has been sent.',
-      });
-      fetchData();
-    } catch (error: any) {
-      console.error('Error applying to team:', error);
-      toast({
-        title: 'Failed to send request',
-        description: error.message || 'Please try again later',
-        variant: 'destructive'
-      });
-    } finally {
-      setIsApplying(false);
-    }
-  };
-
-  const handleRespondToRequest = async (memberId: string, action: 'accept' | 'reject') => {
-    if (!projectId) return;
-
-    setIsResponding(true);
-    try {
-      await respondToTeamRequest(projectId, memberId, action);
-      toast({
-        title: 'Request updated',
-        description: `Team join request ${action === 'accept' ? 'accepted' : 'rejected'}.`,
-      });
-      fetchData();
-    } catch (error: any) {
-      console.error('Error responding to request:', error);
-      toast({
-        title: 'Failed to update request',
-        description: error.message || 'Please try again later',
-        variant: 'destructive'
-      });
-    } finally {
-      setIsResponding(false);
-    }
-  };
-
-  const handleRemoveMember = async (memberId: string) => {
-    if (!projectId) return;
-
-    setIsRemoving(true);
-    try {
-      await removeTeamMember(projectId, memberId);
-      toast({
-        title: 'Team member removed',
-        description: 'The team member has been successfully removed from the project.',
-      });
-      fetchData();
-    } catch (error: any) {
-      console.error('Error removing team member:', error);
-      toast({
-        title: 'Failed to remove team member',
-        description: error.message || 'Please try again later',
-        variant: 'destructive'
-      });
-    } finally {
-      setIsRemoving(false);
-    }
-  };
-
-  const isTeamHead = user && project && project.team_head_id === user.id;
-  const isMember = user && teamMembers.some(member => member.user_id === user.id);
-  const hasRequested = user && pendingRequests.some(req => req.user_id === user.id);
-
-  const formatDate = (dateStr: string | undefined) => {
-    if (!dateStr) return 'N/A';
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!message.trim()) return;
+    
+    // Here you would implement the actual message sending logic
+    console.log('Sending message:', message);
+    setMessage('');
   };
 
   if (isLoading) {
@@ -204,7 +107,7 @@ const ProjectDetail = () => {
   }
 
   return (
-    <div className="container mx-auto mt-8 space-y-6 max-w-4xl">
+    <div className="container mx-auto mt-8 space-y-6 max-w-6xl">
       <div className="flex items-center gap-2">
         <Button 
           variant="ghost" 
@@ -214,211 +117,107 @@ const ProjectDetail = () => {
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h1 className="text-3xl font-bold gold-gradient-text">{project.name}</h1>
+        <div className="flex-1">
+          <h1 className="text-3xl font-bold gold-gradient-text">{project.name}</h1>
+          <Badge variant="secondary" className="mt-1">{project.current_status}</Badge>
+        </div>
       </div>
 
-      <Card className="bg-card/60 backdrop-blur-sm border-gold/10 shadow-md">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Film className="h-5 w-5 text-gold" />
-            Project Overview
-          </CardTitle>
-          <CardDescription>Details about this project</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Status</p>
-              <Badge variant="secondary">{project.current_status}</Badge>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Created Date</p>
-              <p>{formatDate(project.created_at)}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
-                <MapPin className="h-4 w-4 text-muted-foreground" />
-                Location
-              </p>
-              <p>{project.location || 'Not specified'}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                Last Updated
-              </p>
-              <p>{formatDate(project.updated_at)}</p>
-            </div>
-          </div>
-          
-          <Separator />
-          
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <p className="text-sm font-medium text-muted-foreground">Description</p>
-              {isTeamHead && (
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => setIsDescriptionEditOpen(true)}
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
-              )}
-            </div>
-            <p>{project.description || 'No description provided.'}</p>
-          </div>
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="chat" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="chat" className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4" />
+            Chat
+          </TabsTrigger>
+          <TabsTrigger value="team" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Team
+          </TabsTrigger>
+          <TabsTrigger value="milestones" className="flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            Milestones
+          </TabsTrigger>
+        </TabsList>
 
-      <Card className="bg-card/60 backdrop-blur-sm border-gold/10 shadow-md">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-gold" />
-            Team Members
-          </CardTitle>
-          <CardDescription>Current team and pending requests</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Tabs defaultValue="team" className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="team">Team</TabsTrigger>
-              {isTeamHead && <TabsTrigger value="requests">Requests</TabsTrigger>}
-            </TabsList>
-            <TabsContent value="team" className="space-y-4">
+        <TabsContent value="chat" className="space-y-4">
+          <Card className="bg-card/60 backdrop-blur-sm border-gold/10 shadow-md">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-gold" />
+                Project Chat
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="min-h-[400px] flex flex-col justify-center items-center text-center space-y-4 border-2 border-dashed border-border rounded-lg">
+                <MessageSquare className="h-16 w-16 text-muted-foreground" />
+                <div>
+                  <h3 className="text-lg font-medium text-muted-foreground">No messages yet. Start the conversation!</h3>
+                </div>
+              </div>
+              
+              <form onSubmit={handleSendMessage} className="flex gap-2">
+                <Input
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="Type a message..."
+                  className="flex-1"
+                />
+                <Button type="submit" size="icon" className="bg-gold hover:bg-gold/90 text-black">
+                  <Send className="h-4 w-4" />
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="team" className="space-y-4">
+          <Card className="bg-card/60 backdrop-blur-sm border-gold/10 shadow-md">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-gold" />
+                Team Members
+              </CardTitle>
+              <CardDescription>
+                {teamMembers.length} member{teamMembers.length !== 1 ? 's' : ''}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
               {teamMembers.length === 0 ? (
-                <p>No team members yet.</p>
+                <p className="text-muted-foreground">No team members yet.</p>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="space-y-3">
                   {teamMembers.map((member) => (
-                    <Card key={member.id} className="bg-card-gradient border-gold/10">
-                      <CardContent className="flex flex-col items-center justify-center p-4 space-y-2">
-                        <Avatar className="h-16 w-16">
-                          <AvatarImage src={member.avatar_url || ""} alt={member.name || "Team Member"} />
-                          <AvatarFallback>{member.name?.split(" ").map((n) => n[0]).join("") || "TM"}</AvatarFallback>
-                        </Avatar>
-                        <CardTitle className="text-center">{member.name}</CardTitle>
-                        <CardDescription className="text-center text-muted-foreground">
-                          {member.role || 'Member'}
-                        </CardDescription>
-                        {isTeamHead && member.user_id !== user?.id && (
-                          <Button 
-                            variant="destructive" 
-                            size="sm"
-                            disabled={isRemoving}
-                            onClick={() => handleRemoveMember(member.user_id)}
-                          >
-                            {isRemoving ? 'Removing...' : 'Remove'}
-                          </Button>
-                        )}
-                      </CardContent>
-                    </Card>
+                    <div key={member.id} className="flex items-center space-x-3 p-3 rounded-lg border">
+                      <div className="h-10 w-10 rounded-full bg-gold/20 flex items-center justify-center">
+                        <Users className="h-5 w-5 text-gold" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{member.name || 'Team Member'}</p>
+                        <p className="text-sm text-muted-foreground">{member.role || 'Member'}</p>
+                      </div>
+                    </div>
                   ))}
                 </div>
               )}
-            </TabsContent>
-            {isTeamHead && (
-              <TabsContent value="requests">
-                {pendingRequests.length === 0 ? (
-                  <p>No pending requests.</p>
-                ) : (
-                  <div className="space-y-3">
-                    {pendingRequests.map((request) => (
-                      <Card key={request.id} className="bg-card-gradient border-gold/10">
-                        <CardContent className="flex items-center justify-between p-4">
-                          <div className="flex items-center space-x-4">
-                            <Avatar className="h-10 w-10">
-                              <AvatarImage src={request.avatar_url || ""} alt={request.name || "Applicant"} />
-                              <AvatarFallback>{request.name?.split(" ").map((n) => n[0]).join("") || "AP"}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <CardTitle>{request.name}</CardTitle>
-                              <CardDescription className="text-muted-foreground">
-                                {request.role || 'Applicant'}
-                              </CardDescription>
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              disabled={isResponding}
-                              onClick={() => handleRespondToRequest(request.user_id, 'accept')}
-                            >
-                              <CheckCircle className="h-4 w-4 mr-2" />
-                              Accept
-                            </Button>
-                            <Button 
-                              variant="destructive" 
-                              size="sm"
-                              disabled={isResponding}
-                              onClick={() => handleRespondToRequest(request.user_id, 'reject')}
-                            >
-                              <XCircle className="h-4 w-4 mr-2" />
-                              Reject
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </TabsContent>
-            )}
-          </Tabs>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-          {user && !isTeamHead && !isMember && !hasRequested && (
-            <Button 
-              className="w-full bg-gold hover:bg-gold/90 text-black"
-              disabled={isApplying}
-              onClick={handleApplyToTeam}
-            >
-              {isApplying ? 'Applying...' : 'Apply to Join'}
-            </Button>
-          )}
-
-          {user && hasRequested && (
-            <Alert className="w-full">
-              <CheckCircle className="h-4 w-4" />
-              <AlertDescription>
-                Your request to join this project is pending approval.
-              </AlertDescription>
-            </Alert>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Edit Description Dialog */}
-      <Dialog open={isDescriptionEditOpen} onOpenChange={setIsDescriptionEditOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Edit Description</DialogTitle>
-            <DialogDescription>
-              Update the project description.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="description" className="text-right">
-                Description
-              </Label>
-              <Textarea 
-                id="description" 
-                value={editedDescription} 
-                onChange={(e) => setEditedDescription(e.target.value)} 
-                className="col-span-3" 
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="secondary" onClick={() => setIsDescriptionEditOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit">Save changes</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        <TabsContent value="milestones" className="space-y-4">
+          <Card className="bg-card/60 backdrop-blur-sm border-gold/10 shadow-md">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-gold" />
+                Milestones
+              </CardTitle>
+              <CardDescription>Track project progress</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">No milestones set for this project yet.</p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
