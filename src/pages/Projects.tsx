@@ -27,7 +27,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
-import { fetchProjects, createProject } from '@/services/projectService';
+import { fetchProjects, createProject, updateProject } from '@/services/projectService';
 import { db } from '@/integrations/firebase/client';
 import { collection, deleteDoc, doc, addDoc } from 'firebase/firestore';
 

@@ -1,4 +1,3 @@
-
 import { 
   collection, 
   doc, 
@@ -89,6 +88,20 @@ export const fetchProjectById = async (projectId: string) => {
     return null;
   } catch (error) {
     console.error('Error fetching project:', error);
+    throw error;
+  }
+};
+
+export const updateProject = async (projectId: string, projectData: any) => {
+  try {
+    const projectRef = doc(db, 'projects', projectId);
+    await updateDoc(projectRef, {
+      ...projectData,
+      updated_at: serverTimestamp()
+    });
+    return true;
+  } catch (error) {
+    console.error('Error updating project:', error);
     throw error;
   }
 };
