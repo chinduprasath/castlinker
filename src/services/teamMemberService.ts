@@ -30,10 +30,11 @@ export const fetchTeamMembers = async (projectId?: string) => {
       const pending: any[] = [];
       
       querySnapshot.forEach((doc) => {
-        const data = { id: doc.id, ...doc.data() };
-        if (data.status === 'accepted') {
+        const docData = doc.data();
+        const data = { id: doc.id, ...docData };
+        if (docData.status === 'accepted') {
           accepted.push(data);
-        } else if (data.status === 'pending') {
+        } else if (docData.status === 'pending') {
           pending.push(data);
         }
       });
@@ -43,7 +44,8 @@ export const fetchTeamMembers = async (projectId?: string) => {
       // For admin team management - return all members
       const members: any[] = [];
       querySnapshot.forEach((doc) => {
-        const data = { id: doc.id, ...doc.data() };
+        const docData = doc.data();
+        const data = { id: doc.id, ...docData };
         members.push({
           id: data.id,
           name: data.name || 'Unknown',

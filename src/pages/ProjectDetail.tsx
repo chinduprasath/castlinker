@@ -71,8 +71,14 @@ const ProjectDetail = () => {
       const projectData = await fetchProjectById(projectId);
       if (projectData) {
         const projectWithDefaults = {
-          ...projectData,
-          description: projectData.description || ''
+          id: projectData.id,
+          name: projectData.name || '',
+          description: projectData.description || '',
+          current_status: projectData.current_status || '',
+          location: projectData.location || '',
+          team_head_id: projectData.team_head_id || '',
+          created_at: projectData.created_at || '',
+          updated_at: projectData.updated_at || ''
         } as Project;
         setProject(projectWithDefaults);
         setEditedDescription(projectWithDefaults.description || '');

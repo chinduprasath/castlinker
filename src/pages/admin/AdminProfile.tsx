@@ -1,13 +1,24 @@
+
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { db } from "@/integrations/firebase/client";
 import { doc, getDoc } from "firebase/firestore";
 import { useAuth } from "@/contexts/AuthContext";
-import { AdminProfileData } from "@/types/adminTypes";
 import ProfileTab from "@/components/admin/profile/ProfileTab";
 import SecurityTab from "@/components/admin/profile/SecurityTab";
 import PreferencesTab from "@/components/admin/profile/PreferencesTab";
+
+interface AdminProfileData {
+  id: string;
+  name: string;
+  email: string;
+  avatar_url?: string;
+  phone?: string;
+  location?: string;
+  bio?: string;
+  role?: string;
+}
 
 const AdminProfile = () => {
   const [profile, setProfile] = useState<AdminProfileData | null>(null);
