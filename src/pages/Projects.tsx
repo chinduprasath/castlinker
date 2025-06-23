@@ -14,7 +14,8 @@ import {
   Edit,
   Trash2,
   MoreVertical,
-  Loader2
+  Loader2,
+  Clock
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
