@@ -46,7 +46,7 @@ export const useMessages = () => {
     try {
       await sendMessage({
         sender_id: user.id,
-        sender_name: user.displayName || 'User',
+        sender_name: user.name || 'User',
         recipient_id: recipientId,
         content,
         conversation_id: selectedConversation

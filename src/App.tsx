@@ -1,8 +1,9 @@
+
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
-import { QueryClient } from 'react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Layouts
 import AppLayout from '@/components/AppLayout';
@@ -42,6 +43,10 @@ import Projects from '@/pages/Projects';
 import ProjectCreate from '@/pages/ProjectCreate';
 import ProjectDetail from '@/pages/ProjectDetail';
 
+// New Pages
+import Messages from '@/pages/Messages';
+import Tickets from '@/pages/Tickets';
+
 // Admin Pages
 import AdminLogin from '@/pages/AdminLogin';
 import SuperAdminSignup from '@/pages/SuperAdminSignup';
@@ -68,12 +73,15 @@ import UserPostDetail from '@/pages/UserPostDetail';
 import PrivateRoute from '@/components/auth/PrivateRoute';
 import AdminRouteGuard from '@/components/admin/AdminRouteGuard';
 
+// Create a client
+const queryClient = new QueryClient();
+
 function App() {
   return (
-    <BrowserRouter>
+    <Router>
       <AuthProvider>
         <ThemeProvider>
-          <QueryClient client={queryClient}>
+          <QueryClientProvider client={queryClient}>
             <Toaster />
             <Routes>
               {/* Public routes */}
@@ -124,7 +132,7 @@ function App() {
               <Route path="/admin/users" element={<AdminRouteGuard><AdminLayout><UserManagement /></AdminLayout></AdminRouteGuard>} />
               <Route path="/admin/jobs" element={<AdminRouteGuard><AdminLayout><JobManagement /></AdminLayout></AdminRouteGuard>} />
               <Route path="/admin/jobs/:id" element={<AdminRouteGuard><AdminLayout><AdminJobDetail /></AdminLayout></AdminRouteGuard>} />
-              <Route path="/admin/posts" element={<AdminRouteGuard><AdminLayout><AdminPosts /></AdminLayout></AdminRouteGuard>} />
+              <Route path="/admin/posts" element={<AdminRouteGuard><AdminLayout><PostManagement /></AdminLayout></AdminRouteGuard>} />
               <Route path="/admin/posts/:id" element={<AdminRouteGuard><AdminLayout><AdminPostDetail /></AdminLayout></AdminRouteGuard>} />
               <Route path="/admin/events" element={<AdminRouteGuard><AdminLayout><EventManagement /></AdminLayout></AdminRouteGuard>} />
               <Route path="/admin/content" element={<AdminRouteGuard><AdminLayout><ContentModeration /></AdminLayout></AdminRouteGuard>} />
@@ -139,10 +147,10 @@ function App() {
               {/* 404 */}
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </QueryClient>
+          </QueryClientProvider>
         </ThemeProvider>
       </AuthProvider>
-    </BrowserRouter>
+    </Router>
   );
 }
 
