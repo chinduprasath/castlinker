@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Heart, Star, MapPin, Eye, MessageSquare, UserPlus, Award, Briefcase, Clock, ChevronDown, ChevronUp, Users, SlidersHorizontal, Grid, List, ArrowUpDown, CheckCircle, Crown, ExternalLink } from 'lucide-react';
+import { Search, Filter, Heart, Star, MapPin, Eye, MessageSquare, UserPlus, Award, Briefcase, Clock, ChevronDown, ChevronUp, Users, SlidersHorizontal, Grid, List, ArrowUpDown, CheckCircle, Crown, ExternalLink, Calendar } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -287,18 +287,18 @@ const TalentDirectory = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
                         <Avatar>
-                          <AvatarImage src={talent.avatar} alt={talent.name} />
-                          <AvatarFallback>{talent.name.charAt(0)}</AvatarFallback>
+                          <AvatarImage src={talent.avatar || talent.avatar_url} alt={talent.name || talent.full_name} />
+                          <AvatarFallback>{(talent.name || talent.full_name).charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div className="ml-4 space-y-1">
-                          <CardTitle className="text-lg font-semibold">{talent.name}</CardTitle>
+                          <CardTitle className="text-lg font-semibold">{talent.name || talent.full_name}</CardTitle>
                           <CardDescription className="text-sm text-muted-foreground flex items-center gap-1">
                             <Briefcase className="h-4 w-4" />
-                            {talent.role}
+                            {talent.role || talent.profession_type}
                           </CardDescription>
                         </div>
                       </div>
-                      {talent.isPremium && (
+                      {talent.is_premium && (
                         <Badge variant="secondary" className="bg-gold/10 text-gold border-0">
                           <Crown className="h-4 w-4 mr-1" />
                           Premium
@@ -312,10 +312,10 @@ const TalentDirectory = () => {
                       <span>{talent.location}</span>
                       <Separator orientation="vertical" className="h-4" />
                       <Calendar className="h-4 w-4" />
-                      <span>Joined {new Date(talent.joinedDate || talent.created_at).toLocaleDateString()}</span>
+                      <span>Joined {new Date(talent.joined_date || talent.created_at).toLocaleDateString()}</span>
                     </div>
 
-                    <p className="text-sm line-clamp-3 text-muted-foreground">{talent.bio}</p>
+                    <p className="text-sm line-clamp-3 text-muted-foreground">{talent.bio || talent.description}</p>
 
                     <div className="flex flex-wrap gap-2">
                       {talent.skills.slice(0, 3).map((skill) => (
@@ -335,7 +335,7 @@ const TalentDirectory = () => {
                       </div>
                       <div className="flex items-center gap-1">
                         <Heart className="h-4 w-4 text-red-500" />
-                        <span>{talent.likesCount} Likes</span>
+                        <span>{talent.likes_count || talent.likes} Likes</span>
                       </div>
                     </div>
 
@@ -367,9 +367,9 @@ const TalentDirectory = () => {
                   {isGridView ? null : (
                     <CardContent className="flex justify-between">
                       <Button size="sm" onClick={() => handleConnect(talent)}>
-                        {getConnectionStatus(talent.userId) === 'pending' ? (
+                        {getConnectionStatus(talent.user_id) === 'pending' ? (
                           <>Pending...</>
-                        ) : getConnectionStatus(talent.userId) === 'accepted' ? (
+                        ) : getConnectionStatus(talent.user_id) === 'accepted' ? (
                           <>Connected <UserPlus className="h-4 w-4 ml-2" /></>
                         ) : (
                           <>Connect <UserPlus className="h-4 w-4 ml-2" /></>

@@ -54,8 +54,8 @@ const TalentProfileModal: React.FC<TalentProfileModalProps> = ({
           <div className="flex flex-col md:flex-row gap-6">
             <div className="space-y-4">
               <Avatar className="w-32 h-32">
-                <AvatarImage src={talent.avatar} alt={talent.name} />
-                <AvatarFallback className="text-2xl">{talent.name?.charAt(0) || 'T'}</AvatarFallback>
+                <AvatarImage src={talent.avatar || talent.avatar_url} alt={talent.name || talent.full_name} />
+                <AvatarFallback className="text-2xl">{(talent.name || talent.full_name)?.charAt(0) || 'T'}</AvatarFallback>
               </Avatar>
               
               <div className="flex gap-2">
@@ -83,21 +83,21 @@ const TalentProfileModal: React.FC<TalentProfileModalProps> = ({
             <div className="flex-1 space-y-4">
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <h2 className="text-2xl font-bold">{talent.name}</h2>
-                  {talent.isPremium && (
+                  <h2 className="text-2xl font-bold">{talent.name || talent.full_name}</h2>
+                  {talent.is_premium && (
                     <Badge variant="secondary" className="bg-gold/10 text-gold border-0">
                       <Crown className="h-4 w-4 mr-1" />
                       Premium
                     </Badge>
                   )}
-                  {talent.isVerified && (
+                  {talent.is_verified && (
                     <Badge variant="secondary" className="bg-green-100 text-green-800">
                       Verified
                     </Badge>
                   )}
                 </div>
                 
-                <p className="text-lg text-muted-foreground mb-2">{talent.role}</p>
+                <p className="text-lg text-muted-foreground mb-2">{talent.role || talent.profession_type}</p>
                 
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <div className="flex items-center gap-1">
@@ -106,7 +106,7 @@ const TalentProfileModal: React.FC<TalentProfileModalProps> = ({
                   </div>
                   <div className="flex items-center gap-1">
                     <Calendar className="h-4 w-4" />
-                    <span>Joined {new Date(talent.joinedDate || talent.created_at).toLocaleDateString()}</span>
+                    <span>Joined {new Date(talent.joined_date || talent.created_at).toLocaleDateString()}</span>
                   </div>
                 </div>
                 
@@ -117,7 +117,7 @@ const TalentProfileModal: React.FC<TalentProfileModalProps> = ({
                   </div>
                   <div className="flex items-center gap-1">
                     <Heart className="h-4 w-4 text-red-500" />
-                    <span>{talent.likesCount} Likes</span>
+                    <span>{talent.likes_count || talent.likes} Likes</span>
                   </div>
                 </div>
               </div>
@@ -149,7 +149,7 @@ const TalentProfileModal: React.FC<TalentProfileModalProps> = ({
           {/* Bio Section */}
           <div className="space-y-3">
             <h3 className="text-lg font-semibold">About</h3>
-            <p className="text-muted-foreground">{talent.bio}</p>
+            <p className="text-muted-foreground">{talent.bio || talent.description}</p>
           </div>
           
           <Separator />
@@ -189,13 +189,13 @@ const TalentProfileModal: React.FC<TalentProfileModalProps> = ({
             </div>
           </div>
           
-          {talent.featuredIn && talent.featuredIn.length > 0 && (
+          {talent.featured_in && talent.featured_in.length > 0 && (
             <>
               <Separator />
               <div className="space-y-3">
                 <h3 className="text-lg font-semibold">Featured In</h3>
                 <div className="flex flex-wrap gap-2">
-                  {talent.featuredIn.map((feature, index) => (
+                  {talent.featured_in.map((feature, index) => (
                     <Badge key={index} variant="outline">
                       {feature}
                     </Badge>

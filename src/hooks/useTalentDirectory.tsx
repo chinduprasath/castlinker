@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { TalentProfile, ConnectionRequest, Profession, TalentFilters } from '@/types/talentTypes';
+import { TalentProfile, ConnectionRequest, Profession, TalentFilters, PROFESSION_OPTIONS } from '@/types/talentTypes';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
@@ -23,11 +23,16 @@ export const useTalentDirectory = () => {
     maxPrice: 1000,
     verified: false,
     available: false,
-    sortBy: 'rating'
+    sortBy: 'rating',
+    selectedRoles: [],
+    selectedLocations: [],
+    experienceRange: [0, 30],
+    verifiedOnly: false,
+    availableOnly: false,
+    likesMinimum: 0
   });
 
   const locations = ['Los Angeles, CA', 'New York, NY', 'Atlanta, GA', 'Vancouver, BC', 'London, UK'];
-  const PROFESSION_OPTIONS: Profession[] = ['Actor', 'Director', 'Producer', 'Writer', 'Cinematographer', 'Editor'];
 
   const { user } = useAuth();
 
@@ -66,7 +71,9 @@ export const useTalentDirectory = () => {
           is_available: true,
           experience: 8,
           bio: 'Experienced actor with a passion for storytelling',
-          featured_in: ['Film A', 'TV Show B']
+          featured_in: ['Film A', 'TV Show B'],
+          likes_count: 150,
+          joined_date: '2023-01-01T00:00:00Z'
         }
       ];
       
@@ -93,7 +100,13 @@ export const useTalentDirectory = () => {
       maxPrice: 1000,
       verified: false,
       available: false,
-      sortBy: 'rating'
+      sortBy: 'rating',
+      selectedRoles: [],
+      selectedLocations: [],
+      experienceRange: [0, 30],
+      verifiedOnly: false,
+      availableOnly: false,
+      likesMinimum: 0
     });
     setCurrentPage(1);
   };

@@ -26,6 +26,8 @@ export interface TalentProfile {
   experience?: number;
   bio?: string;
   featured_in?: string[];
+  likes_count?: number;
+  joined_date?: string;
 }
 
 export interface ConnectionRequest {
@@ -47,4 +49,24 @@ export interface TalentFilters {
   verified: boolean;
   available: boolean;
   sortBy: string;
+  selectedRoles: string[];
+  selectedLocations: string[];
+  experienceRange: [number, number];
+  verifiedOnly: boolean;
+  availableOnly: boolean;
+  likesMinimum: number;
 }
+
+export interface ProfessionOption {
+  value: string;
+  label: string;
+}
+
+export const PROFESSION_OPTIONS: ProfessionOption[] = [
+  { value: 'Actor', label: 'Actor' },
+  { value: 'Director', label: 'Director' },
+  { value: 'Producer', label: 'Producer' },
+  { value: 'Writer', label: 'Writer' },
+  { value: 'Cinematographer', label: 'Cinematographer' },
+  { value: 'Editor', label: 'Editor' }
+];
