@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { 
   Post, 
-  fetchPosts, 
+  fetchPosts as fetchPostsService, 
   checkIfApplied, 
   togglePostLike, 
   checkIfLiked, 
@@ -28,21 +27,20 @@ export const usePosts = () => {
   const { user } = useAuth();
 
   // Load all posts
-  useEffect(() => {
-    const loadPosts = async () => {
-      setLoading(true);
-      try {
-        const data = await fetchPosts();
-        // Ensure we're setting an array even if the API returns null/undefined
-        setPosts(data || []);
-      } catch (err) {
-        setError('Failed to load posts');
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const loadPosts = async () => {
+    setLoading(true);
+    try {
+      const data = await fetchPostsService();
+      setPosts(data || []);
+    } catch (err) {
+      setError('Failed to load posts');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     loadPosts();
   }, []);
 
@@ -252,7 +250,8 @@ export const usePosts = () => {
     handleDeletePost,
     filters,
     updateFilters,
-    clearFilters
+    clearFilters,
+    refreshPosts: loadPosts
   };
 };
 

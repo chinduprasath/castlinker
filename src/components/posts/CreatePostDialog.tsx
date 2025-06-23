@@ -7,12 +7,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { X, Upload, Image, Video, FileText, Eye, EyeOff, MapPin, Calendar, DollarSign, Users, Clock, Star, Award, Film, Camera, Mic, PenTool, Palette, Music, Briefcase, UserCheck, Globe, Building, Megaphone, Shield, Settings, Crown, Wrench, Loader2 } from 'lucide-react';
+import { X, Upload, Image, Video, FileText, Eye, EyeOff, MapPin, DollarSign, Users, Clock, Star, Award, Film, Camera, Mic, PenTool, Palette, Music, Briefcase, UserCheck, Globe, Building, Megaphone, Shield, Settings, Crown, Wrench, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { db, storage } from '@/integrations/firebase/client';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useAuth } from '@/contexts/AuthContext';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Calendar as CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { createPost } from '@/services/postsService';
 
 interface CreatePostDialogProps {
   isOpen: boolean;
@@ -34,10 +40,16 @@ const CreatePostDialog: React.FC<CreatePostDialogProps> = ({ isOpen, onClose, on
   const [contactEmail, setContactEmail] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [website, setWebsite] = useState('');
-  const [tags, setTags] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
+  const [eventDate, setEventDate] = useState<Date | undefined>(undefined);
+  const [externalUrl, setExternalUrl] = useState('');
+  const [placeName, setPlaceName] = useState('');
+  const [pincode, setPincode] = useState('');
+  const [landmark, setLandmark] = useState('');
+  const [tagsInput, setTagsInput] = useState('');
 
   const handleMediaTypeChange = (type: 'image' | 'video' | null) => {
     setMediaType(type);
@@ -50,6 +62,13 @@ const CreatePostDialog: React.FC<CreatePostDialogProps> = ({ isOpen, onClose, on
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      const isImage = file.type.startsWith('image');
+      const isVideo = file.type.startsWith('video');
+      const maxSize = isImage ? 10 * 1024 * 1024 : 50 * 1024 * 1024; // 10MB for images, 50MB for videos
+      if (file.size > maxSize) {
+        toast.error(`File is too large. Max size is ${isImage ? '10MB' : '50MB'}.`);
+        return;
+      }
       setMediaFile(file);
     }
   };
@@ -57,7 +76,7 @@ const CreatePostDialog: React.FC<CreatePostDialogProps> = ({ isOpen, onClose, on
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!title || !description || !category || !mediaType || !mediaFile) {
+    if (!title || !description || !category) {
       toast.error('Please fill in all required fields.');
       return;
     }
@@ -65,9 +84,14 @@ const CreatePostDialog: React.FC<CreatePostDialogProps> = ({ isOpen, onClose, on
     setIsLoading(true);
     try {
       let mediaUrl = '';
-      const storageRef = ref(storage, `posts/${mediaFile.name}`);
-      await uploadBytes(storageRef, mediaFile);
-      mediaUrl = await getDownloadURL(storageRef);
+      let mediaType = null;
+      if (mediaFile) {
+        // Optionally, add upload progress feedback here
+        const storageRef = ref(storage, `posts/${mediaFile.name}`);
+        await uploadBytes(storageRef, mediaFile);
+        mediaUrl = await getDownloadURL(storageRef);
+        mediaType = mediaFile.type.startsWith('image') ? 'image' : 'video';
+      }
 
       const postData = {
         title,
@@ -76,31 +100,31 @@ const CreatePostDialog: React.FC<CreatePostDialogProps> = ({ isOpen, onClose, on
         location,
         media_type: mediaType,
         media_url: mediaUrl,
-        is_public: isPublic,
-        is_featured: isFeatured,
-        salary: salary,
-        application_deadline: applicationDeadline,
-        contact_email: contactEmail,
-        contact_phone: contactPhone,
-        website: website,
-        tags: tags.split(',').map(tag => tag.trim()),
-        like_count: 0,
-        share_count: 0,
-        view_count: 0,
-        created_at: serverTimestamp(),
-        user_id: user?.id,
+        event_date: eventDate ? eventDate.toISOString() : null,
+        external_url: externalUrl,
+        place: placeName,
+        pincode,
+        landmark,
+        tags,
+        created_by: user?.id || '',
+        creator_name: user?.name || null,
+        creator_profession: user?.role || null,
       };
 
-      const postsRef = collection(db, 'castlinker_posts');
-      await addDoc(postsRef, postData);
-
-      toast.success('Post created successfully!');
-      onClose();
-      onSubmit(postData);
-      resetForm();
+      // Use the createPost service to store in 'posts' collection
+      const created = await createPost(postData);
+      if (created) {
+        toast.success('Post created successfully!');
+        onClose();
+        onSubmit(created);
+        resetForm();
+      } else {
+        toast.error('Failed to create post.');
+      }
     } catch (error: any) {
       console.error('Error creating post:', error);
       toast.error(`Failed to create post: ${error.message}`);
+      setIsLoading(false);
     } finally {
       setIsLoading(false);
     }
@@ -120,7 +144,13 @@ const CreatePostDialog: React.FC<CreatePostDialogProps> = ({ isOpen, onClose, on
     setContactEmail('');
     setContactPhone('');
     setWebsite('');
-    setTags('');
+    setTags([]);
+    setEventDate(undefined);
+    setExternalUrl('');
+    setPlaceName('');
+    setPincode('');
+    setLandmark('');
+    setTagsInput('');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -128,211 +158,145 @@ const CreatePostDialog: React.FC<CreatePostDialogProps> = ({ isOpen, onClose, on
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create New Post</DialogTitle>
           <DialogDescription>
-            Share your creative projects, job opportunities, or industry news with the community.
+            Share an opportunity with the community. Fill out the details below.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="grid gap-4 py-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
-              <Input
-                type="text"
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
-              <Select onValueChange={setCategory} defaultValue={category}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select a category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Film">Film</SelectItem>
-                  <SelectItem value="Television">Television</SelectItem>
-                  <SelectItem value="Theater">Theater</SelectItem>
-                  <SelectItem value="Music">Music</SelectItem>
-                  <SelectItem value="Art">Art</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5 py-2">
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="title">Title</Label>
+            <Input
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter post title"
+              required
+            />
           </div>
-
-          <div className="space-y-2">
+          <div className="flex flex-col gap-1">
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              placeholder="Describe the opportunity in detail..."
+              rows={5}
               required
-              className="min-h-[100px]"
             />
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="location">Location</Label>
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="category">Category</Label>
+            <Select value={category} onValueChange={setCategory} required>
+              <SelectTrigger id="category" className="w-full">
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="casting">Casting</SelectItem>
+                <SelectItem value="audition">Audition</SelectItem>
+                <SelectItem value="workshop">Workshop</SelectItem>
+                <SelectItem value="job">Job</SelectItem>
+                <SelectItem value="event">Event</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="media">Media (Image or Video)</Label>
+            <Button asChild variant="outline" className="w-fit flex items-center gap-2">
+              <label htmlFor="media-upload" className="cursor-pointer">
+                <Upload className="h-4 w-4" /> Upload Media
+                <Input id="media-upload" type="file" accept="image/*,video/*" onChange={handleFileChange} className="sr-only" />
+              </label>
+            </Button>
+            {mediaFile && <span className="text-xs text-muted-foreground mt-1">{mediaFile.name}</span>}
+          </div>
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="event-date">Event/Deadline Date</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn("w-full justify-start text-left font-normal", !eventDate && "text-muted-foreground")}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {eventDate ? format(eventDate, "PPP") : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={eventDate}
+                  onSelect={setEventDate}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            <span className="text-xs text-muted-foreground">Select a date for this opportunity (optional)</span>
+          </div>
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="external-url">External URL (Optional)</Label>
+            <Input
+              id="external-url"
+              value={externalUrl}
+              onChange={(e) => setExternalUrl(e.target.value)}
+              placeholder="https://example.com"
+            />
+            <span className="text-xs text-muted-foreground">Add a relevant external link (e.g. registration form, YouTube link)</span>
+          </div>
+          <div className="flex flex-col gap-2 border border-muted-foreground/10 rounded-lg p-3 mt-2">
+            <Label className="text-base font-semibold mb-0">Address Information (Optional)</Label>
+            <Input
+              id="place-name"
+              value={placeName}
+              onChange={(e) => setPlaceName(e.target.value)}
+              placeholder="Studio name, building, etc."
+            />
+            <div className="flex gap-2">
               <Input
-                type="text"
                 id="location"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                placeholder="e.g., Los Angeles, Remote"
+                placeholder="Area/locality"
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="mediaType">Media Type</Label>
-              <div className="flex gap-2">
-                <Badge
-                  variant={mediaType === 'image' ? 'secondary' : 'outline'}
-                  className="cursor-pointer"
-                  onClick={() => handleMediaTypeChange('image')}
-                >
-                  <Image className="mr-2 h-4 w-4" /> Image
-                </Badge>
-                <Badge
-                  variant={mediaType === 'video' ? 'secondary' : 'outline'}
-                  className="cursor-pointer"
-                  onClick={() => handleMediaTypeChange('video')}
-                >
-                  <Video className="mr-2 h-4 w-4" /> Video
-                </Badge>
-                <Badge
-                  variant={mediaType === null ? 'secondary' : 'outline'}
-                  className="cursor-pointer"
-                  onClick={() => handleMediaTypeChange(null)}
-                >
-                  <FileText className="mr-2 h-4 w-4" /> None
-                </Badge>
-              </div>
-            </div>
-          </div>
-
-          {mediaType && (
-            <div className="space-y-2">
-              <Label htmlFor="mediaFile">Upload Media</Label>
               <Input
-                type="file"
-                id="mediaFile"
-                accept={mediaType === 'image' ? 'image/*' : 'video/*'}
-                onChange={handleFileChange}
-                required={!!mediaType}
-                ref={fileInputRef}
-              />
-              {mediaFile && (
-                <Badge variant="secondary">
-                  {mediaFile.name} <X className="ml-2 h-4 w-4 cursor-pointer" onClick={() => { setMediaFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }} />
-                </Badge>
-              )}
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="salary">Salary/Budget</Label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="number"
-                  id="salary"
-                  className="pl-8"
-                  value={salary}
-                  onChange={(e) => setSalary(e.target.value)}
-                  placeholder="Enter amount"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="applicationDeadline">Application Deadline</Label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="date"
-                  id="applicationDeadline"
-                  className="pl-10"
-                  value={applicationDeadline}
-                  onChange={(e) => setApplicationDeadline(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="contactEmail">Contact Email</Label>
-              <Input
-                type="email"
-                id="contactEmail"
-                value={contactEmail}
-                onChange={(e) => setContactEmail(e.target.value)}
-                placeholder="Enter email"
+                id="pincode"
+                value={pincode}
+                onChange={(e) => setPincode(e.target.value)}
+                placeholder="Postal/zip code"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="contactPhone">Contact Phone</Label>
-              <Input
-                type="tel"
-                id="contactPhone"
-                value={contactPhone}
-                onChange={(e) => setContactPhone(e.target.value)}
-                placeholder="Enter phone number"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="website">Website</Label>
             <Input
-              type="url"
-              id="website"
-              value={website}
-              onChange={(e) => setWebsite(e.target.value)}
-              placeholder="Enter website URL"
+              id="landmark"
+              value={landmark}
+              onChange={(e) => setLandmark(e.target.value)}
+              placeholder="Nearby landmark"
             />
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="tags">Tags</Label>
-            <Input
-              type="text"
-              id="tags"
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
-              placeholder="Enter comma-separated tags"
-            />
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="tags">Tags (Optional)</Label>
+            <div className="flex gap-2">
+              <Input
+                id="tags"
+                value={tagsInput}
+                onChange={(e) => setTagsInput(e.target.value)}
+                placeholder="Add tags..."
+              />
+              <Button type="button" variant="outline" className="px-4" onClick={() => { if (tagsInput.trim()) { setTags([...tags, tagsInput.trim()]); setTagsInput(''); } }}>Add</Button>
+            </div>
+            <div className="flex flex-wrap gap-2 mt-1">
+              {tags.map((tag, idx) => (
+                <Badge key={idx} variant="secondary">{tag}</Badge>
+              ))}
+            </div>
           </div>
-
-          <div className="flex items-center space-x-2">
-            <Switch id="isPublic" checked={isPublic} onCheckedChange={(checked) => setIsPublic(checked)} />
-            <Label htmlFor="isPublic">Make this post public</Label>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Switch id="isFeatured" checked={isFeatured} onCheckedChange={(checked) => setIsFeatured(checked)} />
-            <Label htmlFor="isFeatured">Mark as featured</Label>
-          </div>
-
-          <DialogFooter>
-            <Button type="button" variant="secondary" onClick={onClose}>
-              Cancel
+          <DialogFooter className="mt-2">
+            <Button type="submit" disabled={isLoading} className="px-6 py-2 text-base font-medium">
+              {isLoading ? 'Publishing...' : 'Publish Post'}
             </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                'Create Post'
-              )}
-            </Button>
+            <Button type="button" variant="outline" onClick={onClose} className="px-6 py-2 text-base font-medium">Cancel</Button>
           </DialogFooter>
         </form>
       </DialogContent>

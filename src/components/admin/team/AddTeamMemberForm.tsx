@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +12,9 @@ import {
 import { toast } from "sonner";
 import { createTeamMember } from "@/services/teamMemberService";
 import { AdminRole } from "@/types/rbacTypes";
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db } from '@/integrations/firebase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface AddTeamMemberFormProps {
   onSuccess?: () => void;
@@ -41,6 +43,9 @@ const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({
   const [generatePassword, setGeneratePassword] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [displayRoles, setDisplayRoles] = useState<AdminRole[]>([]);
+  const [connectedUsers, setConnectedUsers] = useState<any[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState('');
+  const { user } = useAuth();
   
   // Merge database roles with default roles if needed
   useEffect(() => {
@@ -77,6 +82,39 @@ const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({
       }
     }
   }, [availableRoles]);
+  
+  useEffect(() => {
+    // Fetch connected users (mutual connections)
+    const fetchConnectedUsers = async () => {
+      if (!user) return;
+      // Find all accepted connections where user is requester or recipient
+      const connectionsRef = collection(db, 'connection_requests');
+      const q = query(connectionsRef, where('status', '==', 'accepted'));
+      const snapshot = await getDocs(q);
+      const connections = snapshot.docs.map(doc => doc.data());
+      // Get user IDs of connected users
+      const connectedIds = connections
+        .filter(c => c.requesterId === user.id || c.recipientId === user.id)
+        .map(c => (c.requesterId === user.id ? c.recipientId : c.requesterId));
+      if (connectedIds.length === 0) return setConnectedUsers([]);
+      // Fetch user details
+      const usersRef = collection(db, 'users');
+      const usersSnap = await getDocs(usersRef);
+      const users = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setConnectedUsers(users.filter(u => connectedIds.includes(u.id)));
+    };
+    fetchConnectedUsers();
+  }, [user]);
+
+  // When a user is selected, set name/email
+  useEffect(() => {
+    if (!selectedUserId) return;
+    const selected = connectedUsers.find(u => u.id === selectedUserId);
+    if (selected) {
+      setName(selected.name || '');
+      setEmail(selected.email || '');
+    }
+  }, [selectedUserId, connectedUsers]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,26 +153,17 @@ const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="name">Name</Label>
-        <Input
-          id="name"
-          placeholder="Full name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-        />
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          type="email"
-          placeholder="example@company.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
+        <Label htmlFor="user">Select User</Label>
+        <Select value={selectedUserId} onValueChange={setSelectedUserId} required>
+          <SelectTrigger id="user" className="w-full">
+            <SelectValue placeholder="Select from your connections" />
+          </SelectTrigger>
+          <SelectContent>
+            {connectedUsers.map(u => (
+              <SelectItem key={u.id} value={u.id}>{u.name} ({u.email})</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       
       <div className="space-y-2">
@@ -142,54 +171,25 @@ const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({
         <Select
           value={roleId}
           onValueChange={setRoleId}
-          disabled={displayRoles.length === 0}
+          required
         >
           <SelectTrigger id="role" className="w-full">
             <SelectValue placeholder="Select a role" />
           </SelectTrigger>
           <SelectContent>
-            {displayRoles.map((role) => (
-              <SelectItem key={role.id} value={role.id}>
-                {role.name}
-              </SelectItem>
+            {['Acting', 'Director', 'Screenwriter', 'Musician', 'Producer', 'Editor', 'Cinematographer'].map(role => (
+              <SelectItem key={role} value={role}>{role}</SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
-      
-      <div className="space-y-2">
-        <div className="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            id="generatePassword"
-            checked={generatePassword}
-            onChange={(e) => setGeneratePassword(e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300"
-          />
-          <Label htmlFor="generatePassword">Generate random password</Label>
-        </div>
-      </div>
-      
-      {!generatePassword && (
-        <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
-          <Input
-            id="password"
-            type="password"
-            placeholder="Minimum 8 characters"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            minLength={8}
-          />
-        </div>
-      )}
       
       <div className="flex justify-end space-x-2 pt-4">
         <Button type="button" variant="outline" onClick={onCancel} disabled={submitting}>
           Cancel
         </Button>
         <Button type="submit" disabled={submitting}>
-          {submitting ? "Creating..." : "Create Team Member"}
+          {submitting ? "Adding..." : "Add Member"}
         </Button>
       </div>
     </form>

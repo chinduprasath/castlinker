@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Heart, Star, MapPin, Eye, MessageSquare, UserPlus, Award, Briefcase, Clock, ChevronDown, ChevronUp, Users, SlidersHorizontal, Grid, List, ArrowUpDown, CheckCircle, Crown, ExternalLink, Calendar } from 'lucide-react';
+import { Search, Filter, Heart, Star, MapPin, Eye, MessageSquare, UserPlus, Award, Briefcase, Clock, ChevronDown, ChevronUp, Users, SlidersHorizontal, Grid, List, ArrowUpDown, CheckCircle, Crown, ExternalLink, Calendar, Bookmark, Share2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +11,7 @@ import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useTalentDirectory } from '@/hooks/useTalentDirectory';
 import { useAuth } from '@/contexts/AuthContext';
@@ -20,7 +20,9 @@ import { toast } from 'sonner';
 import TalentProfileModal from '@/components/talent/TalentProfileModal';
 import { useToast } from '@/hooks/use-toast';
 import { db } from '@/integrations/firebase/client';
-import { collection, addDoc, deleteDoc, query, where, getDocs, doc } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { useNavigate } from 'react-router-dom';
+import { Textarea } from '@/components/ui/textarea';
 
 const TalentDirectory = () => {
   const [isGridView, setIsGridView] = useState(true);
@@ -28,7 +30,6 @@ const TalentDirectory = () => {
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const { 
     talents,
-    isLoading,
     filters,
     updateFilters,
     locations,
@@ -36,7 +37,6 @@ const TalentDirectory = () => {
     PROFESSION_OPTIONS: professionOptions,
     likedProfiles,
     wishlistedProfiles,
-    connectionRequests,
     totalCount,
     pageSize,
     currentPage,
@@ -50,6 +50,86 @@ const TalentDirectory = () => {
   } = useTalentDirectory();
   const { user } = useAuth();
   const { toast: useToastHook } = useToast();
+  const [users, setUsers] = useState<any[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [connectionRequests, setConnectionRequests] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [shareProfileId, setShareProfileId] = useState<string | null>(null);
+  const [messageModalOpen, setMessageModalOpen] = useState(false);
+  const [messageProfile, setMessageProfile] = useState<any>(null);
+  const [messageSubject, setMessageSubject] = useState('');
+  const [messageBody, setMessageBody] = useState('');
+  const [saving, setSaving] = useState<string | null>(null);
+  const [liking, setLiking] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchUsers();
+    fetchConnectionRequests();
+  }, []);
+
+  const fetchUsers = async () => {
+    setIsLoading(true);
+    try {
+      // Fetch all users from users (not users_management)
+      const usersCollection = collection(db, 'users');
+      const querySnapshot = await getDocs(usersCollection);
+      const usersData = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      // Filter: Only show users with a valid email and name (likely real/authenticated users)
+      const filtered = usersData.filter(u => {
+        const name = (u as any).name;
+        const email = (u as any).email;
+        return name && email && name !== 'N/A' && email !== 'N/A' && name.trim() !== '' && email.trim() !== '';
+      });
+      setUsers(filtered);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchConnectionRequests = async () => {
+    // Fetch connection requests for the current user
+    if (!user) return;
+    const requestsCollection = collection(db, 'connection_requests');
+    const q = query(requestsCollection, where('requesterId', '==', user.id));
+    const querySnapshot = await getDocs(q);
+    setConnectionRequests(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+  };
+
+  const handleConnect = async (targetUser) => {
+    if (!user) return;
+    try {
+      const requestsCollection = collection(db, 'connection_requests');
+      await addDoc(requestsCollection, {
+        requesterId: user.id,
+        recipientId: targetUser.id,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+      });
+      toast.success('Connection request sent!');
+      fetchConnectionRequests();
+    } catch (error) {
+      toast.error('Failed to send connection request.');
+    }
+  };
+
+  const getConnectionStatus = (targetUserId) => {
+    const req = connectionRequests.find(
+      (r) => r.recipientId === targetUserId && r.requesterId === user?.id
+    );
+    return req ? req.status : null;
+  };
+
+  const filteredUsers = searchTerm.trim() === ''
+    ? users
+    : users.filter(u => u.name?.toLowerCase().includes(searchTerm.toLowerCase()));
 
   const handleOpenProfile = (profileId: string) => {
     setSelectedProfileId(profileId);
@@ -63,45 +143,90 @@ const TalentDirectory = () => {
 
   const isLiked = (profileId: string) => likedProfiles.includes(profileId);
   const isWishlisted = (profileId: string) => wishlistedProfiles.includes(profileId);
-  const getConnectionStatus = (profileId: string) => {
-    const request = connectionRequests.find(req => 
-      (req.requesterId === 'current-user' && req.recipientId === profileId) ||
-      (req.recipientId === 'current-user' && req.requesterId === profileId)
-    );
-    return request ? request.status : null;
-  };
-
-  const handleConnect = (profile) => {
-    const success = sendConnectionRequest(profile);
-    if (success) {
-      useToastHook({
-        title: "Connection request sent",
-        description: `A connection request has been sent to ${profile.name || 'Talent'}.`,
-      });
-    } else {
-      toast.error("Could not send connection request");
-    }
-  };
 
   const handleShare = (profile) => {
-    shareProfile(profile);
+    setShareProfileId(profile.id);
+    setShareModalOpen(true);
+  };
+
+  const handleCopyProfileLink = (profileId) => {
+    const url = `${window.location.origin}/profile/${profileId}`;
+    navigator.clipboard.writeText(url);
+    toast.success('Profile link copied!');
   };
 
   const handleMessage = (profile) => {
-    toast.info(`Messaging ${profile.name || 'Talent'} - this feature is not fully implemented.`);
-    const message = prompt(`Enter your message to ${profile.name || 'Talent'}:`);
-    if (message) {
-      const success = sendMessage(profile, message);
-      if (success) {
-        toast.success("Message sent successfully!");
-      } else {
-        toast.error("Failed to send message.");
-      }
+    setMessageProfile(profile);
+    setMessageSubject('');
+    setMessageBody('');
+    setMessageModalOpen(true);
+  };
+
+  const handleSendMessage = async () => {
+    if (!user || !messageProfile) return;
+    if (!messageBody.trim()) return toast.error('Message required');
+    try {
+      const inboxRef = collection(db, 'talent_inbox');
+      await addDoc(inboxRef, {
+        sender_id: user.id,
+        recipient_id: messageProfile.id,
+        subject: messageSubject,
+        message: messageBody,
+        created_at: new Date().toISOString(),
+        status: 'unread',
+      });
+      toast.success('Message sent!');
+      setMessageModalOpen(false);
+    } catch (e) {
+      toast.error('Failed to send message');
     }
   };
 
-  const handleLike = (profileId: string) => {
-    toggleLike(profileId);
+  const handleLike = async (profile) => {
+    if (!user) return toast.error('Login required');
+    setLiking(profile.id);
+    try {
+      // Toggle like in Firestore (per user)
+      const likesRef = collection(db, 'talent_likes');
+      const q = query(likesRef, where('profile_id', '==', profile.id), where('user_id', '==', user.id));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        // Unlike
+        await deleteDoc(doc(db, 'talent_likes', snap.docs[0].id));
+        toast.success('Unliked');
+      } else {
+        // Like
+        await addDoc(likesRef, { profile_id: profile.id, user_id: user.id, created_at: new Date().toISOString() });
+        toast.success('Liked');
+      }
+      fetchUsers(); // Refresh like count
+    } catch (e) {
+      toast.error('Failed to update like');
+    } finally {
+      setLiking(null);
+    }
+  };
+
+  const handleSave = async (profile) => {
+    if (!user) return toast.error('Login required');
+    setSaving(profile.id);
+    try {
+      // Toggle save in Firestore (per user)
+      const savesRef = collection(db, 'talent_saves');
+      const q = query(savesRef, where('profile_id', '==', profile.id), where('user_id', '==', user.id));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        await deleteDoc(doc(db, 'talent_saves', snap.docs[0].id));
+        toast.success('Removed from saved');
+      } else {
+        await addDoc(savesRef, { profile_id: profile.id, user_id: user.id, created_at: new Date().toISOString() });
+        toast.success('Saved');
+      }
+    } catch (e) {
+      toast.error('Failed to update saved');
+    } finally {
+      setSaving(null);
+    }
   };
 
   const handleWishlist = (profileId: string) => {
@@ -112,332 +237,163 @@ const TalentDirectory = () => {
     changePage(newPage);
   };
 
+  const handleViewProfile = (profile) => {
+    navigate(`/profile/${profile.id}`);
+  };
+
   return (
     <div className="container py-12">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold gold-gradient-text">Talent Directory</h1>
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => setIsGridView(!isGridView)}
-          >
-            {isGridView ? <List className="h-5 w-5" /> : <Grid className="h-5 w-5" />}
-          </Button>
-        </div>
+      <h1 className="text-4xl font-bold gold-gradient-text mb-2">Talent Directory</h1>
+      <p className="text-muted-foreground mb-8 text-lg">Discover and connect with talented film industry professionals from around the world.</p>
+      <div className="mb-6 flex flex-col md:flex-row md:items-center gap-4">
+        <Input
+          type="search"
+          placeholder="Search by name, role, or keyword..."
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+          className="flex-1 min-w-[220px]"
+        />
+        <Select onValueChange={(value) => updateFilters({ sortBy: value })}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Highest Rated" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="rating">Highest Rated</SelectItem>
+            <SelectItem value="experience">Experience</SelectItem>
+            <SelectItem value="reviews">Reviews</SelectItem>
+            <SelectItem value="likes">Likes</SelectItem>
+            <SelectItem value="nameAsc">Name (A-Z)</SelectItem>
+            <SelectItem value="nameDesc">Name (Z-A)</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button variant="outline" onClick={() => setShowFilters(true)}>
+          <Filter className="h-4 w-4 mr-2" /> Filters
+        </Button>
       </div>
-
-      <Card className="mb-6">
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Input
-              type="search"
-              placeholder="Search talents..."
-              value={filters.searchTerm}
-              onChange={(e) => updateFilters({ searchTerm: e.target.value })}
-            />
-
-            <Select onValueChange={(value) => updateFilters({ sortBy: value })}>
+      <div className="mb-4 text-lg font-medium">
+        Found <span className="text-gold">{filteredUsers.length}</span> talents
+      </div>
+      {isLoading ? (
+        <div className="text-center py-8">Loading talents...</div>
+      ) : filteredUsers.length === 0 ? (
+        <div className="text-center py-8">No talents found.</div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredUsers.map((u) => (
+            <Card key={u.id} className="rounded-xl border border-[#bfa14a] bg-[#181818] p-4 flex flex-col shadow-sm min-h-[300px] max-w-full">
+              {/* Top Section */}
+              <div className="flex items-center mb-3">
+                <Avatar className="h-12 w-12 border border-[#bfa14a] mr-3">
+                  <AvatarImage src={u.avatar_url} alt={u.name} />
+                  <AvatarFallback className="text-base font-semibold text-[#bfa14a] bg-[#181818]">{u.name?.slice(0,2).toUpperCase() || 'NA'}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-semibold text-[1rem] text-white truncate max-w-[100px]">{u.name}</span>
+                      <span className="flex items-center gap-1 text-xs text-[#b3b3b3] mt-0.5">
+                        <MapPin className="h-3 w-3 mr-0.5" />{u.location || 'Remote'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 ml-2">
+                      <span className="flex items-center gap-1 text-[#bfa14a] font-medium text-sm"><Star className="h-4 w-4" />5</span>
+                      <span className="flex items-center gap-1 text-red-400 font-medium text-sm"><Heart className="h-4 w-4" />2</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {/* Experience Section */}
+              <div className="flex items-center mb-3 mt-1">
+                <span className="uppercase text-xs text-[#b3b3b3] tracking-wide mr-2">Experience</span>
+                <span className="font-semibold text-white text-xs">years</span>
+              </div>
+              {/* Action Buttons Row 1 */}
+              <div className="flex flex-wrap gap-2 mb-2">
+                <Button variant="outline" className="flex-1 min-w-[90px] max-w-[120px] rounded-md border-[#bfa14a] text-white font-normal text-xs flex items-center justify-center gap-1 py-1 px-2 h-8 hover:bg-[#bfa14a] hover:text-black transition-colors" onClick={() => handleLike(u)}>
+                  <Heart className="h-3 w-3" />{liking === u.id ? 'Unliking...' : 'Like'}
+                </Button>
+                <Button variant="outline" className="flex-1 min-w-[90px] max-w-[120px] rounded-md border-[#bfa14a] text-white font-normal text-xs flex items-center justify-center gap-1 py-1 px-2 h-8 hover:bg-[#bfa14a] hover:text-black transition-colors" onClick={() => handleSave(u)}>
+                  <Bookmark className="h-3 w-3" />{saving === u.id ? 'Saving...' : 'Save'}
+                </Button>
+                <Button variant="outline" className="flex-1 min-w-[90px] max-w-[120px] rounded-md border-[#bfa14a] text-white font-normal text-xs flex items-center justify-center gap-1 py-1 px-2 h-8 hover:bg-[#bfa14a] hover:text-black transition-colors" onClick={() => handleShare(u)}>
+                  <Share2 className="h-3 w-3" />{shareModalOpen ? 'Sharing...' : 'Share'}
+                </Button>
+              </div>
+              {/* Action Buttons Row 2 */}
+              <div className="flex flex-wrap gap-2 mt-auto">
+                <Button variant="outline" className="flex-1 min-w-[90px] max-w-[120px] rounded-md bg-black text-white font-normal text-xs flex items-center justify-center gap-1 py-1 px-2 h-8 border border-black hover:bg-[#222] transition-colors" onClick={() => handleMessage(u)}>
+                  <MessageSquare className="h-3 w-3" />{messageModalOpen ? 'Sending...' : 'Message'}
+                </Button>
+                <Button
+                  variant="default"
+                  className="flex-1 min-w-[90px] max-w-[120px] rounded-md bg-[#bfa14a] text-black font-normal text-xs flex items-center justify-center gap-1 py-1 px-2 h-8 border border-[#bfa14a] hover:bg-[#e2b93b] transition-colors"
+                  onClick={() => handleConnect(u)}
+                  disabled={getConnectionStatus(u.id) === 'pending'}
+                >
+                  <UserPlus className="h-3 w-3" />{getConnectionStatus(u.id) === 'pending' ? 'Requested' : 'Connect'}
+                </Button>
+                <Button variant="default" className="flex-1 min-w-[90px] max-w-[120px] rounded-md bg-[#bfa14a] text-black font-normal text-xs flex items-center justify-center gap-1 py-1 px-2 h-8 border border-[#bfa14a] hover:bg-[#e2b93b] transition-colors" onClick={() => handleViewProfile(u)}>
+                  <Eye className="h-3 w-3" />View Profile
+                </Button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+      <Dialog open={showFilters} onOpenChange={setShowFilters}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Filters</DialogTitle>
+            <DialogDescription>Customize your talent search</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Label>Role</Label>
+            <Select onValueChange={(value: string) => updateFilters({ profession: value })}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Sort by" />
+                <SelectValue placeholder="Select role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="rating">Rating</SelectItem>
-                <SelectItem value="experience">Experience</SelectItem>
-                <SelectItem value="reviews">Reviews</SelectItem>
-                <SelectItem value="likes">Likes</SelectItem>
-                <SelectItem value="nameAsc">Name (A-Z)</SelectItem>
-                <SelectItem value="nameDesc">Name (Z-A)</SelectItem>
+                {['Actor', 'Director', 'Producer', 'Writer', 'Editor', 'Cinematographer'].map((role) => (
+                  <SelectItem key={role} value={role}>{role}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
-
-            <Button variant="outline" onClick={resetFilters}>
-              Reset Filters
-            </Button>
           </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="md:col-span-1">
-          <Card>
-            <CardHeader>
-              <CardTitle>Filters</CardTitle>
-              <CardDescription>Customize your talent search</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Collapsible>
-                <CollapsibleTrigger className="flex items-center justify-between w-full">
-                  Role <ChevronDown className="w-4 h-4" />
-                </CollapsibleTrigger>
-                <CollapsibleContent className="pl-4 space-y-2">
-                  {professionOptions.map((role) => (
-                    <div key={role.value} className="flex items-center space-x-2">
-                      <Input
-                        type="checkbox"
-                        id={`role-${role.value}`}
-                        className="h-4 w-4"
-                        checked={filters.selectedRoles.includes(role.value)}
-                        onChange={(e) => {
-                          const newRoles = e.target.checked
-                            ? [...filters.selectedRoles, role.value]
-                            : filters.selectedRoles.filter((r) => r !== role.value);
-                          updateFilters({ selectedRoles: newRoles });
-                        }}
-                      />
-                      <Label htmlFor={`role-${role.value}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed">
-                        {role.label}
-                      </Label>
-                    </div>
-                  ))}
-                </CollapsibleContent>
-              </Collapsible>
-
-              <Collapsible>
-                <CollapsibleTrigger className="flex items-center justify-between w-full">
-                  Location <ChevronDown className="w-4 h-4" />
-                </CollapsibleTrigger>
-                <CollapsibleContent className="pl-4 space-y-2">
-                  {locations.map((location) => (
-                    <div key={location} className="flex items-center space-x-2">
-                      <Input
-                        type="checkbox"
-                        id={`location-${location}`}
-                        className="h-4 w-4"
-                        checked={filters.selectedLocations.includes(location)}
-                        onChange={(e) => {
-                          const newLocations = e.target.checked
-                            ? [...filters.selectedLocations, location]
-                            : filters.selectedLocations.filter((loc) => loc !== location);
-                          updateFilters({ selectedLocations: newLocations });
-                        }}
-                      />
-                      <Label htmlFor={`location-${location}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed">
-                        {location}
-                      </Label>
-                    </div>
-                  ))}
-                </CollapsibleContent>
-              </Collapsible>
-
-              <Collapsible>
-                <CollapsibleTrigger className="flex items-center justify-between w-full">
-                  Experience <ChevronDown className="w-4 h-4" />
-                </CollapsibleTrigger>
-                <CollapsibleContent className="pl-4 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label>Years: {filters.experienceRange[0]} - {filters.experienceRange[1]}</Label>
-                  </div>
-                  <Slider
-                    defaultValue={filters.experienceRange}
-                    max={30}
-                    step={1}
-                    onValueChange={(value) => updateFilters({ experienceRange: value as [number, number] })}
-                  />
-                </CollapsibleContent>
-              </Collapsible>
-
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="verified"
-                    checked={filters.verifiedOnly}
-                    onCheckedChange={(checked) => updateFilters({ verifiedOnly: checked })}
-                  />
-                  <Label htmlFor="verified" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed">
-                    Verified Only
-                  </Label>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="available"
-                    checked={filters.availableOnly}
-                    onCheckedChange={(checked) => updateFilters({ availableOnly: checked })}
-                  />
-                  <Label htmlFor="available" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed">
-                    Available Only
-                  </Label>
-                </div>
-              </div>
-
-              <div>
-                <Label>Minimum Likes: {filters.likesMinimum}</Label>
-                <Slider
-                  defaultValue={[filters.likesMinimum]}
-                  max={200}
-                  step={10}
-                  onValueChange={(value) => updateFilters({ likesMinimum: value[0] })}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="md:col-span-3">
-          {isLoading ? (
-            <div className="text-center py-8">Loading talents...</div>
-          ) : talents.length === 0 ? (
-            <div className="text-center py-8">No talents found with the current filters.</div>
-          ) : (
-            <div className={isGridView ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-4"}>
-              {talents.map((talent) => (
-                <Card key={talent.id} className="bg-card-gradient border-gold/10">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <Avatar>
-                          <AvatarImage src={talent.avatar || talent.avatar_url} alt={talent.name || talent.full_name} />
-                          <AvatarFallback>{(talent.name || talent.full_name).charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div className="ml-4 space-y-1">
-                          <CardTitle className="text-lg font-semibold">{talent.name || talent.full_name}</CardTitle>
-                          <CardDescription className="text-sm text-muted-foreground flex items-center gap-1">
-                            <Briefcase className="h-4 w-4" />
-                            {talent.role || talent.profession_type}
-                          </CardDescription>
-                        </div>
-                      </div>
-                      {talent.is_premium && (
-                        <Badge variant="secondary" className="bg-gold/10 text-gold border-0">
-                          <Crown className="h-4 w-4 mr-1" />
-                          Premium
-                        </Badge>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <MapPin className="h-4 w-4" />
-                      <span>{talent.location}</span>
-                      <Separator orientation="vertical" className="h-4" />
-                      <Calendar className="h-4 w-4" />
-                      <span>Joined {new Date(talent.joined_date || talent.created_at).toLocaleDateString()}</span>
-                    </div>
-
-                    <p className="text-sm line-clamp-3 text-muted-foreground">{talent.bio || talent.description}</p>
-
-                    <div className="flex flex-wrap gap-2">
-                      {talent.skills?.slice(0, 3).map((skill) => (
-                        <Badge key={skill} variant="outline">
-                          {skill}
-                        </Badge>
-                      ))}
-                      {talent.skills && talent.skills.length > 3 && (
-                        <Badge variant="outline">+ {talent.skills.length - 3} more</Badge>
-                      )}
-                    </div>
-
-                    <div className="flex items-center justify-between text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Star className="h-4 w-4 text-gold" />
-                        <span>{talent.rating?.toFixed(1)} ({talent.reviews} Reviews)</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Heart className="h-4 w-4 text-red-500" />
-                        <span>{talent.likes_count || talent.likes} Likes</span>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-between">
-                      <Button variant="outline" size="sm" onClick={() => handleOpenProfile(talent.id)}>
-                        <Eye className="h-4 w-4 mr-2" />
-                        View Profile
-                      </Button>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleLike(talent.id)}
-                          className={isLiked(talent.id) ? "text-red-500" : ""}
-                        >
-                          <Heart className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleWishlist(talent.id)}
-                          className={isWishlisted(talent.id) ? "text-blue-500" : ""}
-                        >
-                          <Award className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                  {isGridView ? null : (
-                    <CardContent className="flex justify-between">
-                      <Button size="sm" onClick={() => handleConnect(talent)}>
-                        {getConnectionStatus(talent.user_id) === 'pending' ? (
-                          <>Pending...</>
-                        ) : getConnectionStatus(talent.user_id) === 'accepted' ? (
-                          <>Connected <UserPlus className="h-4 w-4 ml-2" /></>
-                        ) : (
-                          <>Connect <UserPlus className="h-4 w-4 ml-2" /></>
-                        )}
-                      </Button>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => handleShare(talent)}>
-                          Share <ExternalLink className="h-4 w-4 ml-2" />
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => handleMessage(talent)}>
-                          Message <MessageSquare className="h-4 w-4 ml-2" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  )}
-                </Card>
-              ))}
-            </div>
-          )}
-
-          <div className="flex justify-between items-center mt-4">
-            <p className="text-sm text-muted-foreground">
-              Showing {talents.length} of {totalCount} talents
-            </p>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={currentPage === 1}
-                onClick={() => handlePageChange(currentPage - 1)}
-              >
-                Previous
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={currentPage === totalPages}
-                onClick={() => handlePageChange(currentPage + 1)}
-              >
-                Next
-              </Button>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button variant="outline" onClick={() => setShowFilters(false)}>Close</Button>
+            <Button onClick={() => { setShowFilters(false); resetFilters(); }}>Reset Filters</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={shareModalOpen} onOpenChange={setShareModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Share Profile</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Button onClick={() => handleCopyProfileLink(shareProfileId)}>Copy Profile Link</Button>
+            <div className="flex gap-2">
+              <Button onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(window.location.origin + '/profile/' + shareProfileId)}`)}>WhatsApp</Button>
+              <Button onClick={() => window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.origin + '/profile/' + shareProfileId)}`)}>LinkedIn</Button>
             </div>
           </div>
-        </div>
-      </div>
-
-      <TalentProfileModal
-        isOpen={profileOpen}
-        onClose={handleCloseProfile}
-        profileId={selectedProfileId}
-        isLiked={selectedProfileId ? isLiked(selectedProfileId) : false}
-        isWishlisted={selectedProfileId ? isWishlisted(selectedProfileId) : false}
-        connectionStatus={selectedProfileId ? getConnectionStatus(selectedProfileId) : null}
-        onConnect={selectedProfileId ? () => {
-          const profile = talents.find(t => t.id === selectedProfileId);
-          if (profile) handleConnect(profile);
-        } : undefined}
-        onShare={selectedProfileId ? () => {
-          const profile = talents.find(t => t.id === selectedProfileId);
-          if (profile) handleShare(profile);
-        } : undefined}
-        onMessage={selectedProfileId ? () => {
-          const profile = talents.find(t => t.id === selectedProfileId);
-          if (profile) handleMessage(profile);
-        } : undefined}
-        onLike={selectedProfileId ? () => handleLike(selectedProfileId) : undefined}
-        onWishlist={selectedProfileId ? () => handleWishlist(selectedProfileId) : undefined}
-      />
+        </DialogContent>
+      </Dialog>
+      <Dialog open={messageModalOpen} onOpenChange={setMessageModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Send Message</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input placeholder="Subject (optional)" value={messageSubject} onChange={e => setMessageSubject(e.target.value)} />
+            <Textarea placeholder="Type your message..." value={messageBody} onChange={e => setMessageBody(e.target.value)} />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMessageModalOpen(false)}>Cancel</Button>
+            <Button onClick={handleSendMessage}>Send</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

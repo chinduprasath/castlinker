@@ -69,169 +69,148 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onSu
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}> {/* Use onOpenChange to handle closing */} 
-      <DialogContent className="sm:max-w-[700px]"> {/* Increased max-width for two columns */}
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Create New Post</DialogTitle>
           <DialogDescription>
             Share an opportunity with the community. Fill out the details below.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 py-4 overflow-y-auto max-h-[70vh]"> {/* Added scrolling and max height */}
-          {/* Column 1 */}
-          <div className="grid gap-6">
-            {/* Title */}
-            <div className="grid gap-2">
-              <Label htmlFor="title">Title</Label>
+        <div className="flex flex-col gap-5 py-2 overflow-y-auto max-h-[70vh]">
+          {/* Title */}
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="title">Title</Label>
+            <Input
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter post title"
+            />
+          </div>
+          {/* Description */}
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Describe the opportunity in detail..."
+              rows={5}
+            />
+          </div>
+          {/* Category */}
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="category">Category</Label>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger id="category" className="w-full">
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="casting">Casting</SelectItem>
+                <SelectItem value="audition">Audition</SelectItem>
+                <SelectItem value="workshop">Workshop</SelectItem>
+                <SelectItem value="job">Job</SelectItem>
+                <SelectItem value="event">Event</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {/* Media Upload */}
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="media">Media (Image or Video)</Label>
+            <Button asChild variant="outline" className="w-fit flex items-center gap-2">
+              <label htmlFor="media-upload" className="cursor-pointer">
+                <Upload className="h-4 w-4" /> Upload Media
+                <Input id="media-upload" type="file" accept="image/*,video/*" onChange={handleFileChange} className="sr-only" />
+              </label>
+            </Button>
+            {media && <span className="text-xs text-muted-foreground mt-1">{media.name}</span>}
+          </div>
+          {/* Event/Deadline Date */}
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="event-date">Event/Deadline Date</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn("w-full justify-start text-left font-normal", !eventDate && "text-muted-foreground")}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {eventDate ? format(eventDate, "PPP") : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={eventDate}
+                  onSelect={setEventDate}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            <span className="text-xs text-muted-foreground">Select a date for this opportunity (optional)</span>
+          </div>
+          {/* External URL */}
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="external-url">External URL (Optional)</Label>
+            <Input
+              id="external-url"
+              value={externalUrl}
+              onChange={(e) => setExternalUrl(e.target.value)}
+              placeholder="https://example.com"
+            />
+            <span className="text-xs text-muted-foreground">Add a relevant external link (e.g. registration form, YouTube link)</span>
+          </div>
+          {/* Address Information */}
+          <div className="flex flex-col gap-2 border border-muted-foreground/10 rounded-lg p-3 mt-2">
+            <Label className="text-base font-semibold mb-0">Address Information (Optional)</Label>
+            <Input
+              id="place-name"
+              value={placeName}
+              onChange={(e) => setPlaceName(e.target.value)}
+              placeholder="Studio name, building, etc."
+            />
+            <div className="flex gap-2">
               <Input
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Enter post title"
+                id="location"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="Area/locality"
+              />
+              <Input
+                id="pincode"
+                value={pincode}
+                onChange={(e) => setPincode(e.target.value)}
+                placeholder="Postal/zip code"
               />
             </div>
-
-            {/* Category */}
-            <div className="grid gap-2">
-              <Label htmlFor="category">Category</Label>
-              {/* Using a simple Input for now, can replace with Select */}
-              <Input
-                id="category"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                placeholder="Select a category"
-              />
-            </div>
-
-            {/* Event/Deadline Date */}
-            <div className="grid gap-2">
-              <Label htmlFor="event-date">Event/Deadline Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={"outline"}
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !eventDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {eventDate ? format(eventDate, "PPP") : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={eventDate}
-                    onSelect={setEventDate}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-              <p className="text-sm text-muted-foreground">Select a date for this opportunity (optional)</p>
-            </div>
-
-            {/* External URL */}
-            <div className="grid gap-2">
-              <Label htmlFor="external-url">External URL (Optional)</Label>
-              <Input
-                id="external-url"
-                value={externalUrl}
-                onChange={(e) => setExternalUrl(e.target.value)}
-                placeholder="https://example.com"
-              />
-              <p className="text-sm text-muted-foreground">Add a relevant external link (e.g. registration form, YouTube link)</p>
-            </div>
-
-            {/* Tags */}
-            <div className="grid gap-2">
-              <Label htmlFor="tags">Tags (Optional)</Label>
+            <Input
+              id="landmark"
+              value={landmark}
+              onChange={(e) => setLandmark(e.target.value)}
+              placeholder="Nearby landmark"
+            />
+          </div>
+          {/* Tags */}
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="tags">Tags (Optional)</Label>
+            <div className="flex gap-2">
               <Input
                 id="tags"
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
-                placeholder="Add tags"
+                placeholder="Add tags..."
               />
-              <p className="text-sm text-muted-foreground">Comma separated tags (e.g., #castingcall, #filmproduction)</p>
+              <Button type="button" variant="outline" className="px-4">Add</Button>
             </div>
           </div>
-
-          {/* Column 2 */}
-          <div className="grid gap-6">
-            {/* Description */}
-            <div className="grid gap-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe the opportunity in detail..."
-                rows={10} // Adjust rows to fill space better
-              />
-            </div>
-
-            {/* Media Upload */}
-            <div className="grid gap-2">
-              <Label htmlFor="media">Media (Image or Video)</Label>
-              {/* Custom styled file input button */}
-              <div className="flex items-center space-x-2">
-                <Label htmlFor="media-upload" className="flex items-center justify-center px-4 py-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground rounded-md cursor-pointer text-sm font-medium">
-                  <Upload className="h-4 w-4 mr-2" /> Upload Media
-                </Label>
-                <Input id="media-upload" type="file" accept="image/*,video/*" onChange={handleFileChange} className="sr-only" />
-                {media && <span className="text-sm text-muted-foreground">{media.name}</span>}
-              </div>
-            </div>
-
-            {/* Address Information */}
-            <div className="grid gap-4">
-              <Label className="text-base font-semibold mb-0">Address Information (Optional)</Label>
-              <div className="grid gap-2">
-                <Label htmlFor="place-name">Place Name</Label>
-                <Input
-                  id="place-name"
-                  value={placeName}
-                  onChange={(e) => setPlaceName(e.target.value)}
-                  placeholder="Studio name, building, etc."
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="location">Location</Label>
-                  <Input
-                    id="location"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    placeholder="Area/locality"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="pincode">Pincode</Label>
-                  <Input
-                    id="pincode"
-                    value={pincode}
-                    onChange={(e) => setPincode(e.target.value)}
-                    placeholder="Postal/zip code"
-                  />
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="landmark">Landmark (Optional)</Label>
-                <Input
-                  id="landmark"
-                  value={landmark}
-                  onChange={(e) => setLandmark(e.target.value)}
-                  placeholder="Nearby landmark"
-                />
-              </div>
-            </div>
-          </div>
-
         </div>
-        <DialogFooter>
-          <Button type="submit" onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? 'Creating...' : 'Create Post'}
+        <DialogFooter className="mt-2">
+          <Button type="submit" onClick={handleSubmit} disabled={isSubmitting} className="px-6 py-2 text-base font-medium">
+            {isSubmitting ? 'Publishing...' : 'Publish Post'}
           </Button>
+          <Button type="button" variant="outline" onClick={onClose} className="px-6 py-2 text-base font-medium">Cancel</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

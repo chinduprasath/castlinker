@@ -80,7 +80,8 @@ const Posts = () => {
     handleDeletePost,
     filters,
     updateFilters,
-    clearFilters
+    clearFilters,
+    refreshPosts
   } = usePosts();
 
   const confirmDeletePost = (postId: string) => {
@@ -111,10 +112,12 @@ const Posts = () => {
   };
 
   const handleCreatePostSubmit = async (postData: any) => {
-    // Handle post creation submission
-    console.log('Creating post:', postData);
     setShowCreateDialog(false);
-    // Refresh posts or handle the new post data as needed
+    await refreshPosts();
+    toast({
+      title: 'Post published',
+      description: 'Your post has been published and is now visible.',
+    });
   };
 
   const filteredPosts = posts.filter(post => {
