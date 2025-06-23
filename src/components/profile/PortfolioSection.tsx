@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -72,21 +71,16 @@ export function PortfolioSection() {
     // For development, just use mock data
     setContents(mockContents);
     
-    // Real implementation commented out since tables don't exist yet
+    // Real implementation would use Firebase
     /* 
     const loadContent = async () => {
       setIsLoading(true);
       try {
         // This would be the real implementation when the database is ready
-        const { data, error } = await supabase
-          .from('portfolio_content')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-          
-        if (data) {
-          setContents(data as ProfessionContent[]);
-        }
+        const q = query(collection(db, 'portfolio_content'), where('user_id', '==', user.id), orderBy('created_at', 'desc'));
+        const querySnapshot = await getDocs(q);
+        const items = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setContents(items as ProfessionContent[]);
       } catch (error) {
         console.error('Error loading portfolio content:', error);
       } finally {

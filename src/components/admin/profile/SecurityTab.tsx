@@ -41,13 +41,17 @@ const SecurityTab = ({ lastLogin }: SecurityTabProps) => {
     
     setIsSaving(true);
     try {
-      const { error } = await supabase.auth.updateUser({ 
-        password: newPassword 
-      });
-      
-      if (error) {
-        throw error;
+      const user = auth.currentUser;
+      if (!user || !user.email) {
+        throw new Error("No authenticated user found");
       }
+
+      // Re-authenticate user with current password
+      const credential = EmailAuthProvider.credential(user.email, currentPassword);
+      await reauthenticateWithCredential(user, credential);
+      
+      // Update password
+      await updatePassword(user, newPassword);
       
       setCurrentPassword("");
       setNewPassword("");
@@ -58,11 +62,11 @@ const SecurityTab = ({ lastLogin }: SecurityTabProps) => {
         description: "Your password has been successfully changed.",
         variant: "default"
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating password:", error);
       toast({
         title: "Password update failed",
-        description: "We couldn't update your password. Please try again later.",
+        description: error.message || "We couldn't update your password. Please try again later.",
         variant: "destructive"
       });
     } finally {
