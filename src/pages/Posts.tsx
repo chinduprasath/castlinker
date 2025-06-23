@@ -440,8 +440,8 @@ const Posts = () => {
       )}
 
       <CreatePostDialog 
-        open={showCreateDialog} 
-        onOpenChange={setShowCreateDialog} 
+        isOpen={showCreateDialog} 
+        onClose={() => setShowCreateDialog(false)} 
       />
 
       <AlertDialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>

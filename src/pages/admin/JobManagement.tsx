@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { 
   Card, 
@@ -67,13 +68,14 @@ const JobManagement = () => {
   const fetchJobs = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await (db
-        .collection('film_jobs')
-        .get() as any);
-        
-      if (error) throw error;
+      const jobsRef = collection(db, 'film_jobs');
+      const querySnapshot = await getDocs(jobsRef);
       
-      const jobsData = data.docs.map(doc => doc.data()) as Job[];
+      const jobsData: Job[] = [];
+      querySnapshot.forEach((doc) => {
+        jobsData.push({ id: doc.id, ...doc.data() } as Job);
+      });
+      
       setJobs(jobsData);
       setFilteredJobs(jobsData);
       
