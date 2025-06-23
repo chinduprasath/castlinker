@@ -1,6 +1,7 @@
+
 import { useState, useEffect } from "react";
 import { db } from "@/integrations/firebase/client";
-import { collection, getDocs, deleteDoc, doc, orderBy, query } from "firebase/firestore";
+import { collection, getDocs, deleteDoc, doc, orderBy, query, where } from "firebase/firestore";
 import { Post } from "@/services/postsService";
 import { Button } from "@/components/ui/button";
 import {
@@ -75,6 +76,10 @@ const PostManagement = () => {
           like_count: postData.like_count,
           created_at: postData.created_at.toDate(),
           updated_at: postData.updated_at.toDate(),
+          created_by: postData.created_by || '',
+          creator_name: postData.creator_name || 'Unknown',
+          creator_profession: postData.creator_profession || '',
+          tags: postData.tags || []
         });
       }
       setPosts(fetchedPosts);

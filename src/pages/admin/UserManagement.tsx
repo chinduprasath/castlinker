@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -7,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, MoreHorizontal, UserCheck, UserX, Shield, Trash2, Mail, Calendar, MapPin, Phone } from "lucide-react";
+import { Search, MoreHorizontal, UserCheck, UserX, Shield, Trash2, Mail, Calendar, MapPin, Phone, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/integrations/firebase/client";
 import { collection, getDocs, updateDoc, deleteDoc, doc } from "firebase/firestore";
@@ -34,6 +35,7 @@ const UserManagement = () => {
   const [isBlocking, setIsBlocking] = useState(false);
   const [userToBlock, setUserToBlock] = useState<User | null>(null);
   const [blockConfirmOpen, setBlockConfirmOpen] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchUsers();

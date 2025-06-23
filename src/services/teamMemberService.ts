@@ -32,10 +32,10 @@ export const fetchTeamMembers = async (projectId?: string) => {
       querySnapshot.forEach((doc) => {
         const docData = doc.data();
         if (docData && typeof docData === 'object') {
-          const data = { id: doc.id, ...docData };
-          if (docData.status === 'accepted') {
+          const data = { id: doc.id, ...docData } as any;
+          if ((docData as any).status === 'accepted') {
             accepted.push(data);
-          } else if (docData.status === 'pending') {
+          } else if ((docData as any).status === 'pending') {
             pending.push(data);
           }
         }
@@ -48,7 +48,7 @@ export const fetchTeamMembers = async (projectId?: string) => {
       querySnapshot.forEach((doc) => {
         const docData = doc.data();
         if (docData && typeof docData === 'object') {
-          const data = { id: doc.id, ...docData };
+          const data = { id: doc.id, ...docData } as any;
           members.push({
             id: data.id,
             name: data.name || 'Unknown',
