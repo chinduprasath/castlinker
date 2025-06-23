@@ -1,19 +1,31 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/integrations/firebase/client';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
 
-interface Message {
+export interface Message {
   id: string;
-  text: string;
-  createdAt: string;
-  userId: string;
-  displayName: string;
-  photoURL: string;
+  content: string;
+  isMe: boolean;
+  timestamp: string;
+}
+
+export interface UserPresence {
+  user_id: string;
+  status: 'online' | 'away' | 'offline';
+}
+
+export interface RoomInfo {
+  name: string;
 }
 
 const useChat = (roomId: string) => {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [isTyping, setIsTyping] = useState(false);
+  const [onlineUsers, setOnlineUsers] = useState<UserPresence[]>([]);
+  const [roomInfo, setRoomInfo] = useState<RoomInfo | null>(null);
+  const [hasMoreMessages, setHasMoreMessages] = useState(true);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -27,33 +39,74 @@ const useChat = (roomId: string) => {
         const data = doc.data();
         return {
           id: doc.id,
-          text: data.text,
-          createdAt: data.createdAt?.toDate().toISOString() || new Date().toISOString(),
-          userId: data.userId,
-          displayName: data.displayName,
-          photoURL: data.photoURL,
+          content: data.text || data.content,
+          isMe: data.userId === user?.id,
+          timestamp: data.createdAt?.toDate().toISOString() || new Date().toISOString(),
         };
       });
       setMessages(newMessages);
     });
 
     return () => unsubscribe();
-  }, [roomId]);
+  }, [roomId, user]);
 
-  const sendMessage = async (text: string) => {
+  const sendMessage = async (content: string) => {
     if (!user || !roomId) return;
 
     const messagesRef = collection(db, 'rooms', roomId, 'messages');
     await addDoc(messagesRef, {
-      text,
+      text: content,
+      content: content,
       createdAt: serverTimestamp(),
       userId: user.id,
-      displayName: user.displayName,
-      photoURL: user.photoURL,
+      displayName: user.email || 'Unknown User',
+      photoURL: '',
     });
   };
 
-  return { messages, sendMessage };
+  const setTyping = (typing: boolean) => {
+    setIsTyping(typing);
+  };
+
+  const loadMoreMessages = () => {
+    // Implementation for loading more messages
+  };
+
+  const deleteMessage = (messageId: string) => {
+    // Implementation for deleting messages
+  };
+
+  const editMessage = (messageId: string, newContent: string) => {
+    // Implementation for editing messages
+  };
+
+  const addReaction = (messageId: string, reaction: string) => {
+    // Implementation for adding reactions
+  };
+
+  const removeReaction = (messageId: string, reaction: string) => {
+    // Implementation for removing reactions
+  };
+
+  const markAsRead = () => {
+    // Implementation for marking messages as read
+  };
+
+  return { 
+    messages, 
+    sendMessage, 
+    isTyping,
+    onlineUsers,
+    setTyping,
+    roomInfo,
+    loadMoreMessages,
+    hasMoreMessages,
+    deleteMessage,
+    editMessage,
+    addReaction,
+    removeReaction,
+    markAsRead
+  };
 };
 
 export default useChat;

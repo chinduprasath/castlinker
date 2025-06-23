@@ -1,7 +1,6 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useChat, Message, UserPresence } from '@/hooks/useChat';
+import useChat, { Message, UserPresence } from '@/hooks/useChat';
 
 interface ChatContainerProps {
     roomId: string;

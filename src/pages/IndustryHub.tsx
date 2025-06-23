@@ -11,7 +11,7 @@ import {
   Film, FileText, MapPin, Award, Play, Search, 
   Plus, MessageCircle, Star, Mail 
 } from "lucide-react";
-import { useIndustryHub } from "@/hooks/useIndustryHub";
+import useIndustryHub from "@/hooks/useIndustryHub";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SubmitNewsForm } from "@/components/industry/SubmitNewsForm";

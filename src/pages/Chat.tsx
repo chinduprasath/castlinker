@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { useChat } from "@/hooks/useChat";
+import useChat from "@/hooks/useChat";
 import { useDebounce } from "@/hooks/useDebounce";
 import ChatSidebar from "@/components/chat/ChatSidebar";
 import ChatHeader from "@/components/chat/ChatHeader";
