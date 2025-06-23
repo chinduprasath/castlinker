@@ -33,7 +33,7 @@ const TalentDirectory = () => {
     updateFilters,
     locations,
     resetFilters,
-    PROFESSION_OPTIONS,
+    PROFESSION_OPTIONS: professionOptions,
     likedProfiles,
     wishlistedProfiles,
     connectionRequests,
@@ -171,7 +171,7 @@ const TalentDirectory = () => {
                   Role <ChevronDown className="w-4 h-4" />
                 </CollapsibleTrigger>
                 <CollapsibleContent className="pl-4 space-y-2">
-                  {PROFESSION_OPTIONS.map((role) => (
+                  {professionOptions.map((role) => (
                     <div key={role.value} className="flex items-center space-x-2">
                       <Input
                         type="checkbox"
@@ -232,7 +232,7 @@ const TalentDirectory = () => {
                     defaultValue={filters.experienceRange}
                     max={30}
                     step={1}
-                    onValueChange={(value) => updateFilters({ experienceRange: value })}
+                    onValueChange={(value) => updateFilters({ experienceRange: value as [number, number] })}
                   />
                 </CollapsibleContent>
               </Collapsible>
@@ -318,12 +318,12 @@ const TalentDirectory = () => {
                     <p className="text-sm line-clamp-3 text-muted-foreground">{talent.bio || talent.description}</p>
 
                     <div className="flex flex-wrap gap-2">
-                      {talent.skills.slice(0, 3).map((skill) => (
+                      {talent.skills?.slice(0, 3).map((skill) => (
                         <Badge key={skill} variant="outline">
                           {skill}
                         </Badge>
                       ))}
-                      {talent.skills.length > 3 && (
+                      {talent.skills && talent.skills.length > 3 && (
                         <Badge variant="outline">+ {talent.skills.length - 3} more</Badge>
                       )}
                     </div>
@@ -331,7 +331,7 @@ const TalentDirectory = () => {
                     <div className="flex items-center justify-between text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Star className="h-4 w-4 text-gold" />
-                        <span>{talent.rating.toFixed(1)} ({talent.reviews} Reviews)</span>
+                        <span>{talent.rating?.toFixed(1)} ({talent.reviews} Reviews)</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Heart className="h-4 w-4 text-red-500" />

@@ -27,16 +27,25 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
 import { fetchProjectById } from '@/services/projectService';
 import { fetchTeamMembers, requestToJoinTeam, respondToTeamRequest, removeTeamMember } from '@/services/teamMemberService';
-import { db } from '@/integrations/firebase/client';
-import { collection, query, where, getDocs, doc } from 'firebase/firestore';
-import { TalentProfile } from '@/types/talent';
+
+interface Project {
+  id: string;
+  name: string;
+  description?: string;
+  current_status: string;
+  location?: string;
+  team_head_id: string;
+  created_at: string;
+  updated_at: string;
+}
 
 const ProjectDetail = () => {
   const { projectId } = useParams<{ projectId: string }>();
-  const [project, setProject] = useState<any>(null);
+  const [project, setProject] = useState<Project | null>(null);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -61,7 +70,7 @@ const ProjectDetail = () => {
     try {
       const projectData = await fetchProjectById(projectId);
       if (projectData) {
-        setProject(projectData);
+        setProject(projectData as Project);
         setEditedDescription(projectData.description || '');
       } else {
         toast({

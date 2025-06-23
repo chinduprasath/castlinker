@@ -12,6 +12,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/integrations/firebase/client';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { Crown, Shield, Lock, Users, Settings, AlertTriangle } from 'lucide-react';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/integrations/firebase/client';
 
 const SuperAdminSignup = () => {
   const [email, setEmail] = useState('');
@@ -31,7 +33,6 @@ const SuperAdminSignup = () => {
   
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { signUp } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,20 +57,14 @@ const SuperAdminSignup = () => {
     setIsLoading(true);
 
     try {
-      // Create the user account
-      const { user, error } = await signUp(email, password, {
-        firstName,
-        lastName,
-      });
-
-      if (error) {
-        throw error;
-      }
+      // Create the user account using Firebase Auth directly
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
 
       if (user) {
         // Store super admin request in Firestore
         await addDoc(collection(db, 'super_admin_requests'), {
-          user_id: user.id,
+          user_id: user.uid,
           email: email,
           first_name: firstName,
           last_name: lastName,
