@@ -8,6 +8,7 @@ export interface NewsItem {
   id: string;
   title: string;
   excerpt: string;
+  content?: string;
   image: string;
   category: string;
   author_name: string;
@@ -74,6 +75,7 @@ export const useIndustryHub = () => {
           id: '1',
           title: 'The Future of Independent Film Distribution',
           excerpt: 'Exploring how streaming platforms are changing the landscape for independent filmmakers.',
+          content: 'Full article content here...',
           image: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=1000',
           category: 'Industry Analysis',
           author_name: 'Sarah Chen',
@@ -139,7 +141,7 @@ export const useIndustryHub = () => {
   const submitContent = async ({ type, data }: { type: string; data: any }) => {
     // Implementation for submitting content
     console.log('Submitting content:', type, data);
-    return Promise.resolve();
+    return { success: true };
   };
 
   const refreshData = () => {

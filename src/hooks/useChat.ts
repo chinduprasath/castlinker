@@ -22,6 +22,7 @@ export interface RoomInfo {
 
 const useChat = (roomId: string) => {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState<UserPresence[]>([]);
   const [roomInfo, setRoomInfo] = useState<RoomInfo | null>(null);
@@ -95,6 +96,7 @@ const useChat = (roomId: string) => {
   return { 
     messages, 
     sendMessage, 
+    isLoading,
     isTyping,
     onlineUsers,
     setTyping,
