@@ -1,250 +1,196 @@
-
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { 
+  Film, 
+  Plus, 
+  Search, 
+  Filter, 
+  MapPin, 
+  Calendar, 
+  Users, 
+  Star,
+  Eye,
+  Edit,
+  Trash2,
+  MoreVertical
+} from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Search, Calendar, DollarSign, MapPin, Users, Film } from 'lucide-react';
-import { useProjects } from '@/hooks/useProjects';
-import { Project } from '@/services/projectsService';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { useAuth } from '@/contexts/AuthContext';
+import { fetchProjects } from '@/services/projectService';
+import { db } from '@/integrations/firebase/client';
+import { collection, deleteDoc, doc } from 'firebase/firestore';
 
 const Projects = () => {
-  const { projects, isLoading } = useProjects();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [projects, setProjects] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
-  const filteredProjects = projects.filter(project => {
-    const matchesSearch = project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         project.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  useEffect(() => {
+    const loadProjects = async () => {
+      setIsLoading(true);
+      try {
+        if (!user) {
+          toast({
+            title: 'Not authenticated',
+            description: 'Please sign in to view your projects',
+            variant: 'destructive'
+          });
+          return;
+        }
+        const projectsData = await fetchProjects(user.id);
+        setProjects(projectsData);
+      } catch (error: any) {
+        console.error('Error fetching projects:', error);
+        toast({
+          title: 'Failed to load projects',
+          description: error.message || 'Please try again later',
+          variant: 'destructive'
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'planning': return 'bg-blue-500';
-      case 'in-progress': return 'bg-green-500';
-      case 'completed': return 'bg-gray-500';
-      case 'on-hold': return 'bg-yellow-500';
-      default: return 'bg-gray-500';
+    loadProjects();
+  }, [user]);
+
+  const handleDeleteProject = async (projectId: string) => {
+    try {
+      await deleteDoc(doc(db, 'projects', projectId));
+      setProjects(projects.filter(project => project.id !== projectId));
+      toast({
+        title: 'Project deleted',
+        description: 'The project has been successfully deleted',
+      });
+    } catch (error: any) {
+      console.error('Error deleting project:', error);
+      toast({
+        title: 'Failed to delete project',
+        description: error.message || 'Please try again later',
+        variant: 'destructive'
+      });
     }
   };
 
-  const formatCurrency = (amount?: number) => {
-    if (!amount) return 'Budget TBD';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
-
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Projects</h1>
-        </div>
-        <div className="grid gap-4">
-          {[...Array(3)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardHeader>
-                <div className="h-6 bg-muted rounded w-1/3"></div>
-                <div className="h-4 bg-muted rounded w-2/3"></div>
-              </CardHeader>
-              <CardContent>
-                <div className="h-20 bg-muted rounded"></div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
-  }
+  const filteredProjects = projects.filter(project =>
+    project.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Projects</h1>
-          <p className="text-muted-foreground">Manage your film and video projects</p>
-        </div>
-        <Button className="bg-gold hover:bg-gold/90 text-white dark:text-black">
-          <Plus className="mr-2 h-4 w-4" />
-          New Project
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold gold-gradient-text">My Projects</h1>
+        <Button asChild>
+          <Link to="/project-create" className="bg-gold hover:bg-gold/90 text-black">
+            <Plus className="h-4 w-4 mr-2" />
+            Create New
+          </Link>
         </Button>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search projects..."
-            className="pl-8"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Projects</SelectItem>
-            <SelectItem value="planning">Planning</SelectItem>
-            <SelectItem value="in-progress">In Progress</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="on-hold">On Hold</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {filteredProjects.map((project) => (
-          <Card key={project.id} className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setSelectedProject(project)}>
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <CardTitle className="text-lg">{project.title}</CardTitle>
-                <Badge className={getStatusColor(project.status)}>
-                  {project.status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                </Badge>
-              </div>
-              <p className="text-sm text-muted-foreground line-clamp-2">{project.description}</p>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {project.genre && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Film className="h-4 w-4 text-muted-foreground" />
-                    <span>{project.genre}</span>
-                  </div>
-                )}
-                {project.location && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <span>{project.location}</span>
-                  </div>
-                )}
-                {project.budget && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    <span>{formatCurrency(project.budget)}</span>
-                  </div>
-                )}
-                {project.start_date && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span>{new Date(project.start_date).toLocaleDateString()}</span>
-                  </div>
-                )}
-                {(project.cast && project.cast.length > 0) || (project.crew && project.crew.length > 0) ? (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <span>
-                      {project.cast?.length || 0} cast, {project.crew?.length || 0} crew
-                    </span>
-                  </div>
-                ) : null}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {filteredProjects.length === 0 && (
-        <Card className="text-center py-12">
-          <CardContent>
-            <Film className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">No projects found</h3>
-            <p className="text-muted-foreground mb-4">
-              {searchTerm || statusFilter !== 'all' 
-                ? 'Try adjusting your search or filters'
-                : 'Get started by creating your first project'
-              }
-            </p>
-            <Button className="bg-gold hover:bg-gold/90 text-white dark:text-black">
-              <Plus className="mr-2 h-4 w-4" />
-              Create Project
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Project Detail Dialog */}
-      <Dialog open={!!selectedProject} onOpenChange={() => setSelectedProject(null)}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{selectedProject?.title}</DialogTitle>
-          </DialogHeader>
-          {selectedProject && (
-            <div className="space-y-6">
-              <div className="flex items-center gap-2">
-                <Badge className={getStatusColor(selectedProject.status)}>
-                  {selectedProject.status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                </Badge>
-                {selectedProject.genre && <Badge variant="outline">{selectedProject.genre}</Badge>}
-              </div>
-              
-              <div>
-                <h4 className="font-semibold mb-2">Description</h4>
-                <p className="text-sm text-muted-foreground">{selectedProject.description}</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                {selectedProject.director && (
-                  <div>
-                    <h4 className="font-semibold mb-1">Director</h4>
-                    <p className="text-sm">{selectedProject.director}</p>
-                  </div>
-                )}
-                {selectedProject.producer && (
-                  <div>
-                    <h4 className="font-semibold mb-1">Producer</h4>
-                    <p className="text-sm">{selectedProject.producer}</p>
-                  </div>
-                )}
-                {selectedProject.location && (
-                  <div>
-                    <h4 className="font-semibold mb-1">Location</h4>
-                    <p className="text-sm">{selectedProject.location}</p>
-                  </div>
-                )}
-                {selectedProject.budget && (
-                  <div>
-                    <h4 className="font-semibold mb-1">Budget</h4>
-                    <p className="text-sm">{formatCurrency(selectedProject.budget)}</p>
-                  </div>
-                )}
-              </div>
-
-              {selectedProject.cast && selectedProject.cast.length > 0 && (
-                <div>
-                  <h4 className="font-semibold mb-2">Cast</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedProject.cast.map((member, index) => (
-                      <Badge key={index} variant="secondary">{member}</Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {selectedProject.crew && selectedProject.crew.length > 0 && (
-                <div>
-                  <h4 className="font-semibold mb-2">Crew</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedProject.crew.map((member, index) => (
-                      <Badge key={index} variant="secondary">{member}</Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
+      <Card>
+        <CardContent>
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                type="search"
+                placeholder="Search projects..."
+                className="pl-10"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
+            <Button variant="outline" className="w-full md:w-auto">
+              <Filter className="h-4 w-4 mr-2" />
+              Filter
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {isLoading ? (
+        <div className="flex justify-center items-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-gold border-solid"></div>
+        </div>
+      ) : filteredProjects.length === 0 ? (
+        <Card className="bg-card-gradient border-gold/10 p-8 text-center">
+          <div className="space-y-3">
+            <h3 className="text-xl font-medium">No projects yet</h3>
+            <p className="text-foreground/70">Get started by creating your first project.</p>
+            <Button asChild className="mt-4 bg-gold hover:bg-gold/90 text-black">
+              <Link to="/project-create">Create Project</Link>
+            </Button>
+          </div>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredProjects.map(project => (
+            <Card key={project.id} className="bg-card-gradient border-gold/10">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Film className="h-5 w-5 text-gold" />
+                  {project.name}
+                </CardTitle>
+                <CardDescription>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <MapPin className="h-4 w-4" />
+                    {project.location || 'Unknown'}
+                  </div>
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Calendar className="h-4 w-4" />
+                  Created: {new Date(project.created_at).toLocaleDateString()}
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Users className="h-4 w-4" />
+                  Team Size: 3 / 10
+                </div>
+                <Badge variant="secondary">{project.current_status}</Badge>
+              </CardContent>
+              <div className="flex justify-between items-center p-4">
+                <Button variant="link" asChild>
+                  <Link to={`/projects/${project.id}`} className="flex items-center gap-1">
+                    <Eye className="h-4 w-4" />
+                    View Details
+                  </Link>
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                      <span className="sr-only">Open menu</span>
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem asChild>
+                      <Link to={`/project-edit/${project.id}`} className="flex items-center gap-2">
+                        <Edit className="h-4 w-4" />
+                        Edit
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleDeleteProject(project.id)} className="text-destructive">
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
