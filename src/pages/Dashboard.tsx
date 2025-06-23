@@ -1,557 +1,243 @@
-import React, { useState, useEffect } from "react";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { 
-  Activity, 
-  Film, 
-  Star, 
-  Users, 
-  ChevronRight, 
-  Calendar, 
-  Clock, 
-  DollarSign, 
-  Award, 
-  Briefcase, 
-  MapPin, 
-  MessageCircle,
-  TrendingUp,
-  ArrowRight,
-  CheckCircle2,
-  Bell,
-  Eye,
-  Zap,
-  Heart,
-  ThumbsUp
-} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
-import { dashboardData } from "@/utils/dummyData";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { 
+  Calendar, 
+  MapPin, 
+  Briefcase, 
+  Bookmark, 
+  Eye, 
+  TrendingUp,
+  Clock,
+  CheckCircle,
+  Users
+} from "lucide-react";
+import { format } from 'date-fns';
+import { useDashboard } from '@/hooks/useDashboard';
+import { Link } from 'react-router-dom';
 
 const Dashboard = () => {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const firstName = user?.name?.split(' ')[0] || 'Actor';
-  const [stats, setStats] = useState({
-    ...dashboardData.stats,
-    connections: 48,
-    likes: 126,
-  });
-  const [recentOpportunities, setRecentOpportunities] = useState(() => {
-    return dashboardData.recentOpportunities.map(job => ({
-      ...job,
-      applied: false
-    }));
-  });
-  const [recentMessages, setRecentMessages] = useState(dashboardData.recentMessages);
-  const [upcomingEvents, setUpcomingEvents] = useState(dashboardData.upcomingEvents);
-  const [loading, setLoading] = useState(true);
-  const [totalPosts, setTotalPosts] = useState<number>(0);
+  const { stats, recentConnections, upcomingAuditions, isLoading } = useDashboard();
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1000);
-    
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (Math.random() > 0.7) {
-        setStats(prev => ({
-          ...prev,
-          connections: prev.connections + 1
-        }));
-      }
-    }, 30000);
-    
-    return () => clearInterval(interval);
-  }, []);
-
-  const handleNavigateToJobs = () => {
-    navigate('/jobs');
-  };
-  
-  const handleNavigateToMessages = () => {
-    navigate('/chat');
-  };
-  
-  const handleNavigateToNotifications = () => {
-    navigate('/notifications');
-  };
-  
-  const handleNavigateToCalendar = () => {
-    toast({
-      title: "Coming Soon",
-      description: "Calendar functionality will be available soon"
-    });
-  };
-
-  const handleApplyToJob = (jobId: number) => {
-    const updatedOpportunities = recentOpportunities.map(job => 
-      job.id === jobId ? { ...job, applied: true } : job
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-6">
+                <div className="h-6 bg-muted rounded w-3/4 mb-2"></div>
+                <div className="h-8 bg-muted rounded w-1/2"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
     );
-    setRecentOpportunities(updatedOpportunities);
-    
-    setStats(prev => ({
-      ...prev, 
-      applications: prev.applications + 1
-    }));
-  };
+  }
 
   return (
-    <div className="space-y-4 pr-1">
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex flex-col space-y-1">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-gold to-gold-light">
-                Hello, {firstName}
-              </span>
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Here's your activity summary and upcoming opportunities
-            </p>
-          </div>
-        </div>
-        <Button variant="outline" onClick={() => navigate('/manage')}>Manage</Button>
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <p className="text-muted-foreground">
+          Welcome back! Here's what's happening with your profile and applications.
+        </p>
       </div>
 
-      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        {loading ? (
-          <Card className="border-gold/10 shadow-lg bg-card/60 backdrop-blur-sm">
-            <CardHeader className="pb-2 pt-4 px-4">
-              <div className="flex items-center justify-between">
-                <Skeleton className="h-5 w-32" />
-                <Skeleton className="h-8 w-8 rounded-full" />
-              </div>
-            </CardHeader>
-            <CardContent className="px-4 pb-4">
-              <Skeleton className="h-10 w-16 mb-2" />
-              <Skeleton className="h-4 w-full" />
-            </CardContent>
-          </Card>
-        ) : (
-          <Card className="border-gold/10 hover:border-gold/30 transition-colors duration-300 shadow-lg bg-card/60 backdrop-blur-sm">
-            <CardHeader className="pb-2 pt-4 px-4">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <span className="text-base font-semibold text-foreground/80">Applications</span>
-                </CardTitle>
-                <div className="rounded-full bg-gold/10 p-2">
-                  <Briefcase className="h-4 w-4 text-gold" />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="px-4 pb-4">
-              <div className="flex flex-col">
-                <div className="text-3xl font-bold">{stats.applications}</div>
-                <div className="flex items-center mt-1.5">
-                  <span className="text-xs text-green-500 font-medium flex items-center">
-                    <TrendingUp className="h-3 w-3 mr-1" /> +2
-                  </span>
-                  <span className="text-xs text-muted-foreground ml-1.5">
-                    since last week
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-        
-        {loading ? (
-          <Card className="border-indigo-500/10 shadow-lg bg-card/60 backdrop-blur-sm">
-            <CardHeader className="pb-2 pt-4 px-4">
-              <div className="flex items-center justify-between">
-                <Skeleton className="h-5 w-32" />
-                <Skeleton className="h-8 w-8 rounded-full" />
-              </div>
-            </CardHeader>
-            <CardContent className="px-4 pb-4">
-              <Skeleton className="h-10 w-16 mb-2" />
-              <Skeleton className="h-4 w-full" />
-            </CardContent>
-          </Card>
-        ) : (
-          <Card className="border-indigo-500/10 hover:border-indigo-500/30 transition-colors duration-300 shadow-lg bg-card/60 backdrop-blur-sm">
-            <CardHeader className="pb-2 pt-4 px-4">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <span className="text-base font-semibold text-foreground/80">Connections</span>
-                </CardTitle>
-                <div className="rounded-full bg-indigo-500/10 p-2">
-                  <Users className="h-4 w-4 text-indigo-500" />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="px-4 pb-4">
-              <div className="flex flex-col">
-                <div className="text-3xl font-bold">{stats.connections}</div>
-                <div className="flex items-center mt-1.5">
-                  <span className="text-xs text-green-500 font-medium flex items-center">
-                    <TrendingUp className="h-3 w-3 mr-1" /> +5
-                  </span>
-                  <span className="text-xs text-muted-foreground ml-1.5">
-                    from last month
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-        
-        {loading ? (
-          <Card className="border-pink-500/10 shadow-lg bg-card/60 backdrop-blur-sm">
-            <CardHeader className="pb-2 pt-4 px-4">
-              <div className="flex items-center justify-between">
-                <Skeleton className="h-5 w-32" />
-                <Skeleton className="h-8 w-8 rounded-full" />
-              </div>
-            </CardHeader>
-            <CardContent className="px-4 pb-4">
-              <Skeleton className="h-10 w-16 mb-2" />
-              <Skeleton className="h-4 w-full" />
-            </CardContent>
-          </Card>
-        ) : (
-          <Card className="border-pink-500/10 hover:border-pink-500/30 transition-colors duration-300 shadow-lg bg-card/60 backdrop-blur-sm">
-            <CardHeader className="pb-2 pt-4 px-4">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <span className="text-base font-semibold text-foreground/80">Likes</span>
-                </CardTitle>
-                <div className="rounded-full bg-pink-500/10 p-2">
-                  <Heart className="h-4 w-4 text-pink-500" />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="px-4 pb-4">
-              <div className="flex flex-col">
-                <div className="text-3xl font-bold">{stats.likes}</div>
-                <div className="flex items-center mt-1.5">
-                  <span className="text-xs text-green-500 font-medium flex items-center">
-                    <TrendingUp className="h-3 w-3 mr-1" /> +12
-                  </span>
-                  <span className="text-xs text-muted-foreground ml-1.5">
-                    new likes this week
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-        
-        {loading ? (
-          <Card className="border-amber-500/10 shadow-lg bg-card/60 backdrop-blur-sm">
-            <CardHeader className="pb-2 pt-4 px-4">
-              <div className="flex items-center justify-between">
-                <Skeleton className="h-5 w-32" />
-                <Skeleton className="h-8 w-8 rounded-full" />
-              </div>
-            </CardHeader>
-            <CardContent className="px-4 pb-4">
-              <Skeleton className="h-10 w-16 mb-2" />
-              <Skeleton className="h-4 w-full" />
-            </CardContent>
-          </Card>
-        ) : (
-          <Card className="border-amber-500/10 hover:border-amber-500/30 transition-colors duration-300 shadow-lg bg-card/60 backdrop-blur-sm">
-            <CardHeader className="pb-2 pt-4 px-4">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <span className="text-base font-semibold text-foreground/80">Total Posts</span>
-                </CardTitle>
-                <div className="rounded-full bg-amber-500/10 p-2">
-                  <Film className="h-4 w-4 text-amber-500" />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="px-4 pb-4">
-              <div className="flex flex-col">
-                <div className="text-3xl font-bold">{totalPosts}</div>
-                <div className="flex items-center mt-1.5">
-                  <span className="text-xs text-muted-foreground ml-1.5">
-                    total posts created
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
-        <Card className="border-gold/10 lg:col-span-2 shadow-lg bg-card/60 backdrop-blur-sm overflow-hidden">
-          <CardHeader className="px-4 py-4 border-b border-border/10 bg-gradient-to-r from-gold/5 to-transparent">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="rounded-full bg-gold/10 p-2">
-                  <Film className="h-5 w-5 text-gold" />
-                </div>
-                <div>
-                  <CardTitle className="text-xl">Recent Opportunities</CardTitle>
-                  <CardDescription className="mt-0.5">
-                    Casting calls that match your profile
-                  </CardDescription>
-                </div>
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="text-xs gap-1 border-gold/20 text-gold hover:text-gold/80 hover:bg-gold/10"
-                onClick={handleNavigateToJobs}
-              >
-                View all
-                <ChevronRight className="h-3 w-3" />
-              </Button>
-            </div>
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Applications</CardTitle>
+            <Briefcase className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent className="p-0">
-            {loading ? (
-              <div className="divide-y divide-border/10">
-                {[1, 2, 3].map((_, index) => (
-                  <div key={index} className="p-4">
-                    <div className="flex items-start space-x-3">
-                      <Skeleton className="h-14 w-14 rounded-md" />
-                      <div className="flex-1 space-y-2">
-                        <Skeleton className="h-5 w-3/4" />
-                        <div className="flex flex-wrap gap-2">
-                          <Skeleton className="h-3 w-20" />
-                          <Skeleton className="h-3 w-24" />
-                          <Skeleton className="h-3 w-16" />
-                        </div>
-                        <Skeleton className="h-4 w-full" />
-                        <div className="flex items-center justify-end gap-2">
-                          <Skeleton className="h-8 w-20" />
-                          <Skeleton className="h-8 w-20" />
-                        </div>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalApplications}</div>
+            <p className="text-xs text-muted-foreground">
+              +2 from last week
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Jobs</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.activeJobs}</div>
+            <p className="text-xs text-muted-foreground">
+              +5 new this week
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Saved Jobs</CardTitle>
+            <Bookmark className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.savedJobs}</div>
+            <p className="text-xs text-muted-foreground">
+              Recently saved
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Profile Views</CardTitle>
+            <Eye className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.profileViews}</div>
+            <p className="text-xs text-muted-foreground">
+              This month
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {/* Upcoming Auditions */}
+        <Card className="col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Upcoming Auditions
+            </CardTitle>
+            <CardDescription>
+              Your scheduled auditions and callbacks
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {upcomingAuditions.length > 0 ? (
+              upcomingAuditions.map((audition) => (
+                <div key={audition.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="space-y-1">
+                    <p className="font-medium">{audition.title}</p>
+                    <p className="text-sm text-muted-foreground">{audition.company}</p>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        {format(new Date(audition.date), 'MMM d, yyyy')}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        {audition.location}
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
+                  <div className="flex items-center gap-2">
+                    <Badge className={audition.status === 'confirmed' ? 'bg-green-500' : 'bg-yellow-500'}>
+                      {audition.status === 'confirmed' ? (
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                      ) : (
+                        <Clock className="h-3 w-3 mr-1" />
+                      )}
+                      {audition.status.charAt(0).toUpperCase() + audition.status.slice(1)}
+                    </Badge>
+                  </div>
+                </div>
+              ))
             ) : (
-              <div className="divide-y divide-border/10">
-                {recentOpportunities.map((job) => (
-                  <div key={job.id} className="hover:bg-card/80 transition-colors p-4">
-                    <div className="flex items-start space-x-3">
-                      <div className="rounded-md bg-card flex-shrink-0 h-14 w-14 flex items-center justify-center border border-gold/20">
-                        <Film className="h-7 w-7 text-gold" />
-                      </div>
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-semibold text-base leading-tight">{job.title}</h3>
-                              {job.isNew && (
-                                <Badge variant="outline" className="bg-green-500/10 border-green-500/20 text-green-500 text-[10px] rounded-sm py-0 h-5">
-                                  New
-                                </Badge>
-                              )}
-                              {job.applied && (
-                                <Badge variant="outline" className="bg-blue-500/10 border-blue-500/20 text-blue-500 text-[10px] rounded-sm py-0 h-5">
-                                  Applied
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <MapPin className="h-3 w-3" />
-                                {job.location}
-                              </div>
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <Briefcase className="h-3 w-3" />
-                                {job.type}
-                              </div>
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <DollarSign className="h-3 w-3" />
-                                {job.pay}
-                              </div>
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <Clock className="h-3 w-3" />
-                                {job.posted}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <p className="text-sm text-muted-foreground line-clamp-2">{job.desc}</p>
-                        <div className="flex items-center justify-end gap-2 pt-1">
-                          <Button variant="outline" size="sm" className="h-8 border-gold/20 text-gold">Details</Button>
-                          <Button 
-                            size="sm" 
-                            className={`h-8 ${job.applied ? 'bg-green-500 hover:bg-green-600' : 'bg-gold hover:bg-gold/90'} text-black`}
-                            onClick={() => handleApplyToJob(job.id)}
-                            disabled={job.applied}
-                          >
-                            {job.applied ? 'Applied' : 'Apply'}
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              <div className="text-center py-8">
+                <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium mb-2">No upcoming auditions</h3>
+                <p className="text-muted-foreground mb-4">
+                  Keep applying to jobs to get audition invitations
+                </p>
+                <Button asChild className="bg-gold hover:bg-gold/90 text-white dark:text-black">
+                  <Link to="/jobs">Browse Jobs</Link>
+                </Button>
               </div>
             )}
           </CardContent>
         </Card>
-        
-        <div className="space-y-4">
-          <Card className="border-blue-500/10 shadow-lg bg-card/60 backdrop-blur-sm overflow-hidden">
-            <CardHeader className="px-4 py-4 border-b border-border/10 bg-gradient-to-r from-blue-500/5 to-transparent">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-full bg-blue-500/10 p-2">
-                    <MessageCircle className="h-5 w-5 text-blue-500" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-xl">Messages</CardTitle>
-                    <CardDescription className="mt-0.5">
-                      Your latest conversations
-                    </CardDescription>
-                  </div>
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="text-xs gap-1 border-blue-500/20 text-blue-500 hover:text-blue-500/80 hover:bg-blue-500/10"
-                  onClick={handleNavigateToMessages}
-                >
-                  View all
-                  <ChevronRight className="h-3 w-3" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              {loading ? (
-                <div className="divide-y divide-border/10">
-                  {[1, 2, 3].map((_, index) => (
-                    <div key={index} className="p-3">
-                      <div className="flex items-start space-x-3">
-                        <Skeleton className="h-10 w-10 rounded-full" />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <Skeleton className="h-4 w-24" />
-                            <Skeleton className="h-3 w-12" />
-                          </div>
-                          <Skeleton className="h-3 w-full mt-1.5" />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="divide-y divide-border/10">
-                  {recentMessages.map((msg) => (
-                    <div key={msg.id} className="p-3 hover:bg-card/80 transition-colors group cursor-pointer" onClick={handleNavigateToMessages}>
-                      <div className="flex items-start space-x-3">
-                        <div className="rounded-full h-10 w-10 bg-blue-500/10 flex items-center justify-center border border-blue-500/20 group-hover:border-blue-500/40 transition-colors flex-shrink-0">
-                          <span className="text-xs font-medium text-blue-500">{msg.name.split(' ').map(n => n[0]).join('')}</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <p className="font-medium leading-none text-sm group-hover:text-blue-500 transition-colors">{msg.name}</p>
-                            <p className="text-[10px] text-muted-foreground">{msg.time}</p>
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{msg.msg}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
 
-          <Card className="border-gold/10 shadow-lg bg-card/60 backdrop-blur-sm overflow-hidden">
-            <CardHeader className="px-4 py-4 border-b border-border/10 bg-gradient-to-r from-gold/5 to-transparent">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-full bg-gold/10 p-2">
-                    <Calendar className="h-5 w-5 text-gold" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-xl">Upcoming</CardTitle>
-                    <CardDescription className="mt-0.5">
-                      Your scheduled events
-                    </CardDescription>
+        {/* Recent Connections */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Recent Connections
+            </CardTitle>
+            <CardDescription>
+              People you've connected with recently
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {recentConnections.length > 0 ? (
+              recentConnections.map((connection) => (
+                <div key={connection.id} className="flex items-center space-x-3">
+                  <Avatar>
+                    <AvatarImage src={connection.avatar} />
+                    <AvatarFallback>
+                      {connection.name.split(' ').map(n => n[0]).join('')}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{connection.name}</p>
+                    <p className="text-xs text-muted-foreground">{connection.role}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Connected {format(new Date(connection.connected_at), 'MMM d')}
+                    </p>
                   </div>
                 </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="text-xs gap-1 border-gold/20 text-gold hover:text-gold/80 hover:bg-gold/10"
-                  onClick={handleNavigateToCalendar}
-                >
-                  Calendar
-                  <ChevronRight className="h-3 w-3" />
-                </Button>
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <Users className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">
+                  No recent connections
+                </p>
               </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              {loading ? (
-                <div className="divide-y divide-border/10">
-                  {[1, 2].map((_, index) => (
-                    <div key={index} className="p-3">
-                      <div className="flex gap-2">
-                        <Skeleton className="w-14 h-16 rounded-md" />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between">
-                            <Skeleton className="h-5 w-40" />
-                            <Skeleton className="h-5 w-16" />
-                          </div>
-                          <Skeleton className="h-4 w-full mt-1" />
-                          <div className="flex items-center gap-3 mt-2">
-                            <Skeleton className="h-3 w-24" />
-                            <Skeleton className="h-3 w-20" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="divide-y divide-border/10">
-                  {upcomingEvents.map((event) => (
-                    <div key={event.id} className="p-3 hover:bg-card/80 transition-colors">
-                      <div className="flex gap-2">
-                        <div className="flex flex-col items-center justify-center bg-gold/5 p-2 rounded-md border border-gold/20 w-14 h-16 flex-shrink-0">
-                          <span className="text-xs font-medium text-gold">{event.date.split(' ')[0]}</span>
-                          <span className="text-xl font-bold">{event.date.split(' ')[1]}</span>
-                          <span className="text-[10px] text-muted-foreground">{event.day}</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between">
-                            <h3 className="font-medium text-sm">{event.title}</h3>
-                            <Badge variant="outline" className="bg-blue-500/10 border-blue-500/20 text-blue-500 text-[10px] rounded-sm py-0 h-5">
-                              {event.time}
-                            </Badge>
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-1">{event.subtitle}</p>
-                          <div className="flex items-center gap-3 mt-1.5">
-                            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                              <MapPin className="h-2.5 w-2.5" />
-                              {event.location}
-                            </div>
-                            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                              <Clock className="h-2.5 w-2.5" />
-                              {event.duration}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+          <CardDescription>
+            Common tasks to help you get started
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Button asChild variant="outline" className="h-20 flex-col gap-2">
+              <Link to="/profile">
+                <Eye className="h-6 w-6" />
+                <span className="text-sm">Update Profile</span>
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="h-20 flex-col gap-2">
+              <Link to="/jobs">
+                <Briefcase className="h-6 w-6" />
+                <span className="text-sm">Browse Jobs</span>
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="h-20 flex-col gap-2">
+              <Link to="/posts">
+                <TrendingUp className="h-6 w-6" />
+                <span className="text-sm">View Posts</span>
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="h-20 flex-col gap-2">
+              <Link to="/messages">
+                <Users className="h-6 w-6" />
+                <span className="text-sm">Messages</span>
+              </Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
