@@ -110,6 +110,13 @@ const Posts = () => {
     navigate(`/posts/${post.id}`);
   };
 
+  const handleCreatePostSubmit = async (postData: any) => {
+    // Handle post creation submission
+    console.log('Creating post:', postData);
+    setShowCreateDialog(false);
+    // Refresh posts or handle the new post data as needed
+  };
+
   const filteredPosts = posts.filter(post => {
     if (filters.category !== 'all' && post.category !== filters.category) {
       return false;
@@ -441,7 +448,8 @@ const Posts = () => {
 
       <CreatePostDialog 
         isOpen={showCreateDialog} 
-        onClose={() => setShowCreateDialog(false)} 
+        onClose={() => setShowCreateDialog(false)}
+        onSubmit={handleCreatePostSubmit}
       />
 
       <AlertDialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>

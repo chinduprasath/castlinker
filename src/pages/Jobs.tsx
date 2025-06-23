@@ -88,11 +88,7 @@ const Jobs = () => {
       </div>
 
       {/* Job Create Form */}
-      <JobCreateForm
-        isOpen={isCreateFormOpen}
-        onClose={() => setIsCreateFormOpen(false)}
-        onJobCreated={refetchJobs}
-      />
+      <JobCreateForm />
     </div>
   );
 };
