@@ -1,216 +1,209 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Shield } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AdminTeamRole } from "@/types/adminTypes";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-
-const formSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-  confirmPassword: z.string().min(8, "Password must be at least 8 characters"),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords do not match",
-  path: ["confirmPassword"],
-});
-
-type FormValues = z.infer<typeof formSchema>;
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
+import { Eye, EyeOff, Loader2, Crown, Shield, CheckCircle } from 'lucide-react';
+import { auth, db } from '@/integrations/firebase/client';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { collection, addDoc, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const SuperAdminSignup = () => {
-  const { signup } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [signupSuccess, setSignupSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage(null);
+
+    if (password !== confirmPassword) {
+      setErrorMessage("Passwords do not match");
+      return;
     }
-  });
 
-  const onSubmit = async (data: FormValues) => {
-    setIsLoading(true);
-    setError(null);
-    
+    setIsSubmitting(true);
     try {
-      // First, create the user in Supabase Auth
-      const { data: authData, error: signupError } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          data: {
-            name: data.name,
-            role: 'SuperAdmin'
-          }
-        }
-      });
-      
-      if (signupError) {
-        console.error("Auth signup error:", signupError);
-        throw new Error(signupError.message);
-      }
-      
-      if (!authData.user) {
-        throw new Error("Failed to create user account");
-      }
-      
-      console.log("Auth account created:", authData.user.id);
-      
-      // Create entry in users_management table for admin team member
-      const { error: managementError } = await supabase
-        .from('users_management')
-        .insert({
-          id: authData.user.id,
-          name: data.name,
-          email: data.email.toLowerCase(),
-          role: 'super_admin',
-          status: 'active',
-          verified: true
+      // Create user with email and password
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Create a super admin role
+      const rolesRef = collection(db, 'adminRoles');
+      const superAdminRoleRef = doc(rolesRef, 'superAdmin'); // Use a fixed ID for superAdmin role
+
+      // Check if the superAdmin role already exists
+      const superAdminDoc = await getDoc(superAdminRoleRef);
+
+      if (!superAdminDoc.exists()) {
+        // Create the superAdmin role if it doesn't exist
+        await setDoc(superAdminRoleRef, {
+          name: 'Super Admin',
+          description: 'The ultimate administrator with all privileges',
+          is_system: true,
+          created_at: serverTimestamp(),
+          updated_at: serverTimestamp()
         });
-      
-      if (managementError) {
-        console.error("Error creating admin user record:", managementError);
-        // If we fail to create the management record, delete the auth user
-        await supabase.auth.admin.deleteUser(authData.user.id);
-        throw new Error(`Failed to create admin record: ${managementError.message}`);
       }
-      
-      toast.success("SuperAdmin account created successfully! Please check your email to verify your account.");
-      navigate("/superadmin-signin");
-    } catch (err: any) {
-      console.error("Signup error:", err);
-      setError(err.message || "Failed to create account");
+
+      // Assign the superAdmin role to the new user
+      const usersRef = collection(db, 'users_management');
+      const userRef = doc(usersRef, user.uid);
+
+      await setDoc(userRef, {
+        id: user.uid,
+        email: user.email,
+        role: 'superAdmin',
+        created_at: serverTimestamp(),
+        updated_at: serverTimestamp()
+      });
+
+      // Create a default admin profile
+      const profileRef = doc(db, 'adminProfiles', user.uid);
+      await setDoc(profileRef, {
+        id: user.uid,
+        name: 'Super Admin User',
+        email: user.email,
+        created_at: serverTimestamp(),
+        updated_at: serverTimestamp()
+      });
+
+      setSignupSuccess(true);
+      toast({
+        title: 'Signup successful',
+        description: 'Super Admin account created successfully',
+      });
+
+      // Redirect to admin dashboard or login page
+      setTimeout(() => {
+        navigate('/admin/dashboard');
+      }, 2000);
+    } catch (error: any) {
+      console.error('Error creating super admin:', error);
+      setErrorMessage(error.message || 'Failed to create account. Please try again.');
+      toast({
+        title: 'Signup failed',
+        description: error.message || 'Please try again later',
+        variant: 'destructive'
+      });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-cinematic">
-      <div className="w-full max-w-md p-8 space-y-8 bg-background/80 backdrop-blur-sm rounded-lg shadow-lg border border-gold/20">
-        <div className="flex items-center justify-center">
-          <div className="bg-gold/10 p-3 rounded-full">
-            <Shield className="h-8 w-8 text-gold" />
-          </div>
-          <h1 className="text-3xl font-bold ml-3 gold-gradient-text">Super Admin</h1>
-        </div>
-        
-        <h2 className="text-2xl font-semibold text-center">Create Admin Account</h2>
-        
-        {error && (
-          <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-        
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="John Doe" {...field} className="bg-background/70" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="admin@example.com" 
-                      type="email"
-                      {...field} 
-                      className="bg-background/70"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="password" 
-                      placeholder="••••••••" 
-                      {...field} 
-                      className="bg-background/70"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="confirmPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Confirm Password</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="password" 
-                      placeholder="••••••••" 
-                      {...field} 
-                      className="bg-background/70"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <Button 
-              type="submit" 
-              className="w-full bg-gold hover:bg-gold/90 text-black font-medium"
-              disabled={isLoading}
-            >
-              {isLoading ? "Creating Account..." : "Create Admin Account"}
-            </Button>
-            
-            <div className="text-center text-sm text-muted-foreground">
-              Already have an account?{" "}
-              <Button 
-                variant="link" 
-                className="text-gold p-0 h-auto font-medium"
-                onClick={() => navigate("/superadmin-signin")}
-              >
-                Sign in
-              </Button>
+    <div className="flex items-center justify-center min-h-screen bg-background">
+      <Card className="w-full max-w-md bg-card/60 backdrop-blur-sm border-gold/10 shadow-md">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl flex items-center gap-2 gold-gradient-text">
+            <Crown className="h-5 w-5 text-gold" />
+            Create Super Admin Account
+          </CardTitle>
+          <CardDescription>
+            Only one super admin account is allowed.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          {signupSuccess ? (
+            <Alert variant="success">
+              <CheckCircle className="h-4 w-4" />
+              <AlertDescription>
+                Account created successfully! Redirecting...
+              </AlertDescription>
+            </Alert>
+          ) : null}
+
+          {errorMessage ? (
+            <Alert variant="destructive">
+              <Shield className="h-4 w-4" />
+              <AlertDescription>
+                {errorMessage}
+              </AlertDescription>
+            </Alert>
+          ) : null}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="focus-visible:ring-gold/30"
+              />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="focus-visible:ring-gold/30 pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  placeholder="Confirm your password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  className="focus-visible:ring-gold/30 pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+            <Button
+              type="submit"
+              className="w-full bg-gold hover:bg-gold/90 text-black gap-2"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Create Account
+            </Button>
           </form>
-        </Form>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

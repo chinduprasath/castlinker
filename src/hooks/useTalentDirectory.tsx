@@ -1,12 +1,12 @@
-
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { db } from '@/integrations/firebase/client';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import { useDebounce } from './useDebounce';
-import { Profession, PROFESSION_OPTIONS, TalentProfile, TalentFilters } from '@/types/talent';
+import { PROFESSION_OPTIONS } from '@/types/talent';
 import { useAuth } from '@/contexts/AuthContext';
 
 // Default filters configuration
-const DEFAULT_FILTERS: TalentFilters = {
+const DEFAULT_FILTERS = {
   searchTerm: '',
   selectedRoles: [],
   selectedLocations: [],
@@ -20,50 +20,42 @@ const DEFAULT_FILTERS: TalentFilters = {
 export const useTalentDirectory = () => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
-  const [talents, setTalents] = useState<TalentProfile[]>([]);
-  const [filteredTalents, setFilteredTalents] = useState<TalentProfile[]>([]);
-  const [filters, setFilters] = useState<TalentFilters>({...DEFAULT_FILTERS});
-  const [locations, setLocations] = useState<string[]>([]);
-  const [likedProfiles, setLikedProfiles] = useState<string[]>([]);
-  const [wishlistedProfiles, setWishlistedProfiles] = useState<string[]>([]);
-  const [connectionRequests, setConnectionRequests] = useState<any[]>([]);
+  const [talents, setTalents] = useState([]);
+  const [filteredTalents, setFilteredTalents] = useState([]);
+  const [filters, setFilters] = useState({ ...DEFAULT_FILTERS });
+  const [locations, setLocations] = useState([]);
+  const [likedProfiles, setLikedProfiles] = useState([]);
+  const [wishlistedProfiles, setWishlistedProfiles] = useState([]);
+  const [connectionRequests, setConnectionRequests] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 6;
-  
+
   const debouncedSearchTerm = useDebounce(filters.searchTerm, 300);
-  
+
   // Load talents from profiles table
   useEffect(() => {
     const fetchTalents = async () => {
       setIsLoading(true);
       try {
         // First check if we have profiles table data
-        const { data: profilesData, error: profilesError } = await supabase
-          .from('profiles')
-          .select('*');
-          
-        if (profilesError) {
-          console.error('Error fetching profiles:', profilesError);
-          // If we can't access profiles, try to get users directly (this may not work due to RLS)
-          await fetchUsers();
-          return;
-        }
-        
-        if (profilesData && profilesData.length > 0) {
-          console.log('Found profiles in the database:', profilesData.length);
+        const profilesRef = collection(db, 'profiles');
+        const profilesSnapshot = await getDocs(profilesRef);
+        const profilesData = profilesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        if (!profilesSnapshot.empty) {
           // Map profiles to talent format
-          const talentData: TalentProfile[] = profilesData.map(profile => ({
+          const talentData = profilesData.map(profile => ({
             id: profile.id,
             user_id: profile.id,
             name: profile.full_name || 'Anonymous User',
-            role: profile.profession_type as Profession || 'Actor',
-            profession_type: profile.profession_type as Profession || 'Actor',
+            role: profile.profession_type || 'Actor',
+            profession_type: profile.profession_type || 'Actor',
             location: profile.location || 'Los Angeles, CA',
             avatar: profile.avatar_url || `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`,
-            rating: profile.rating || (3.5 + Math.random() * 1.5), // Random rating between 3.5 and 5
-            reviews: Math.floor(Math.random() * 30) + 1, // Random number of reviews
+            rating: profile.rating || 3.5 + Math.random() * 1.5,
+            reviews: Math.floor(Math.random() * 30) + 1,
             isVerified: profile.is_verified || false,
-            isPremium: Math.random() > 0.7, // 30% chance of being premium
+            isPremium: Math.random() > 0.7,
             isAvailable: profile.availability_status === 'Available',
             available_for_hire: profile.availability_status === 'Available',
             skills: profile.skills || ['Acting', 'Dancing', 'Singing'],
@@ -78,13 +70,13 @@ export const useTalentDirectory = () => {
             updated_at: profile.updated_at,
             userId: profile.id
           }));
-          
+
           setTalents(talentData);
-          
+
           // Extract unique locations
           const uniqueLocations = Array.from(new Set(talentData.map(talent => talent.location)));
           setLocations(uniqueLocations);
-          
+
           // Load liked profiles from database
           if (user) {
             fetchLikedProfiles(user.id);
@@ -92,94 +84,76 @@ export const useTalentDirectory = () => {
             setupDummyInteractions(talentData);
           }
         } else {
-          console.log('No profiles found, fetching users or using fallback data');
           await fetchUsers();
         }
       } catch (error) {
         console.error('Error in talent directory:', error);
-        // Use fallback data
         generateFallbackData();
       } finally {
         setIsLoading(false);
       }
     };
-    
+
     fetchTalents();
   }, [user]);
-  
+
   // Fetch likes from database when user is available
-  const fetchLikedProfiles = async (userId: string) => {
+  const fetchLikedProfiles = async (userId) => {
     try {
-      const { data, error } = await supabase
-        .from('talent_likes')
-        .select('talent_id')
-        .eq('liker_id', userId);
-        
-      if (error) {
-        console.error('Error fetching liked profiles:', error);
-        return;
-      }
-      
+      const likesRef = collection(db, 'talent_likes');
+      const q = query(likesRef, where('liker_id', '==', userId));
+      const likesSnapshot = await getDocs(q);
+      const data = likesSnapshot.docs.map(doc => doc.data());
+
       if (data && data.length > 0) {
-        // Map the talent_ids to profile ids
         const likedIds = data.map(like => like.talent_id);
-        console.log('Fetched liked profiles:', likedIds);
         setLikedProfiles(likedIds);
       } else {
-        console.log('No liked profiles found');
-        // Set up some dummy liked profiles for better UI testing
         if (talents.length > 0) {
           setLikedProfiles([talents[0].id]);
         }
       }
-      
-      // Also fetch connection requests
+
       fetchConnections(userId);
-      
     } catch (error) {
       console.error('Error setting up liked profiles:', error);
     }
   };
-  
+
   // Fetch connection requests
-  const fetchConnections = async (userId: string) => {
+  const fetchConnections = async (userId) => {
     try {
-      const { data, error } = await supabase
-        .from('talent_connections')
-        .select('*')
-        .or(`requester_id.eq.${userId},recipient_id.eq.${userId}`);
-        
-      if (error) {
-        console.error('Error fetching connections:', error);
-        return;
-      }
-      
-      if (data) {
-        setConnectionRequests(data);
-      }
+      const connectionsRef = collection(db, 'talent_connections');
+      const q = query(connectionsRef, 
+        where('requester_id', '==', userId)
+      );
+      const q2 = query(connectionsRef, 
+        where('recipient_id', '==', userId)
+      );
+      const [snapshot1, snapshot2] = await Promise.all([getDocs(q), getDocs(q2)]);
+      const data1 = snapshot1.docs.map(doc => doc.data());
+      const data2 = snapshot2.docs.map(doc => doc.data());
+      setConnectionRequests([...data1, ...data2]);
     } catch (error) {
       console.error('Error fetching connections:', error);
     }
   };
-  
+
   // Fetch users from auth or talent_profiles if available
   const fetchUsers = async () => {
     try {
-      // Try fetching from talent_profiles which might have more user-friendly RLS
-      const { data: talentProfilesData, error: talentProfilesError } = await supabase
-        .from('talent_profiles')
-        .select('*');
-      
-      if (!talentProfilesError && talentProfilesData && talentProfilesData.length > 0) {
-        console.log('Found talent profiles:', talentProfilesData.length);
-        // Map talent_profiles to talent format
-        const talentData: TalentProfile[] = talentProfilesData.map(profile => ({
+      const talentProfilesRef = collection(db, 'talent_profiles');
+      const talentProfilesSnapshot = await getDocs(talentProfilesRef);
+      const talentProfilesData = talentProfilesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      if (talentProfilesData && talentProfilesData.length > 0) {
+        const talentData = talentProfilesData.map(profile => ({
           id: profile.id,
           user_id: profile.user_id,
           userId: profile.user_id,
           name: profile.name,
-          role: profile.role as Profession,
-          profession_type: profile.role as Profession,
+          role: profile.role,
+          profession_type: profile.role,
           location: profile.location,
           avatar: profile.avatar || `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`,
           rating: profile.rating || 4.5,
@@ -199,14 +173,12 @@ export const useTalentDirectory = () => {
           created_at: profile.created_at,
           updated_at: profile.updated_at
         }));
-        
+
         setTalents(talentData);
-        
-        // Extract unique locations
+
         const uniqueLocations = Array.from(new Set(talentData.map(talent => talent.location)));
         setLocations(uniqueLocations);
-        
-        // Load liked profiles if user is available
+
         if (user) {
           fetchLikedProfiles(user.id);
         } else {
@@ -214,37 +186,33 @@ export const useTalentDirectory = () => {
         }
         return;
       }
-      
-      // If we reach here, we need fallback data
-      console.log('No talent profiles found, using fallback data');
+
       generateFallbackData();
-      
     } catch (error) {
       console.error('Error fetching users:', error);
       generateFallbackData();
     }
   };
-  
+
   // Generate some fallback data if no real data is available
   const generateFallbackData = () => {
-    console.log('Generating fallback talent data');
     const defaultLocations = [
-      'Los Angeles, CA', 
-      'New York, NY', 
-      'Atlanta, GA', 
+      'Los Angeles, CA',
+      'New York, NY',
+      'Atlanta, GA',
       'Vancouver, BC',
       'London, UK',
       'Mumbai, India'
     ];
-    
-    const defaultRoles: Profession[] = [
+
+    const defaultRoles = [
       'Actor',
       'Director',
       'Producer',
       'Writer',
       'Cinematographer'
     ];
-    
+
     const defaultSkills = {
       'Actor': ['Method Acting', 'Improvisation', 'Voice Acting'],
       'Director': ['Shot Composition', 'Script Analysis', 'Team Leadership'],
@@ -252,8 +220,8 @@ export const useTalentDirectory = () => {
       'Writer': ['Story Development', 'Character Creation', 'Dialogue Writing'],
       'Cinematographer': ['Camera Operation', 'Lighting', 'Shot Composition']
     };
-    
-    const fallbackProfiles: TalentProfile[] = Array.from({ length: 10 }).map((_, index) => {
+
+    const fallbackProfiles = Array.from({ length: 10 }).map((_, index) => {
       const role = defaultRoles[Math.floor(Math.random() * defaultRoles.length)];
       return {
         id: `fallback-${index}`,
@@ -270,7 +238,7 @@ export const useTalentDirectory = () => {
         isPremium: Math.random() > 0.7,
         isAvailable: Math.random() > 0.3,
         available_for_hire: Math.random() > 0.3,
-        skills: (defaultSkills[role as keyof typeof defaultSkills] || ['Acting', 'Dancing', 'Singing']),
+        skills: defaultSkills[role] || ['Acting', 'Dancing', 'Singing'],
         experience: Math.floor(Math.random() * 15) + 1,
         experience_years: Math.floor(Math.random() * 15) + 1,
         languages: ['English'],
@@ -282,80 +250,70 @@ export const useTalentDirectory = () => {
         updated_at: new Date().toISOString()
       };
     });
-    
+
     setTalents(fallbackProfiles);
     setLocations(defaultLocations);
     setupDummyInteractions(fallbackProfiles);
   };
-  
+
   // Setup some dummy interactions for the profiles
-  const setupDummyInteractions = (talentData: TalentProfile[]) => {
-    // Mock some liked and wishlisted profiles
+  const setupDummyInteractions = (talentData) => {
     if (talentData.length > 0) {
       setLikedProfiles([talentData[0].id]);
       if (talentData.length > 1) {
         setWishlistedProfiles([talentData[1].id]);
       }
     }
-    
-    // Mock connection requests
+
     setConnectionRequests([
       { id: 'conn-1', requesterId: 'current-user', recipientId: talentData.length > 0 ? talentData[0].user_id : '', status: 'accepted' },
       { id: 'conn-2', requesterId: talentData.length > 1 ? talentData[1].user_id : '', recipientId: 'current-user', status: 'pending' }
     ]);
   };
-  
+
   // Apply filters
   useEffect(() => {
     let results = [...talents];
-    
-    // Apply search term filter
+
     if (debouncedSearchTerm) {
-      results = results.filter(talent => 
+      results = results.filter(talent =>
         (talent.name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase())) ||
         talent.bio.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         (talent.role?.toLowerCase().includes(debouncedSearchTerm.toLowerCase())) ||
         talent.skills.some(skill => skill.toLowerCase().includes(debouncedSearchTerm.toLowerCase()))
       );
     }
-    
-    // Apply role filter - ensure we have a valid array
+
     if (Array.isArray(filters.selectedRoles) && filters.selectedRoles.length > 0) {
-      results = results.filter(talent => 
-        filters.selectedRoles.includes(talent.profession_type) || 
+      results = results.filter(talent =>
+        filters.selectedRoles.includes(talent.profession_type) ||
         (talent.role && filters.selectedRoles.includes(talent.role))
       );
     }
-    
-    // Apply location filter - ensure we have a valid array
+
     if (Array.isArray(filters.selectedLocations) && filters.selectedLocations.length > 0) {
-      results = results.filter(talent => 
+      results = results.filter(talent =>
         filters.selectedLocations.includes(talent.location)
       );
     }
-    
-    // Apply experience range filter
+
     results = results.filter(talent => {
       const exp = talent.experience_years || talent.experience || 0;
       return exp >= filters.experienceRange[0] && exp <= filters.experienceRange[1];
     });
-    
-    // Apply verified only filter
+
     if (filters.verifiedOnly) {
       results = results.filter(talent => talent.isVerified);
     }
-    
-    // Apply available only filter
+
     if (filters.availableOnly) {
       results = results.filter(talent => talent.isAvailable || talent.available_for_hire);
     }
-    
-    // Apply likes minimum filter
+
     if (filters.likesMinimum > 0) {
       results = results.filter(talent => (talent.likesCount || 0) >= filters.likesMinimum);
     }
-    
-    // Apply sorting
+
     switch (filters.sortBy) {
       case 'rating':
         results.sort((a, b) => (b.rating || 0) - (a.rating || 0));
@@ -382,31 +340,27 @@ export const useTalentDirectory = () => {
       default:
         break;
     }
-    
+
     setFilteredTalents(results);
-    // Reset to first page when filters change
     setCurrentPage(1);
   }, [talents, filters, debouncedSearchTerm]);
 
-  // Calculate pagination values
   const totalCount = filteredTalents.length;
   const totalPages = Math.ceil(totalCount / pageSize);
   const paginatedTalents = filteredTalents.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
-  
-  // Handler functions and return values
-  const toggleLike = (profileId: string) => {
-    setLikedProfiles(prev => 
-      prev.includes(profileId) 
-        ? prev.filter(id => id !== profileId) 
+
+  const toggleLike = (profileId) => {
+    setLikedProfiles(prev =>
+      prev.includes(profileId)
+        ? prev.filter(id => id !== profileId)
         : [...prev, profileId]
     );
-    
-    // Update talent likesCount
+
     if (user) {
-      setTalents(prev => 
+      setTalents(prev =>
         prev.map(talent => {
           if (talent.id === profileId) {
             const wasLiked = likedProfiles.includes(profileId);
@@ -421,73 +375,69 @@ export const useTalentDirectory = () => {
     }
   };
 
-  const toggleWishlist = (profileId: string) => {
-    setWishlistedProfiles(prev => 
-      prev.includes(profileId) 
-        ? prev.filter(id => id !== profileId) 
+  const toggleWishlist = (profileId) => {
+    setWishlistedProfiles(prev =>
+      prev.includes(profileId)
+        ? prev.filter(id => id !== profileId)
         : [...prev, profileId]
     );
   };
-  
-  const sendConnectionRequest = (profile: TalentProfile) => {
+
+  const sendConnectionRequest = (profile) => {
     const newRequest = {
       id: `conn-${Date.now()}`,
-      requesterId: 'current-user', // In a real app this would be the current user's ID
+      requesterId: 'current-user',
       recipientId: profile.user_id || profile.userId,
       status: 'pending'
     };
-    
+
     setConnectionRequests(prev => [...prev, newRequest]);
     return true;
   };
-  
-  const shareProfile = (profile: TalentProfile) => {
-    // Mock implementation
+
+  const shareProfile = (profile) => {
     console.log(`Sharing profile: ${profile.name || 'Talent'}`);
     alert(`Profile of ${profile.name || 'Talent'} would be shared in a real app.`);
   };
-  
-  const sendMessage = (profile: TalentProfile, message: string) => {
-    // Mock implementation
+
+  const sendMessage = (profile, message) => {
     console.log(`Message to ${profile.name || 'Talent'}: ${message}`);
     return true;
   };
-  
-  const changePage = (page: number) => {
+
+  const changePage = (page) => {
     setCurrentPage(page);
   };
-  
-  // Make sure updateFilters properly handles arrays
-  const updateFilters = (newFilters: Partial<TalentFilters>) => {
+
+  const updateFilters = (newFilters) => {
     setFilters(prev => {
       const updated = { ...prev, ...newFilters };
-      
-      // Ensure arrays are properly initialized
+
       if (newFilters.selectedRoles !== undefined) {
-        updated.selectedRoles = Array.isArray(newFilters.selectedRoles) 
-          ? newFilters.selectedRoles 
+        updated.selectedRoles = Array.isArray(newFilters.selectedRoles)
+          ? newFilters.selectedRoles
           : [];
       }
-      
+
       if (newFilters.selectedLocations !== undefined) {
-        updated.selectedLocations = Array.isArray(newFilters.selectedLocations) 
-          ? newFilters.selectedLocations 
+        updated.selectedLocations = Array.isArray(newFilters.selectedLocations)
+          ? newFilters.selectedLocations
           : [];
       }
-      
+
       return updated;
     });
   };
-  
+
   return {
     talents: paginatedTalents,
-    profiles: paginatedTalents, // Alias for backward compatibility
+    profiles: paginatedTalents,
     isLoading,
     filters,
     setFilters,
     updateFilters,
     locations,
-    resetFilters: () => setFilters({...DEFAULT_FILTERS}),
+    resetFilters: () => setFilters({ ...DEFAULT_FILTERS }),
     PROFESSION_OPTIONS,
     likedProfiles,
     wishlistedProfiles,
@@ -506,5 +456,4 @@ export const useTalentDirectory = () => {
 };
 
 export default useTalentDirectory;
-export { PROFESSION_OPTIONS, type Profession };
-export type { TalentProfile };
+export { PROFESSION_OPTIONS };

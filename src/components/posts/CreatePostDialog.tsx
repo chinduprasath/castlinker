@@ -1,597 +1,339 @@
-import { useState, useRef } from "react";
-import { useAuth } from "@/hooks/useAuth";
-import { createPost, uploadPostMedia, updatePost } from "@/services/postsService";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { toast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
-import { format } from "date-fns";
-
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  FormDescription,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Loader2, X, Calendar as CalendarIcon, Upload, Image, Video } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/integrations/supabase/client";
-import { cn } from "@/lib/utils";
-
-const CATEGORIES = [
-  "Audition",
-  "Casting Call",
-  "Collaboration",
-  "Content Creation",
-  "Event",
-  "Job Opportunity",
-  "Mentorship",
-  "Other"
-];
-
-const formSchema = z.object({
-  title: z.string().min(5, "Title must be at least 5 characters"),
-  description: z.string().min(20, "Description must be at least 20 characters"),
-  category: z.string().min(1, "Please select a category"),
-  tags: z.array(z.string()).optional(),
-  event_date: z.date().optional().nullable(),
-  external_url: z.string().url("Please enter a valid URL").optional().nullable(),
-  place: z.string().optional(),
-  location: z.string().optional(),
-  pincode: z.string().optional(),
-  landmark: z.string().optional(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+import React, { useState, useRef } from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { X, Upload, Image, Video, FileText, Eye, EyeOff, MapPin, Calendar, DollarSign, Users, Clock, Star, Award, Film, Camera, Mic, PenTool, Palette, Music, Briefcase, UserCheck, Globe, Building, Megaphone, Shield, Settings, Crown, Wrench } from 'lucide-react';
+import { toast } from 'sonner';
+import { db, storage } from '@/integrations/firebase/client';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface CreatePostDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  editPost?: any;
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (postData: any) => void;
 }
 
-const CreatePostDialog = ({ open, onOpenChange, editPost }: CreatePostDialogProps) => {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [tagInput, setTagInput] = useState("");
-  const [mediaFile, setMediaFile] = useState<File | null>(null);
-  const [mediaPreview, setMediaPreview] = useState<string | null>(null);
+const CreatePostDialog: React.FC<CreatePostDialogProps> = ({ isOpen, onClose, onSubmit }) => {
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [category, setCategory] = useState('');
+  const [location, setLocation] = useState('');
   const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
+  const [mediaFile, setMediaFile] = useState<File | null>(null);
+  const [isPublic, setIsPublic] = useState(true);
+  const [isFeatured, setIsFeatured] = useState(false);
+  const [salary, setSalary] = useState('');
+  const [applicationDeadline, setApplicationDeadline] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
+  const [website, setWebsite] = useState('');
+  const [tags, setTags] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
-  const isEditMode = !!editPost;
-  
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: isEditMode ? {
-      title: editPost.title,
-      description: editPost.description,
-      category: editPost.category,
-      tags: editPost.tags || [],
-      event_date: editPost.event_date ? new Date(editPost.event_date) : null,
-      external_url: editPost.external_url || null,
-      place: editPost.place || '',
-      location: editPost.location || '',
-      pincode: editPost.pincode || '',
-      landmark: editPost.landmark || '',
-    } : {
-      title: "",
-      description: "",
-      category: "",
-      tags: [],
-      event_date: null,
-      external_url: null,
-      place: '',
-      location: '',
-      pincode: '',
-      landmark: '',
-    },
-  });
+  const { user } = useAuth();
 
-  const addTag = () => {
-    if (!tagInput.trim()) return;
-    
-    const currentTags = form.getValues("tags") || [];
-    const normalizedTag = tagInput.trim();
-    
-    if (currentTags.includes(normalizedTag)) {
-      toast({
-        title: "Tag already exists",
-        description: "This tag has already been added.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (currentTags.length >= 5) {
-      toast({
-        title: "Maximum tags reached",
-        description: "You can only add up to 5 tags.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    form.setValue("tags", [...currentTags, normalizedTag]);
-    setTagInput("");
-  };
-
-  const removeTag = (tagToRemove: string) => {
-    const currentTags = form.getValues("tags") || [];
-    form.setValue("tags", currentTags.filter(tag => tag !== tagToRemove));
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setMediaFile(file);
-      
-      // Set media type based on file
-      if (file.type.startsWith('image/')) {
-        setMediaType('image');
-      } else if (file.type.startsWith('video/')) {
-        setMediaType('video');
-      }
-      
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setMediaPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const removeMedia = () => {
+  const handleMediaTypeChange = (type: 'image' | 'video' | null) => {
+    setMediaType(type);
     setMediaFile(null);
-    setMediaPreview(null);
-    setMediaType(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
-  const onSubmit = async (values: FormValues) => {
-    if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to create a post.",
-        variant: "destructive"
-      });
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setMediaFile(file);
+    }
+  };
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!title || !description || !category || !mediaType || !mediaFile) {
+      toast.error('Please fill in all required fields.');
       return;
     }
 
-    setIsSubmitting(true);
-
+    setIsLoading(true);
     try {
-      // Get user profile details for creator name and profession
-      const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select("full_name, profession_type")
-        .eq("id", user.id)
-        .single();
-      
-      if (profileError) {
-        console.error("Error fetching profile:", profileError);
-      }
-
-      // Upload media if present
-      let mediaUrl: string | null = null;
-      if (mediaFile) {
-        mediaUrl = await uploadPostMedia(mediaFile, user.id);
-        if (!mediaUrl) {
-          throw new Error("Failed to upload media");
-        }
-      }
+      let mediaUrl = '';
+      const storageRef = ref(storage, `posts/${mediaFile.name}`);
+      await uploadBytes(storageRef, mediaFile);
+      mediaUrl = await getDownloadURL(storageRef);
 
       const postData = {
-        title: values.title,
-        description: values.description,
-        created_by: user.id,
-        creator_name: profileData?.full_name || user.email?.split('@')[0] || 'Anonymous',
-        creator_profession: profileData?.profession_type || null,
-        category: values.category,
-        tags: values.tags || [],
-        media_url: isEditMode && !mediaFile ? editPost.media_url : mediaUrl,
-        media_type: isEditMode && !mediaFile ? editPost.media_type : mediaType,
-        event_date: values.event_date ? values.event_date.toISOString() : null,
-        external_url: values.external_url || null,
-        place: values.place || null,
-        location: values.location || null,
-        pincode: values.pincode || null,
-        landmark: values.landmark || null,
+        title,
+        description,
+        category,
+        location,
+        media_type: mediaType,
+        media_url: mediaUrl,
+        is_public: isPublic,
+        is_featured: isFeatured,
+        salary: salary,
+        application_deadline: applicationDeadline,
+        contact_email: contactEmail,
+        contact_phone: contactPhone,
+        website: website,
+        tags: tags.split(',').map(tag => tag.trim()),
+        like_count: 0,
+        share_count: 0,
+        view_count: 0,
+        created_at: serverTimestamp(),
+        user_id: user?.id,
       };
-      
-      let createdPost;
-      
-      if (isEditMode) {
-        createdPost = await updatePost(editPost.id, postData);
-        if (createdPost) {
-          toast({
-            title: "Post Updated",
-            description: "Your post has been successfully updated.",
-          });
-        }
-      } else {
-        createdPost = await createPost(postData);
-        if (createdPost) {
-          toast({
-            title: "Post Created",
-            description: "Your post has been successfully published.",
-          });
-        }
-      }
-      
-      if (createdPost) {
-        onOpenChange(false);
-        form.reset();
-        navigate(`/posts/${createdPost.id}`);
-      } else {
-        throw new Error(`Failed to ${isEditMode ? 'update' : 'create'} post`);
-      }
-    } catch (error) {
-      console.error(`Error ${isEditMode ? 'updating' : 'creating'} post:`, error);
-      toast({
-        title: "Error",
-        description: `Failed to ${isEditMode ? 'update' : 'create'} post. Please try again.`,
-        variant: "destructive"
-      });
+
+      const postsRef = collection(db, 'castlinker_posts');
+      await addDoc(postsRef, postData);
+
+      toast.success('Post created successfully!');
+      onClose();
+      onSubmit(postData);
+      resetForm();
+    } catch (error: any) {
+      console.error('Error creating post:', error);
+      toast.error(`Failed to create post: ${error.message}`);
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setTitle('');
+    setDescription('');
+    setCategory('');
+    setLocation('');
+    setMediaType(null);
+    setMediaFile(null);
+    setIsPublic(true);
+    setIsFeatured(false);
+    setSalary('');
+    setApplicationDeadline('');
+    setContactEmail('');
+    setContactPhone('');
+    setWebsite('');
+    setTags('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>{isEditMode ? "Edit Post" : "Create New Post"}</DialogTitle>
+          <DialogTitle>Create New Post</DialogTitle>
           <DialogDescription>
-            {isEditMode 
-              ? "Update your post details below."
-              : "Share an opportunity with the community. Fill out the details below."
-            }
+            Share your creative projects, job opportunities, or industry news with the community.
           </DialogDescription>
         </DialogHeader>
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Title</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter post title" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Describe the opportunity in detail..." 
-                      className="min-h-[150px]"
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="category"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Category</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a category" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {CATEGORIES.map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {category}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Media Upload */}
+        <form onSubmit={handleSubmit} className="grid gap-4 py-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <FormLabel>Media (Image or Video)</FormLabel>
-              <div className="flex gap-2 items-center">
-                <input
-                  type="file"
-                  accept="image/*,video/*"
-                  onChange={handleFileChange}
-                  className="hidden"
-                  ref={fileInputRef}
-                />
-                <Button 
-                  type="button" 
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
+              <Label htmlFor="title">Title</Label>
+              <Input
+                type="text"
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="category">Category</Label>
+              <Select onValueChange={setCategory} defaultValue={category}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Film">Film</SelectItem>
+                  <SelectItem value="Television">Television</SelectItem>
+                  <SelectItem value="Theater">Theater</SelectItem>
+                  <SelectItem value="Music">Music</SelectItem>
+                  <SelectItem value="Art">Art</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              required
+              className="min-h-[100px]"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="location">Location</Label>
+              <Input
+                type="text"
+                id="location"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="e.g., Los Angeles, Remote"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="mediaType">Media Type</Label>
+              <div className="flex gap-2">
+                <Badge
+                  variant={mediaType === 'image' ? 'secondary' : 'outline'}
+                  className="cursor-pointer"
+                  onClick={() => handleMediaTypeChange('image')}
                 >
-                  <Upload className="h-4 w-4 mr-2" />
-                  {mediaFile ? 'Change Media' : 'Upload Media'}
-                </Button>
-                
-                {mediaFile && (
-                  <Button 
-                    type="button"
-                    variant="outline"
-                    onClick={removeMedia}
-                    className="text-destructive hover:text-destructive"
-                  >
-                    <X className="h-4 w-4 mr-2" />
-                    Remove
-                  </Button>
-                )}
+                  <Image className="mr-2 h-4 w-4" /> Image
+                </Badge>
+                <Badge
+                  variant={mediaType === 'video' ? 'secondary' : 'outline'}
+                  className="cursor-pointer"
+                  onClick={() => handleMediaTypeChange('video')}
+                >
+                  <Video className="mr-2 h-4 w-4" /> Video
+                </Badge>
+                <Badge
+                  variant={mediaType === null ? 'secondary' : 'outline'}
+                  className="cursor-pointer"
+                  onClick={() => handleMediaTypeChange(null)}
+                >
+                  <FileText className="mr-2 h-4 w-4" /> None
+                </Badge>
               </div>
+            </div>
+          </div>
 
-              {(mediaPreview || (isEditMode && editPost.media_url)) && (
-                <div className="mt-4 border rounded-md p-2 max-w-[300px]">
-                  {mediaType === 'image' || (isEditMode && editPost.media_type === 'image') ? (
-                    <div className="relative">
-                      <Image className="h-6 w-6 absolute top-2 left-2 bg-black/50 p-1 rounded-md text-white" />
-                      <img 
-                        src={mediaPreview || editPost.media_url} 
-                        alt="Preview" 
-                        className="w-full h-auto rounded-md" 
-                      />
-                    </div>
-                  ) : (
-                    <div className="relative">
-                      <Video className="h-6 w-6 absolute top-2 left-2 bg-black/50 p-1 rounded-md text-white" />
-                      {mediaPreview ? (
-                        <video 
-                          src={mediaPreview} 
-                          controls 
-                          className="w-full h-auto rounded-md"
-                        />
-                      ) : (
-                        <video 
-                          src={editPost.media_url} 
-                          controls 
-                          className="w-full h-auto rounded-md"
-                        />
-                      )}
-                    </div>
-                  )}
-                </div>
+          {mediaType && (
+            <div className="space-y-2">
+              <Label htmlFor="mediaFile">Upload Media</Label>
+              <Input
+                type="file"
+                id="mediaFile"
+                accept={mediaType === 'image' ? 'image/*' : 'video/*'}
+                onChange={handleFileChange}
+                required={!!mediaType}
+                ref={fileInputRef}
+              />
+              {mediaFile && (
+                <Badge variant="secondary">
+                  {mediaFile.name} <X className="ml-2 h-4 w-4 cursor-pointer" onClick={() => { setMediaFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }} />
+                </Badge>
               )}
             </div>
+          )}
 
-            {/* Event Date */}
-            <FormField
-              control={form.control}
-              name="event_date"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Event/Deadline Date</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value || undefined}
-                        onSelect={field.onChange}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormDescription>
-                    Select a date for this opportunity (optional)
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* External URL */}
-            <FormField
-              control={form.control}
-              name="external_url"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>External URL (Optional)</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="https://example.com" 
-                      {...field} 
-                      value={field.value || ''}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Add a relevant external link (e.g. registration form, YouTube link)
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Location Fields */}
-            <div className="space-y-4 border rounded-md p-4">
-              <h3 className="text-sm font-medium">Address Information (Optional)</h3>
-              
-              <FormField
-                control={form.control}
-                name="place"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Place Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Studio name, building, etc." {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="location"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Location</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Area/locality" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="pincode"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Pincode</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Postal/zip code" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="salary">Salary/Budget</Label>
+              <div className="relative">
+                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="number"
+                  id="salary"
+                  className="pl-8"
+                  value={salary}
+                  onChange={(e) => setSalary(e.target.value)}
+                  placeholder="Enter amount"
                 />
               </div>
-              
-              <FormField
-                control={form.control}
-                name="landmark"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Landmark (Optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Nearby landmark" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="applicationDeadline">Application Deadline</Label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="date"
+                  id="applicationDeadline"
+                  className="pl-10"
+                  value={applicationDeadline}
+                  onChange={(e) => setApplicationDeadline(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="contactEmail">Contact Email</Label>
+              <Input
+                type="email"
+                id="contactEmail"
+                value={contactEmail}
+                onChange={(e) => setContactEmail(e.target.value)}
+                placeholder="Enter email"
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="contactPhone">Contact Phone</Label>
+              <Input
+                type="tel"
+                id="contactPhone"
+                value={contactPhone}
+                onChange={(e) => setContactPhone(e.target.value)}
+                placeholder="Enter phone number"
+              />
+            </div>
+          </div>
 
-            <FormField
-              control={form.control}
-              name="tags"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tags (Optional)</FormLabel>
-                  <div className="flex gap-2">
-                    <Input
-                      value={tagInput}
-                      onChange={(e) => setTagInput(e.target.value)}
-                      placeholder="Add tags..."
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          addTag();
-                        }
-                      }}
-                    />
-                    <Button 
-                      type="button" 
-                      onClick={addTag}
-                      variant="secondary"
-                    >
-                      Add
-                    </Button>
-                  </div>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {field.value?.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="px-2 py-1">
-                        {tag}
-                        <X
-                          className="h-3 w-3 ml-1 cursor-pointer"
-                          onClick={() => removeTag(tag)}
-                        />
-                      </Badge>
-                    ))}
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
+          <div className="space-y-2">
+            <Label htmlFor="website">Website</Label>
+            <Input
+              type="url"
+              id="website"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+              placeholder="Enter website URL"
             />
+          </div>
 
-            <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isEditMode ? 'Update Post' : 'Publish Post'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+          <div className="space-y-2">
+            <Label htmlFor="tags">Tags</Label>
+            <Input
+              type="text"
+              id="tags"
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
+              placeholder="Enter comma-separated tags"
+            />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Switch id="isPublic" checked={isPublic} onCheckedChange={(checked) => setIsPublic(checked)} />
+            <Label htmlFor="isPublic">Make this post public</Label>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Switch id="isFeatured" checked={isFeatured} onCheckedChange={(checked) => setIsFeatured(checked)} />
+            <Label htmlFor="isFeatured">Mark as featured</Label>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="secondary" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                'Create Post'
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

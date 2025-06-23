@@ -1,60 +1,39 @@
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
-import { Checkbox } from "@/components/ui/checkbox";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
-import { 
-  Search, Check, Star, MessageCircle, Bookmark, ArrowUpDown, 
-  MapPin, Filter, UserPlus, Badge as BadgeIcon, Heart, Share
-} from "lucide-react";
-import { Separator } from "@/components/ui/separator";
-import { 
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { useAuth } from "@/contexts/AuthContext";
-import { useTalentDirectory, TalentProfile } from "@/hooks/useTalentDirectory";
-import { MessageDialog } from "@/components/talent/MessageDialog";
-import { ProfileDialog } from "@/components/talent/ProfileDialog";
-import { ConnectDialog } from "@/components/talent/ConnectDialog";
-import { Skeleton } from "@/components/ui/skeleton";
-import { supabase } from "@/integrations/supabase/client";
-import { ProfessionFilter } from "@/components/filters/ProfessionFilter";
-import { PROFESSION_OPTIONS, Profession } from "@/hooks/useTalentDirectory";
-import { LocationFilter, INDIA_LOCATIONS } from "@/components/filters/LocationFilter";
-import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
+import React, { useState, useEffect } from 'react';
+import { Search, Filter, Heart, Star, MapPin, Eye, MessageSquare, UserPlus, Award, Briefcase, Clock, ChevronDown, ChevronUp, Users, SlidersHorizontal, Grid, List, ArrowUpDown, CheckCircle, Crown, ExternalLink } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useTalentDirectory } from '@/hooks/useTalentDirectory';
+import { useAuth } from '@/contexts/AuthContext';
+import { PROFESSION_OPTIONS } from '@/types/talent';
+import { toast } from 'sonner';
+import TalentProfileModal from '@/components/talent/TalentProfileModal';
+import { useToast } from '@/hooks/use-toast';
+import { db } from '@/integrations/firebase/client';
+import { collection, addDoc, deleteDoc, query, where, getDocs, doc } from 'firebase/firestore';
 
 const TalentDirectory = () => {
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const {
-    profiles,
+  const [isGridView, setIsGridView] = useState(true);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+  const { 
+    talents,
     isLoading,
     filters,
+    updateFilters,
+    locations,
+    resetFilters,
+    PROFESSION_OPTIONS,
     likedProfiles,
     wishlistedProfiles,
     connectionRequests,
@@ -62,675 +41,402 @@ const TalentDirectory = () => {
     pageSize,
     currentPage,
     totalPages,
-    updateFilters,
-    resetFilters,
-    sendMessage,
     toggleLike,
     toggleWishlist,
+    sendConnectionRequest,
     shareProfile,
-    changePage,
-    sendConnectionRequest
+    sendMessage,
+    changePage
   } = useTalentDirectory();
-  
-  // UI state
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const [messageDialogOpen, setMessageDialogOpen] = useState(false);
-  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
-  const [connectDialogOpen, setConnectDialogOpen] = useState(false);
-  const [selectedProfile, setSelectedProfile] = useState<TalentProfile | null>(null);
-  
-  const handleMessageClick = (profile: TalentProfile) => {
-    setSelectedProfile(profile);
-    setMessageDialogOpen(true);
+  const { user } = useAuth();
+  const { toast: useToastHook } = useToast();
+
+  const handleOpenProfile = (profileId: string) => {
+    setSelectedProfileId(profileId);
+    setProfileOpen(true);
   };
-  
-  const handleViewProfile = (profile: TalentProfile) => {
-    // Navigate to the user's profile page using their userId
-    const profileUserId = profile.userId || profile.user_id;
-    if (profileUserId) {
-      navigate(`/profile/${profileUserId}`);
-    } else {
-      toast.error("Unable to view profile - user ID not found");
-    }
+
+  const handleCloseProfile = () => {
+    setProfileOpen(false);
+    setSelectedProfileId(null);
   };
-  
-  const handleConnectClick = (profile: TalentProfile) => {
-    setSelectedProfile(profile);
-    setConnectDialogOpen(true);
-  };
-  
-  const handleLikeProfile = async (profile: TalentProfile) => {
-    if (!user) {
-      toast.error("Please sign in to like profiles");
-      return;
-    }
-    
-    // Toggle like locally first for better UX
-    toggleLike(profile.id);
-    
-    try {
-      // If the profile was just liked (now in likedProfiles)
-      const isLiked = likedProfiles.includes(profile.id);
-      
-      if (isLiked) {
-        // Add to database
-        const { error } = await supabase
-          .from('talent_likes')
-          .insert({
-            liker_id: user.id,
-            talent_id: profile.userId
-          });
-          
-        if (error) {
-          throw error;
-        }
-        
-        toast.success(`You liked ${profile.name}'s profile`);
-      } else {
-        // Remove from database
-        const { error } = await supabase
-          .from('talent_likes')
-          .delete()
-          .match({
-            liker_id: user.id,
-            talent_id: profile.userId
-          });
-          
-        if (error) {
-          throw error;
-        }
-        
-        toast.info(`You unliked ${profile.name}'s profile`);
-      }
-    } catch (error) {
-      console.error('Error toggling like:', error);
-      // Revert local state in case of error
-      toggleLike(profile.id);
-      toast.error("Could not update like status. Please try again.");
-    }
-  };
-  
-  const toggleRole = (role: Profession) => {
-    updateFilters({
-      selectedRoles: filters.selectedRoles.includes(role)
-        ? filters.selectedRoles.filter(r => r !== role)
-        : [...filters.selectedRoles, role]
-    });
-  };
-  
-  const toggleLocation = (location: string) => {
-    updateFilters({
-      selectedLocations: filters.selectedLocations.includes(location)
-        ? filters.selectedLocations.filter(l => l !== location)
-        : [...filters.selectedLocations, location]
-    });
-  };
-  
-  const getConnectionStatus = (profile: TalentProfile) => {
-    if (!user) return null;
-    
-    const connection = connectionRequests.find(
-      conn => 
-        (conn.requesterId === user.id && conn.recipientId === profile.userId) ||
-        (conn.requesterId === profile.userId && conn.recipientId === user.id)
+
+  const isLiked = (profileId: string) => likedProfiles.includes(profileId);
+  const isWishlisted = (profileId: string) => wishlistedProfiles.includes(profileId);
+  const getConnectionStatus = (profileId: string) => {
+    const request = connectionRequests.find(req => 
+      (req.requesterId === 'current-user' && req.recipientId === profileId) ||
+      (req.recipientId === 'current-user' && req.requesterId === profileId)
     );
-    
-    return connection ? connection.status : null;
+    return request ? request.status : null;
   };
-  
-  const getPageNumbers = () => {
-    const pages = [];
-    if (totalPages <= 7) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
+
+  const handleConnect = (profile) => {
+    const success = sendConnectionRequest(profile);
+    if (success) {
+      useToastHook({
+        title: "Connection request sent",
+        description: `A connection request has been sent to ${profile.name || 'Talent'}.`,
+      });
     } else {
-      pages.push(1);
-      
-      if (currentPage > 3) pages.push('ellipsis');
-      
-      const start = Math.max(2, currentPage - 1);
-      const end = Math.min(totalPages - 1, currentPage + 1);
-      
-      for (let i = start; i <= end; i++) {
-        pages.push(i);
-      }
-      
-      if (currentPage < totalPages - 2) pages.push('ellipsis');
-      
-      pages.push(totalPages);
+      toast.error("Could not send connection request");
     }
-    return pages;
+  };
+
+  const handleShare = (profile) => {
+    shareProfile(profile);
+  };
+
+  const handleMessage = (profile) => {
+    toast.info(`Messaging ${profile.name || 'Talent'} - this feature is not fully implemented.`);
+    const message = prompt(`Enter your message to ${profile.name || 'Talent'}:`);
+    if (message) {
+      const success = sendMessage(profile, message);
+      if (success) {
+        toast.success("Message sent successfully!");
+      } else {
+        toast.error("Failed to send message.");
+      }
+    }
+  };
+
+  const handleLike = (profileId: string) => {
+    toggleLike(profileId);
+  };
+
+  const handleWishlist = (profileId: string) => {
+    toggleWishlist(profileId);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    changePage(newPage);
   };
 
   return (
-    <div className="space-y-4 pr-1">
-      <div className="flex flex-col space-y-1">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-gold to-gold-light">
-                Talent Directory
-              </span>
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Discover and connect with talented film industry professionals from around the world.
-            </p>
-          </div>
-          <div className="hidden sm:flex items-center gap-2">
-            <Button size="sm" className="bg-gold hover:bg-gold/90 text-black gap-1">
-              <UserPlus className="h-4 w-4" />
-              <span>Connect</span>
-            </Button>
-          </div>
-        </div>
-      </div>
-      
-      <Card className="bg-card/50 backdrop-blur border-gold/10">
-        <CardHeader className="px-4 py-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search by name, role, or keyword..." 
-                value={filters.searchTerm}
-                onChange={(e) => updateFilters({ searchTerm: e.target.value })}
-                className="pl-9 bg-background/50 border-gold/10 focus-visible:ring-gold/30"
-              />
-            </div>
-            
-            <div className="flex gap-2">
-              <Select 
-                value={filters.sortBy} 
-                onValueChange={(value) => updateFilters({ sortBy: value as 'rating' | 'experience' | 'reviews' | 'likes' | 'nameAsc' | 'nameDesc' })}
-              >
-                <SelectTrigger className="w-[180px] border-gold/10 focus:ring-gold/30 bg-background/50">
-                  <div className="flex items-center gap-2">
-                    <ArrowUpDown className="h-4 w-4" />
-                    <SelectValue placeholder="Sort by" />
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="nameAsc">A to Z</SelectItem>
-                  <SelectItem value="nameDesc">Z to A</SelectItem>
-                  <SelectItem value="rating">Highest Rated</SelectItem>
-                  <SelectItem value="experience">Most Experienced</SelectItem>
-                  <SelectItem value="reviews">Most Reviewed</SelectItem>
-                  <SelectItem value="likes">Most Liked</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="outline" className="border-gold/10 focus:ring-gold/30">
-                    <Filter className="h-4 w-4 mr-2" />
-                    Filters
-                  </Button>
-                </SheetTrigger>
-                <SheetContent className="w-[300px] sm:w-[400px] bg-cinematic-dark border-gold/10">
-                  <SheetHeader>
-                    <SheetTitle className="text-foreground">Talent Filters</SheetTitle>
-                    <SheetDescription>Refine your talent search with specific criteria.</SheetDescription>
-                  </SheetHeader>
-                  
-                  <div className="mt-6 space-y-6">
-                    <div className="space-y-3">
-                      <h3 className="font-medium text-sm text-foreground/80">Profession</h3>
-                      <ProfessionFilter
-                        selectedProfessions={filters.selectedRoles}
-                        onProfessionChange={(professions) => updateFilters({ selectedRoles: professions })}
-                      />
-                    </div>
-                    
-                    <Separator className="bg-gold/10" />
-                    
-                    <div className="space-y-3">
-                      <h3 className="font-medium text-sm text-foreground/80">Location</h3>
-                      <LocationFilter
-                        selectedLocations={filters.selectedLocations}
-                        onLocationChange={(locations) => updateFilters({ selectedLocations: locations })}
-                      />
-                    </div>
-                    
-                    <Separator className="bg-gold/10" />
-                    
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-medium text-sm text-foreground/80">Experience (Years)</h3>
-                        <span className="text-xs text-gold">
-                          {filters.experienceRange[0]} - {filters.experienceRange[1]}+
-                        </span>
-                      </div>
-                      <Slider 
-                        defaultValue={filters.experienceRange} 
-                        min={0} 
-                        max={20} 
-                        step={1} 
-                        value={filters.experienceRange}
-                        onValueChange={(value) => updateFilters({ experienceRange: value as [number, number] })}
-                        className="py-2"
-                      />
-                    </div>
-                    
-                    <Separator className="bg-gold/10" />
-                    
-                    <div className="space-y-3">
-                      <h3 className="font-medium text-sm text-foreground/80">Additional Filters</h3>
-                      <div className="space-y-2">
-                        <div className="flex items-center space-x-2">
-                          <Checkbox 
-                            id="verifiedOnly"
-                            checked={filters.verifiedOnly}
-                            onCheckedChange={(checked) => updateFilters({ verifiedOnly: !!checked })}
-                            className="border-gold/30 data-[state=checked]:bg-gold data-[state=checked]:border-gold"
-                          />
-                          <Label htmlFor="verifiedOnly" className="text-sm">Verified Talents Only</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox 
-                            id="availableOnly"
-                            checked={filters.availableOnly}
-                            onCheckedChange={(checked) => updateFilters({ availableOnly: !!checked })}
-                            className="border-gold/30 data-[state=checked]:bg-gold data-[state=checked]:border-gold"
-                          />
-                          <Label htmlFor="availableOnly" className="text-sm">Currently Available Only</Label>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <Separator className="bg-gold/10" />
-                    
-                    <div className="space-y-3">
-                      <h3 className="font-medium text-sm text-foreground/80">Likes Filter</h3>
-                      <div className="space-y-4">
-                        <div className="flex items-center space-x-2">
-                          <Label htmlFor="likesMinimum" className="min-w-20 text-sm">Minimum Likes:</Label>
-                          <Input
-                            id="likesMinimum"
-                            type="number"
-                            min={0}
-                            value={filters.likesMinimum}
-                            onChange={(e) => updateFilters({ likesMinimum: parseInt(e.target.value) || 0 })}
-                            className="h-8 w-24"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </SheetContent>
-              </Sheet>
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
-      
-      {(filters.selectedRoles.length > 0 || filters.selectedLocations.length > 0 || filters.verifiedOnly || 
-        filters.availableOnly || filters.experienceRange[0] > 0 || filters.experienceRange[1] < 20 ||
-        filters.likesMinimum > 0) && (
-        <div className="flex flex-wrap items-center gap-2 mt-3">
-          <span className="text-sm text-foreground/70">Active filters:</span>
-          
-          {filters.selectedRoles.map(role => (
-            <Button
-              key={`filter-${role}`}
-              variant="outline"
-              size="sm"
-              className="text-xs h-7 px-2 py-1 bg-gold/10 border-gold/20 hover:bg-gold/20"
-              onClick={() => toggleRole(role)}
-            >
-              {role}
-              <span className="ml-1 text-xs">×</span>
-            </Button>
-          ))}
-          
-          {filters.selectedLocations.map(location => (
-            <Button
-              key={`filter-${location}`}
-              variant="outline"
-              size="sm"
-              className="text-xs h-7 px-2 py-1 bg-gold/10 border-gold/20 hover:bg-gold/20"
-              onClick={() => toggleLocation(location)}
-            >
-              {location}
-              <span className="ml-1 text-xs">×</span>
-            </Button>
-          ))}
-          
-          {filters.verifiedOnly && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs h-7 px-2 py-1 bg-gold/10 border-gold/20 hover:bg-gold/20"
-              onClick={() => updateFilters({ verifiedOnly: false })}
-            >
-              Verified Only
-              <span className="ml-1 text-xs">×</span>
-            </Button>
-          )}
-          
-          {filters.availableOnly && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs h-7 px-2 py-1 bg-gold/10 border-gold/20 hover:bg-gold/20"
-              onClick={() => updateFilters({ availableOnly: false })}
-            >
-              Available Only
-              <span className="ml-1 text-xs">×</span>
-            </Button>
-          )}
-          
-          {(filters.experienceRange[0] > 0 || filters.experienceRange[1] < 20) && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs h-7 px-2 py-1 bg-gold/10 border-gold/20 hover:bg-gold/20"
-              onClick={() => updateFilters({ experienceRange: [0, 20] })}
-            >
-              Experience: {filters.experienceRange[0]}-{filters.experienceRange[1]}+ yrs
-              <span className="ml-1 text-xs">×</span>
-            </Button>
-          )}
-          
-          {filters.likesMinimum > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs h-7 px-2 py-1 bg-gold/10 border-gold/20 hover:bg-gold/20"
-              onClick={() => updateFilters({ likesMinimum: 0 })}
-            >
-              Min Likes: {filters.likesMinimum}+
-              <span className="ml-1 text-xs">×</span>
-            </Button>
-          )}
-          
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-xs h-7 px-2 py-1 border-gold/20 hover:bg-gold/10"
-            onClick={resetFilters}
+    <div className="container py-12">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold gold-gradient-text">Talent Directory</h1>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setIsGridView(!isGridView)}
           >
-            Clear All
+            {isGridView ? <List className="h-5 w-5" /> : <Grid className="h-5 w-5" />}
           </Button>
         </div>
-      )}
-      
-      <div className="flex justify-between items-center mt-3">
-        <p className="text-sm text-foreground/70">
-          Found <span className="text-gold font-medium">{totalCount}</span> talents
-        </p>
       </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-3">
-        {isLoading ? (
-          Array(6).fill(0).map((_, index) => (
-            <Card key={index} className="bg-card border-gold/10 overflow-hidden shadow-lg">
-              <CardHeader className="p-4 border-b border-gold/10 bg-gradient-to-r from-gold/5 to-transparent">
-                <div className="flex items-start gap-3">
-                  <Skeleton className="h-14 w-14 rounded-full" />
-                  <div className="flex-1 min-w-0 space-y-2">
-                    <Skeleton className="h-5 w-32" />
-                    <Skeleton className="h-4 w-40" />
-                  </div>
-                  <Skeleton className="h-10 w-16" />
-                </div>
-              </CardHeader>
-              <CardContent className="p-4">
-                <Skeleton className="h-10 w-full mb-3" />
-                <div className="flex flex-wrap gap-1 mb-3">
-                  <Skeleton className="h-5 w-16 rounded-full" />
-                  <Skeleton className="h-5 w-20 rounded-full" />
-                  <Skeleton className="h-5 w-14 rounded-full" />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <Skeleton className="h-12 w-full" />
-                  <Skeleton className="h-12 w-full" />
-                </div>
-              </CardContent>
-              <CardFooter className="px-4 py-3 border-t border-gold/10 flex justify-between">
-                <Skeleton className="h-9 w-28" />
-                <Skeleton className="h-9 w-28" />
-              </CardFooter>
-            </Card>
-          ))
-        ) : profiles.length > 0 ? (
-          profiles.map(profile => (
-            <Card key={profile.id} className="bg-card border-gold/10 overflow-hidden shadow-lg hover:border-gold/30 transition-all">
-              <CardHeader className="p-4 border-b border-gold/10 bg-gradient-to-r from-gold/5 to-transparent">
-                <div className="flex items-start gap-3">
-                  <Avatar className="h-14 w-14 border-2 border-gold/30">
-                    <AvatarImage src={profile.avatar} />
-                    <AvatarFallback>{profile.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <CardTitle className="text-lg truncate">{profile.name}</CardTitle>
-                      {profile.isVerified && (
-                        <Check className="h-4 w-4 text-gold bg-gold/20 rounded-full p-0.5" />
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-foreground/70">
-                      <span>{profile.role}</span>
-                      <span className="text-xs">•</span>
-                      <div className="flex items-center">
-                        <MapPin className="h-3 w-3 mr-1" />
-                        <span className="truncate">{profile.location}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <div className="flex items-center">
-                      <Star className="h-4 w-4 text-gold mr-1 fill-gold" />
-                      <span className="text-sm font-medium">{profile.rating.toFixed(1)}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Heart className="h-3.5 w-3.5 text-rose-400 mr-1" />
-                      <span className="text-xs text-foreground/60">{profile.likesCount}</span>
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="p-4">
-                <p className="text-sm text-foreground/80 line-clamp-3 mb-3">
-                  {profile.bio}
-                </p>
-                <div className="flex flex-wrap gap-1 mb-3">
-                  {profile.skills.slice(0, 3).map(skill => (
-                    <span 
-                      key={`${profile.id}-${skill}`} 
-                      className="text-xs px-2 py-0.5 bg-gold/10 text-gold/90 rounded-full"
-                    >
-                      {skill}
-                    </span>
-                  ))}
-                  {profile.skills.length > 3 && (
-                    <span className="text-xs px-2 py-0.5 bg-gold/5 text-gold/70 rounded-full">
-                      +{profile.skills.length - 3} more
-                    </span>
-                  )}
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-xs text-foreground/70">
-                  <div>
-                    <span className="block text-foreground/50">Experience</span>
-                    <span className="font-medium text-foreground/80">{profile.experience} years</span>
-                  </div>
-                  <div>
-                    <span className="block text-foreground/50">Languages</span>
-                    <span className="font-medium text-foreground/80">
-                      {profile.languages.length > 0 
-                        ? profile.languages.join(", ") 
-                        : "English"}
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="flex justify-between mt-4">
-                  <Button 
-                    variant="outline"
-                    size="sm"
-                    className={`px-3 border-gold/20 ${
-                      likedProfiles.includes(profile.id) ? 'bg-rose-950/30 text-rose-400' : 'hover:bg-rose-950/20 hover:text-rose-400'
-                    }`}
-                    onClick={() => handleLikeProfile(profile)}
-                  >
-                    <Heart 
-                      className={`h-4 w-4 mr-1 ${likedProfiles.includes(profile.id) ? 'fill-rose-400' : ''}`} 
-                    />
-                    {likedProfiles.includes(profile.id) ? 'Liked' : 'Like'}
-                  </Button>
-                  
-                  <Button 
-                    variant="outline"
-                    size="sm"
-                    className={`px-3 border-gold/20 ${
-                      wishlistedProfiles.includes(profile.id) ? 'bg-amber-950/30 text-amber-400' : 'hover:bg-amber-950/20 hover:text-amber-400'
-                    }`}
-                    onClick={() => toggleWishlist(profile.id)}
-                  >
-                    <Bookmark 
-                      className={`h-4 w-4 mr-1 ${wishlistedProfiles.includes(profile.id) ? 'fill-amber-400' : ''}`} 
-                    />
-                    {wishlistedProfiles.includes(profile.id) ? 'Saved' : 'Save'}
-                  </Button>
-                  
-                  <Button 
-                    variant="outline"
-                    size="sm"
-                    className="px-3 border-gold/20 hover:bg-blue-950/20 hover:text-blue-400"
-                    onClick={() => shareProfile(profile)}
-                  >
-                    <Share className="h-4 w-4 mr-1" />
-                    Share
-                  </Button>
-                </div>
-              </CardContent>
-              <CardFooter className="px-4 py-3 border-t border-gold/10 flex justify-between bg-gradient-to-r from-transparent to-gold/5">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="gap-1 border-gold/20 hover:bg-gold/10"
-                  onClick={() => handleMessageClick(profile)}
-                >
-                  <MessageCircle className="h-3.5 w-3.5" />
-                  Message
-                </Button>
-                
-                <div className="flex gap-2">
-                  {getConnectionStatus(profile) === 'pending' ? (
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      className="gap-1 border-gold/20 bg-gold/10 text-gold" 
-                      disabled
-                    >
-                      <UserPlus className="h-3.5 w-3.5" />
-                      Pending
-                    </Button>
-                  ) : getConnectionStatus(profile) === 'accepted' ? (
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      className="gap-1 border-green-500/20 bg-green-950/20 text-green-500" 
-                      disabled
-                    >
-                      <Check className="h-3.5 w-3.5" />
-                      Connected
-                    </Button>
-                  ) : (
-                    <Button 
-                      size="sm" 
-                      className="gap-1 bg-gold text-black hover:bg-gold/90"
-                      onClick={() => handleConnectClick(profile)}
-                    >
-                      <UserPlus className="h-3.5 w-3.5" />
-                      Connect
-                    </Button>
-                  )}
-                  
-                  <Button 
-                    size="sm" 
-                    className="bg-gold text-black hover:bg-gold/90"
-                    onClick={() => handleViewProfile(profile)}
-                  >
-                    View Profile
-                  </Button>
-                </div>
-              </CardFooter>
-            </Card>
-          ))
-        ) : (
-          <div className="col-span-3 bg-card border border-gold/10 rounded-xl p-8 text-center">
-            <BadgeIcon className="h-12 w-12 text-gold/30 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">No matching talents found</h3>
-            <p className="text-foreground/70 mb-4">
-              Try adjusting your search criteria or filters to find talents that match your needs.
-            </p>
-            <Button onClick={resetFilters} className="bg-gold hover:bg-gold/90 text-black">
-              Reset All Filters
+
+      <Card className="mb-6">
+        <CardContent className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Input
+              type="search"
+              placeholder="Search talents..."
+              value={filters.searchTerm}
+              onChange={(e) => updateFilters({ searchTerm: e.target.value })}
+            />
+
+            <Select onValueChange={(value) => updateFilters({ sortBy: value })}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="rating">Rating</SelectItem>
+                <SelectItem value="experience">Experience</SelectItem>
+                <SelectItem value="reviews">Reviews</SelectItem>
+                <SelectItem value="likes">Likes</SelectItem>
+                <SelectItem value="nameAsc">Name (A-Z)</SelectItem>
+                <SelectItem value="nameDesc">Name (Z-A)</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Button variant="outline" onClick={resetFilters}>
+              Reset Filters
             </Button>
           </div>
-        )}
-      </div>
-      
-      {totalPages > 1 && (
-        <div className="flex justify-center mt-6">
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious 
-                  onClick={() => changePage(Math.max(1, currentPage - 1))}
-                  className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-                />
-              </PaginationItem>
-              
-              {getPageNumbers().map((page, index) => 
-                page === 'ellipsis' ? (
-                  <PaginationItem key={`ellipsis-${index}`}>
-                    <PaginationEllipsis />
-                  </PaginationItem>
-                ) : (
-                  <PaginationItem key={`page-${page}`}>
-                    <PaginationLink 
-                      isActive={currentPage === page}
-                      onClick={() => typeof page === 'number' && changePage(page)}
-                    >
-                      {page}
-                    </PaginationLink>
-                  </PaginationItem>
-                )
-              )}
-              
-              <PaginationItem>
-                <PaginationNext 
-                  onClick={() => changePage(Math.min(totalPages, currentPage + 1))}
-                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        </div>
-      )}
+        </CardContent>
+      </Card>
 
-      <MessageDialog 
-        isOpen={messageDialogOpen}
-        onClose={() => setMessageDialogOpen(false)}
-        talent={selectedProfile}
-        onSendMessage={sendMessage}
-      />
-      
-      <ProfileDialog
-        isOpen={profileDialogOpen}
-        onClose={() => setProfileDialogOpen(false)}
-        talent={selectedProfile}
-        onMessage={handleMessageClick}
-        onConnect={handleConnectClick}
-      />
-      
-      <ConnectDialog 
-        isOpen={connectDialogOpen}
-        onClose={() => setConnectDialogOpen(false)}
-        talent={selectedProfile}
-        onConnect={sendConnectionRequest}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="md:col-span-1">
+          <Card>
+            <CardHeader>
+              <CardTitle>Filters</CardTitle>
+              <CardDescription>Customize your talent search</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Collapsible>
+                <CollapsibleTrigger className="flex items-center justify-between w-full">
+                  Role <ChevronDown className="w-4 h-4" />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pl-4 space-y-2">
+                  {PROFESSION_OPTIONS.map((role) => (
+                    <div key={role.value} className="flex items-center space-x-2">
+                      <Input
+                        type="checkbox"
+                        id={`role-${role.value}`}
+                        className="h-4 w-4"
+                        checked={filters.selectedRoles.includes(role.value)}
+                        onChange={(e) => {
+                          const newRoles = e.target.checked
+                            ? [...filters.selectedRoles, role.value]
+                            : filters.selectedRoles.filter((r) => r !== role.value);
+                          updateFilters({ selectedRoles: newRoles });
+                        }}
+                      />
+                      <Label htmlFor={`role-${role.value}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed">
+                        {role.label}
+                      </Label>
+                    </div>
+                  ))}
+                </CollapsibleContent>
+              </Collapsible>
+
+              <Collapsible>
+                <CollapsibleTrigger className="flex items-center justify-between w-full">
+                  Location <ChevronDown className="w-4 h-4" />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pl-4 space-y-2">
+                  {locations.map((location) => (
+                    <div key={location} className="flex items-center space-x-2">
+                      <Input
+                        type="checkbox"
+                        id={`location-${location}`}
+                        className="h-4 w-4"
+                        checked={filters.selectedLocations.includes(location)}
+                        onChange={(e) => {
+                          const newLocations = e.target.checked
+                            ? [...filters.selectedLocations, location]
+                            : filters.selectedLocations.filter((loc) => loc !== location);
+                          updateFilters({ selectedLocations: newLocations });
+                        }}
+                      />
+                      <Label htmlFor={`location-${location}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed">
+                        {location}
+                      </Label>
+                    </div>
+                  ))}
+                </CollapsibleContent>
+              </Collapsible>
+
+              <Collapsible>
+                <CollapsibleTrigger className="flex items-center justify-between w-full">
+                  Experience <ChevronDown className="w-4 h-4" />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pl-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label>Years: {filters.experienceRange[0]} - {filters.experienceRange[1]}</Label>
+                  </div>
+                  <Slider
+                    defaultValue={filters.experienceRange}
+                    max={30}
+                    step={1}
+                    onValueChange={(value) => updateFilters({ experienceRange: value })}
+                  />
+                </CollapsibleContent>
+              </Collapsible>
+
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="verified"
+                    checked={filters.verifiedOnly}
+                    onCheckedChange={(checked) => updateFilters({ verifiedOnly: checked })}
+                  />
+                  <Label htmlFor="verified" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed">
+                    Verified Only
+                  </Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="available"
+                    checked={filters.availableOnly}
+                    onCheckedChange={(checked) => updateFilters({ availableOnly: checked })}
+                  />
+                  <Label htmlFor="available" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed">
+                    Available Only
+                  </Label>
+                </div>
+              </div>
+
+              <div>
+                <Label>Minimum Likes: {filters.likesMinimum}</Label>
+                <Slider
+                  defaultValue={[filters.likesMinimum]}
+                  max={200}
+                  step={10}
+                  onValueChange={(value) => updateFilters({ likesMinimum: value[0] })}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="md:col-span-3">
+          {isLoading ? (
+            <div className="text-center py-8">Loading talents...</div>
+          ) : talents.length === 0 ? (
+            <div className="text-center py-8">No talents found with the current filters.</div>
+          ) : (
+            <div className={isGridView ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-4"}>
+              {talents.map((talent) => (
+                <Card key={talent.id} className="bg-card-gradient border-gold/10">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <Avatar>
+                          <AvatarImage src={talent.avatar} alt={talent.name} />
+                          <AvatarFallback>{talent.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div className="ml-4 space-y-1">
+                          <CardTitle className="text-lg font-semibold">{talent.name}</CardTitle>
+                          <CardDescription className="text-sm text-muted-foreground flex items-center gap-1">
+                            <Briefcase className="h-4 w-4" />
+                            {talent.role}
+                          </CardDescription>
+                        </div>
+                      </div>
+                      {talent.isPremium && (
+                        <Badge variant="secondary" className="bg-gold/10 text-gold border-0">
+                          <Crown className="h-4 w-4 mr-1" />
+                          Premium
+                        </Badge>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <MapPin className="h-4 w-4" />
+                      <span>{talent.location}</span>
+                      <Separator orientation="vertical" className="h-4" />
+                      <Calendar className="h-4 w-4" />
+                      <span>Joined {new Date(talent.joinedDate || talent.created_at).toLocaleDateString()}</span>
+                    </div>
+
+                    <p className="text-sm line-clamp-3 text-muted-foreground">{talent.bio}</p>
+
+                    <div className="flex flex-wrap gap-2">
+                      {talent.skills.slice(0, 3).map((skill) => (
+                        <Badge key={skill} variant="outline">
+                          {skill}
+                        </Badge>
+                      ))}
+                      {talent.skills.length > 3 && (
+                        <Badge variant="outline">+ {talent.skills.length - 3} more</Badge>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Star className="h-4 w-4 text-gold" />
+                        <span>{talent.rating.toFixed(1)} ({talent.reviews} Reviews)</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Heart className="h-4 w-4 text-red-500" />
+                        <span>{talent.likesCount} Likes</span>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <Button variant="outline" size="sm" onClick={() => handleOpenProfile(talent.id)}>
+                        <Eye className="h-4 w-4 mr-2" />
+                        View Profile
+                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleLike(talent.id)}
+                          className={isLiked(talent.id) ? "text-red-500" : ""}
+                        >
+                          <Heart className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleWishlist(talent.id)}
+                          className={isWishlisted(talent.id) ? "text-blue-500" : ""}
+                        >
+                          <Award className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                  {isGridView ? null : (
+                    <CardContent className="flex justify-between">
+                      <Button size="sm" onClick={() => handleConnect(talent)}>
+                        {getConnectionStatus(talent.userId) === 'pending' ? (
+                          <>Pending...</>
+                        ) : getConnectionStatus(talent.userId) === 'accepted' ? (
+                          <>Connected <UserPlus className="h-4 w-4 ml-2" /></>
+                        ) : (
+                          <>Connect <UserPlus className="h-4 w-4 ml-2" /></>
+                        )}
+                      </Button>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => handleShare(talent)}>
+                          Share <ExternalLink className="h-4 w-4 ml-2" />
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => handleMessage(talent)}>
+                          Message <MessageSquare className="h-4 w-4 ml-2" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  )}
+                </Card>
+              ))}
+            </div>
+          )}
+
+          <div className="flex justify-between items-center mt-4">
+            <p className="text-sm text-muted-foreground">
+              Showing {talents.length} of {totalCount} talents
+            </p>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === 1}
+                onClick={() => handlePageChange(currentPage - 1)}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === totalPages}
+                onClick={() => handlePageChange(currentPage + 1)}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <TalentProfileModal
+        isOpen={profileOpen}
+        onClose={handleCloseProfile}
+        profileId={selectedProfileId}
+        isLiked={selectedProfileId ? isLiked(selectedProfileId) : false}
+        isWishlisted={selectedProfileId ? isWishlisted(selectedProfileId) : false}
+        connectionStatus={selectedProfileId ? getConnectionStatus(selectedProfileId) : null}
+        onConnect={selectedProfileId ? () => {
+          const profile = talents.find(t => t.id === selectedProfileId);
+          if (profile) handleConnect(profile);
+        } : undefined}
+        onShare={selectedProfileId ? () => {
+          const profile = talents.find(t => t.id === selectedProfileId);
+          if (profile) handleShare(profile);
+        } : undefined}
+        onMessage={selectedProfileId ? () => {
+          const profile = talents.find(t => t.id === selectedProfileId);
+          if (profile) handleMessage(profile);
+        } : undefined}
+        onLike={selectedProfileId ? () => handleLike(selectedProfileId) : undefined}
+        onWishlist={selectedProfileId ? () => handleWishlist(selectedProfileId) : undefined}
       />
     </div>
   );

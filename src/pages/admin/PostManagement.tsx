@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/integrations/firebase/client";
+import { collection, getDocs, deleteDoc, doc, orderBy, query } from "firebase/firestore";
 import { Post } from "@/services/postsService";
 import { Button } from "@/components/ui/button";
 import {
@@ -56,32 +57,35 @@ const PostManagement = () => {
   const fetchPosts = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from("castlinker_posts")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const postsRef = collection(db, "castlinker_posts");
+      const q = query(postsRef, orderBy("created_at", "desc"));
+      const querySnapshot = await getDocs(q);
 
-      if (error) throw error;
-      
-      // Cast data to ensure media_type is properly typed
-      const typedPosts = (data || []).map(post => ({
-        ...post,
-        media_type: post.media_type as 'image' | 'video' | null
-      }));
-      
-      setPosts(typedPosts);
+      const fetchedPosts: Post[] = [];
+      for (const docSnapshot of querySnapshot.docs) {
+        const postData = docSnapshot.data();
+        fetchedPosts.push({
+          id: docSnapshot.id,
+          title: postData.title,
+          description: postData.description,
+          category: postData.category,
+          location: postData.location,
+          media_url: postData.media_url,
+          media_type: postData.media_type,
+          like_count: postData.like_count,
+          created_at: postData.created_at.toDate(),
+          updated_at: postData.updated_at.toDate(),
+        });
+      }
+      setPosts(fetchedPosts);
 
       // Get application counts for all posts
       const counts: Record<string, number> = {};
-      for (const post of typedPosts) {
-        const { count, error: countError } = await supabase
-          .from("post_applications")
-          .select("*", { count: "exact", head: true })
-          .eq("post_id", post.id);
-
-        if (!countError) {
-          counts[post.id] = count || 0;
-        }
+      for (const post of fetchedPosts) {
+        const applicationsRef = collection(db, "post_applications");
+        const q = query(applicationsRef, where("post_id", "==", post.id));
+        const applicationSnapshot = await getDocs(q);
+        counts[post.id] = applicationSnapshot.size;
       }
       setApplicationCounts(counts);
     } catch (error) {
@@ -121,17 +125,10 @@ const PostManagement = () => {
     if (!postToDelete) return;
 
     try {
-      const { error } = await supabase
-        .from("castlinker_posts")
-        .delete()
-        .eq("id", postToDelete.id);
-
-      if (error) throw error;
-      
+      await deleteDoc(doc(db, "castlinker_posts", postToDelete.id));
       setPosts(posts.filter(post => post.id !== postToDelete.id));
       setDeleteConfirmOpen(false);
       setPostToDelete(null);
-      
       toast({
         title: "Post Deleted",
         description: "The post has been successfully deleted."

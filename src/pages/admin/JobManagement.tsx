@@ -33,7 +33,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Dialog } from "@/components/ui/dialog";
 import JobForm from "@/components/admin/JobForm";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/integrations/firebase/client";
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from "firebase/firestore";
 import { Job } from "@/hooks/useJobsData";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { seedJobsData } from "@/utils/seedJobsData";
@@ -66,13 +67,13 @@ const JobManagement = () => {
   const fetchJobs = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await (supabase
-        .from('film_jobs')
-        .select('*') as any);
+      const { data, error } = await (db
+        .collection('film_jobs')
+        .get() as any);
         
       if (error) throw error;
       
-      const jobsData = data as Job[];
+      const jobsData = data.docs.map(doc => doc.data()) as Job[];
       setJobs(jobsData);
       setFilteredJobs(jobsData);
       
@@ -111,11 +112,8 @@ const JobManagement = () => {
   const handleJobSubmit = async (jobData: Partial<Job>) => {
     try {
       if (currentJob) {
-        const { error } = await (supabase
-          .from('film_jobs')
-          .update(jobData)
-          .eq('id', currentJob.id) as any);
-          
+        const { error } = await (updateDoc(doc(db, 'film_jobs', currentJob.id), jobData) as any);
+        
         if (error) throw error;
         
         toast({
@@ -123,10 +121,8 @@ const JobManagement = () => {
           description: "Job updated successfully"
         });
       } else {
-        const { error } = await (supabase
-          .from('film_jobs')
-          .insert([jobData as any]) as any);
-          
+        const { error } = await (addDoc(collection(db, 'film_jobs'), jobData as any) as any);
+        
         if (error) throw error;
         
         toast({
@@ -157,11 +153,8 @@ const JobManagement = () => {
     if (!currentJob) return;
     
     try {
-      const { error } = await (supabase
-        .from('film_jobs')
-        .delete()
-        .eq('id', currentJob.id) as any);
-        
+      const { error } = await (deleteDoc(doc(db, 'film_jobs', currentJob.id)) as any);
+      
       if (error) throw error;
       
       toast({
@@ -186,11 +179,8 @@ const JobManagement = () => {
     const newStatus = job.status === 'active' ? 'inactive' : 'active';
     
     try {
-      const { error } = await (supabase
-        .from('film_jobs')
-        .update({ status: newStatus })
-        .eq('id', job.id) as any);
-        
+      const { error } = await (updateDoc(doc(db, 'film_jobs', job.id), { status: newStatus }) as any);
+      
       if (error) throw error;
       
       toast({
@@ -211,11 +201,8 @@ const JobManagement = () => {
 
   const handleApproveJob = async (job: Job) => {
     try {
-      const { error } = await (supabase
-        .from('film_jobs')
-        .update({ status: 'active' })
-        .eq('id', job.id) as any);
-        
+      const { error } = await (updateDoc(doc(db, 'film_jobs', job.id), { status: 'active' }) as any);
+      
       if (error) throw error;
       
       toast({

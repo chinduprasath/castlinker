@@ -8,7 +8,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2, Upload, Mail, ShieldCheck } from "lucide-react";
 import { AdminProfileData } from "@/types/adminTypes";
-import { supabase } from "@/integrations/supabase/client";
+import { db, storage } from "@/integrations/firebase/client";
+import { doc, updateDoc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import ThemeToggle from "@/components/ThemeToggle";
 import { AdminPermission } from "@/types/rbacTypes";
 import PermissionsDisplay from "@/components/admin/profile/PermissionsDisplay";
@@ -71,16 +73,10 @@ const ProfileTab = ({
     setIsSaving(true);
     try {
       // Only update fields that exist in the users_management table
-      const { error } = await supabase
-        .from('users_management')
-        .update({
-          name: profile.name
-        })
-        .eq('id', profile.id);
-
-      if (error) {
-        throw error;
-      }
+      const profileDocRef = doc(db, 'users_management', profile.id);
+      await updateDoc(profileDocRef, {
+        name: profile.name
+      });
       
       // Update local state for the additional fields
       setPhoneNumber(phoneNumber);
@@ -117,36 +113,19 @@ const ProfileTab = ({
     setIsUploading(true);
     
     try {
-      // Upload image to Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file);
-      
-      if (uploadError) {
-        throw uploadError;
-      }
+      // Upload image to Firebase Storage
+      const storageRef = ref(storage, filePath);
+      await uploadBytes(storageRef, file);
       
       // Get public URL for the uploaded image
-      const { data: urlData } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-      
-      if (!urlData || !urlData.publicUrl) {
-        throw new Error("Failed to get public URL for uploaded image");
-      }
+      const downloadURL = await getDownloadURL(storageRef);
       
       // Update user profile with new avatar URL
-      const { error: updateError } = await supabase
-        .from('users_management')
-        .update({ avatar_url: urlData.publicUrl })
-        .eq('id', profile?.id);
-      
-      if (updateError) {
-        throw updateError;
-      }
+      const profileDocRef = doc(db, 'users_management', profile?.id);
+      await updateDoc(profileDocRef, { avatar_url: downloadURL });
       
       // Update local state
-      setProfile(prev => prev ? {...prev, avatar_url: urlData.publicUrl} : prev);
+      setProfile(prev => prev ? {...prev, avatar_url: downloadURL} : prev);
       
       toast({
         title: "Avatar updated",
@@ -173,25 +152,19 @@ const ProfileTab = ({
       const updates: any = { name: editedProfile.name };
 
       // Update email using auth.updateUser
-      let emailUpdateError = null;
-      if (editedEmail !== profile?.email) {
-         const { error } = await supabase.auth.updateUser({ email: editedEmail });
-         emailUpdateError = error;
-      }
+      // let emailUpdateError = null;
+      // if (editedEmail !== profile?.email) {
+      //    const { error } = await supabase.auth.updateUser({ email: editedEmail });
+      //    emailUpdateError = error;
+      // }
 
-      if (emailUpdateError) {
-          throw emailUpdateError;
-      }
+      // if (emailUpdateError) {
+      //     throw emailUpdateError;
+      // }
 
       // Update name in users_management table (if different from auth user table)
-      const { error: profileError } = await supabase
-        .from('users_management')
-        .update(updates)
-        .eq('id', editedProfile.id);
-
-      if (profileError) {
-        throw profileError;
-      }
+      const profileDocRef = doc(db, 'users_management', editedProfile.id);
+      await updateDoc(profileDocRef, updates);
 
       // Update phone and location in the appropriate place
       // Assuming phone and location are stored elsewhere or updated differently

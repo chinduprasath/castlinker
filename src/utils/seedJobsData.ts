@@ -1,14 +1,14 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/integrations/firebase/client";
+import { collection, addDoc, getDocs, limit, query } from "firebase/firestore";
 
 export const seedJobsData = async () => {
   // Check if we already have jobs in the database
-  const { data: existingJobs } = await (supabase
-    .from('film_jobs')
-    .select('id')
-    .limit(1) as any);
+  const jobsRef = collection(db, 'film_jobs');
+  const existingJobsQuery = query(jobsRef, limit(1));
+  const existingJobs = await getDocs(existingJobsQuery);
     
-  if (existingJobs && existingJobs.length > 0) {
+  if (!existingJobs.empty) {
     console.log('Jobs data already exists');
     return;
   }
@@ -112,11 +112,12 @@ export const seedJobsData = async () => {
     }
   ];
   
-  const { error } = await (supabase.from('film_jobs').insert(jobsData) as any);
-  
-  if (error) {
-    console.error('Error seeding jobs data:', error);
-  } else {
+  try {
+    for (const jobData of jobsData) {
+      await addDoc(collection(db, 'film_jobs'), jobData);
+    }
     console.log('Jobs data seeded successfully');
+  } catch (error) {
+    console.error('Error seeding jobs data:', error);
   }
 };

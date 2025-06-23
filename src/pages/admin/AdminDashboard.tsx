@@ -1,416 +1,190 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Legend } from "recharts";
-import { AreaChart, Area, PieChart, Pie, Cell } from "recharts";
 import { Button } from "@/components/ui/button";
-import { ArrowUpRight, Users, FilmIcon, Calendar, Activity, Clock, Download, FileText, CheckCircle2, Eye, MessageSquare, Folder } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { Skeleton } from "@/components/ui/skeleton";
-
-// Mock data for charts
-const postsByCategory = [
-  { name: "Audition", value: 25 },
-  { name: "Casting Call", value: 40 },
-  { name: "Content Creation", value: 30 },
-  { name: "Collaboration", value: 20 },
-  { name: "Event", value: 15 },
-  { name: "Job Opportunities", value: 35 },
-  { name: "Mentorship", value: 10 },
-  { name: "Others", value: 5 },
-];
-
-// Dummy data for monthly support tickets
-const monthlyTicketData = [
-  { month: "Jan", tickets: 150 },
-  { month: "Feb", tickets: 120 },
-  { month: "Mar", tickets: 250 },
-  { month: "Apr", tickets: 180 },
-  { month: "May", tickets: 220 },
-  { month: "Jun", tickets: 190 },
-  { month: "Jul", tickets: 210 },
-  { month: "Aug", tickets: 240 },
-  { month: "Sep", tickets: 200 },
-  { month: "Oct", tickets: 230 },
-  { month: "Nov", tickets: 260 },
-  { month: "Dec", tickets: 280 },
-];
-
-const postEngagementData = [
-  { month: "Jan", views: 2400, comments: 240, shares: 120 },
-  { month: "Feb", views: 1398, comments: 139, shares: 70 },
-  { month: "Mar", views: 9800, comments: 980, shares: 490 },
-  { month: "Apr", views: 3908, comments: 390, shares: 195 },
-  { month: "May", views: 4800, comments: 480, shares: 240 },
-  { month: "Jun", views: 3800, comments: 380, shares: 190 },
-  { month: "Jul", views: 4300, comments: 430, shares: 215 },
-];
-
-const teamSummaryData = [
-  { role: "SuperAdmin", count: 1 },
-  { role: "Admin", count: 3 },
-  { role: "Manager", count: 5 },
-  { role: "Editor", count: 8 },
-  { role: "Reviewer", count: 12 },
-  { role: "HR", count: 4 },
-];
-
-const recentActivities = [
-  { id: 1, type: "post", action: "created", title: "Industry Spotlight: Summer Blockbusters", user: "Jane Smith", time: "2h ago" },
-  { id: 2, type: "user", action: "approved", title: "John Walker's profile", user: "Admin Team", time: "4h ago" },
-  { id: 3, type: "job", action: "updated", title: "Senior Actor Position", user: "HR Team", time: "6h ago" },
-  { id: 4, type: "post", action: "edited", title: "5 Tips for Audition Success", user: "Content Editor", time: "8h ago" },
-  { id: 5, type: "event", action: "created", title: "Summer Casting Workshop", user: "Events Team", time: "1d ago" },
-];
-
-const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088FE', '#00C49F', '#FF69B4', '#BA55D3'];
+import { Badge } from "@/components/ui/badge";
+import { Users, Briefcase, FileText, TrendingUp, Calendar, CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { db } from "@/integrations/firebase/client";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { useToast } from "@/hooks/use-toast";
+import { Link } from "react-router-dom";
 
 const AdminDashboard = () => {
-  const [totalUsers, setTotalUsers] = useState<number>(0);
-  const [totalPosts, setTotalPosts] = useState<number>(135);
-  const [totalJobs, setTotalJobs] = useState<number>(86);
-  const [totalProjects, setTotalProjects] = useState<number>(0);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [timeRange, setTimeRange] = useState<string>("month");
-  
-  // Fetch users data
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [totalJobs, setTotalJobs] = useState(0);
+  const [activeJobs, setActiveJobs] = useState(0);
+  const [pendingPosts, setPendingPosts] = useState(0);
+  const [upcomingEvents, setUpcomingEvents] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+
   useEffect(() => {
-    const fetchUsersData = async () => {
-      setLoading(true);
-      try {
-        // Fetch total users count
-        const { count, error: countError } = await supabase
-          .from('users_management')
-          .select('*', { count: 'exact', head: true });
-        
-        if (countError) throw countError;
-        setTotalUsers(count || 0);
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-        toast.error("Failed to load user data");
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchUsersData();
+    fetchDashboardData();
   }, []);
 
-  // Fetch projects data
-  useEffect(() => {
-    const fetchProjectsData = async () => {
-      try {
-        const { count, error: countError } = await supabase
-          .from('projects')
-          .select('*', { count: 'exact', head: true });
-        
-        if (countError) throw countError;
-        setTotalProjects(count || 0);
-      } catch (error) {
-        console.error("Error fetching project data:", error);
-        toast.error("Failed to load project data");
-      }
-    };
-    
-    fetchProjectsData();
-  }, []);
+  const fetchDashboardData = async () => {
+    setIsLoading(true);
+    try {
+      // Fetch total users
+      const usersQuery = collection(db, "users_management");
+      const usersSnapshot = await getDocs(usersQuery);
+      setTotalUsers(usersSnapshot.size);
 
-  // Activity icon based on activity type
-  const getActivityIcon = (type: string) => {
-    switch (type) {
-      case "post":
-        return <FileText className="h-4 w-4 text-indigo-500" />;
-      case "user":
-        return <Users className="h-4 w-4 text-green-500" />;
-      case "job":
-        return <FilmIcon className="h-4 w-4 text-amber-500" />;
-      case "event":
-        return <Calendar className="h-4 w-4 text-blue-500" />;
-      default:
-        return <Activity className="h-4 w-4 text-gray-500" />;
-    }
-  };
+      // Fetch total jobs
+      const jobsQuery = collection(db, "film_jobs");
+      const jobsSnapshot = await getDocs(jobsQuery);
+      setTotalJobs(jobsSnapshot.size);
 
-  // Action icon based on action type
-  const getActionIcon = (action: string) => {
-    switch (action) {
-      case "created":
-        return <CheckCircle2 className="h-3 w-3 text-green-500" />;
-      case "updated":
-      case "edited":
-        return <Activity className="h-3 w-3 text-amber-500" />;
-      case "approved":
-        return <CheckCircle2 className="h-3 w-3 text-blue-500" />;
-      default:
-        return <Eye className="h-3 w-3 text-gray-500" />;
+      // Fetch active jobs
+      const activeJobsQuery = query(jobsQuery, where("status", "==", "active"));
+      const activeJobsSnapshot = await getDocs(activeJobsQuery);
+      setActiveJobs(activeJobsSnapshot.size);
+
+      // Fetch pending posts
+      const postsQuery = collection(db, "castlinker_posts");
+      const pendingPostsQuery = query(postsQuery, where("status", "==", "pending"));
+      const pendingPostsSnapshot = await getDocs(pendingPostsQuery);
+      setPendingPosts(pendingPostsSnapshot.size);
+
+      // Fetch upcoming events (example: events happening in the next 7 days)
+      const eventsQuery = collection(db, "events");
+      // const now = new Date();
+      // const future = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days in the future
+      // const upcomingEventsQuery = query(eventsQuery, where("date", ">=", now), where("date", "<=", future));
+      const eventsSnapshot = await getDocs(eventsQuery);
+      setUpcomingEvents(eventsSnapshot.size);
+    } catch (error: any) {
+      console.error("Error fetching dashboard data:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to load dashboard data",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold gold-gradient-text">Admin Dashboard</h1>
-      <p className="text-muted-foreground">Overview of platform statistics and insights.</p>
-      
-      {/* Summary statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <div className="space-y-1">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <span className="text-base font-semibold text-foreground/80">Total Users</span>
-              </CardTitle>
-              <CardDescription>Platform registrations</CardDescription>
-            </div>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{loading ? "..." : totalUsers}</div>
-            <div className="flex items-center pt-1 text-xs text-green-500">
-              <ArrowUpRight className="h-3 w-3 mr-1" />
-              <span>12% from last month</span>
-            </div>
-          </CardContent>
-        </Card>
-          
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <div className="space-y-1">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <span className="text-base font-semibold text-foreground/80">Total Posts</span>
-              </CardTitle>
-              <CardDescription>Published content</CardDescription>
-            </div>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalPosts}</div>
-            <div className="flex items-center pt-1 text-xs text-green-500">
-              <ArrowUpRight className="h-3 w-3 mr-1" />
-              <span>15% from last month</span>
-            </div>
-          </CardContent>
-        </Card>
-          
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <div className="space-y-1">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <span className="text-base font-semibold text-foreground/80">Active Jobs</span>
-              </CardTitle>
-              <CardDescription>Open positions</CardDescription>
-            </div>
-            <FilmIcon className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalJobs}</div>
-            <div className="flex items-center pt-1 text-xs text-green-500">
-              <ArrowUpRight className="h-3 w-3 mr-1" />
-              <span>8% from last month</span>
-            </div>
-          </CardContent>
-        </Card>
-          
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <div className="space-y-1">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <span className="text-base font-semibold text-foreground/80">Total Projects</span>
-              </CardTitle>
-              <CardDescription>Created by users</CardDescription>
-            </div>
-            <Folder className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{loading ? "..." : totalProjects}</div>
-            <div className="flex items-center pt-1 text-xs text-green-500">
-              <ArrowUpRight className="h-3 w-3 mr-1" />
-              <span>N/A (Data needed)</span>
-            </div>
-          </CardContent>
-        </Card>
+    <div className="p-6">
+      <div className="space-y-4">
+        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+        <p className="text-muted-foreground">
+          Monitor key metrics and manage platform resources.
+        </p>
       </div>
 
-      {/* Posts Overview and Engagement */}
-      <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Posts Overview</CardTitle>
-                <CardDescription>Content distribution by category</CardDescription>
-              </div>
-              <Select defaultValue="all">
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="Time period" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Time</SelectItem>
-                  <SelectItem value="year">Past Year</SelectItem>
-                  <SelectItem value="month">Past Month</SelectItem>
-                  <SelectItem value="week">Past Week</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={postsByCategory}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    outerRadius={80}
-                    dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {postsByCategory.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => [`${value} posts`, 'Count']} />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Monthly Support Tickets</CardTitle>
-                <CardDescription>Number of support tickets received each month</CardDescription>
-              </div>
-              <Select defaultValue="past-6-months">
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Time Period" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="past-6-months">Past 6 Months</SelectItem>
-                  <SelectItem value="past-year">Past Year</SelectItem>
-                  {/* Add filters for current/previous year and ticket status here later */}
-                </SelectContent>
-              </Select>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={monthlyTicketData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-                  <XAxis dataKey="month" stroke="#888" label={{ value: 'Month', position: 'insideBottom', offset: -5, fill: '#888' }} />
-                  <YAxis stroke="#888" label={{ value: 'Number of Tickets Received', angle: -90, position: 'insideLeft', fill: '#888' }} />
-                  <Tooltip 
-                    formatter={(value) => [`${~~value} Tickets`, 'Count']}
-                    labelFormatter={(label) => `Month: ${label}`}
-                    contentStyle={{ backgroundColor: '#1c1c1c', border: '1px solid #555' }}
-                    labelStyle={{ color: '#888' }}
-                  />
-                  <Bar dataKey="tickets" fill="#8884d8" />
-                  <Legend />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Team summary and recent activities */}
-      <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Team Summary</CardTitle>
-                <CardDescription>Distribution of team members by role</CardDescription>
-              </div>
-              <Button variant="outline" size="sm">
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={teamSummaryData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="role" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="count" name="Team Members" fill="#8884d8" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Recent Activities</CardTitle>
-                <CardDescription>Latest actions on the platform</CardDescription>
-              </div>
-              <Button variant="ghost" size="sm">
-                View All
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {loading ? (
-                Array(5).fill(0).map((_, i) => (
-                  <div key={i} className="flex items-start gap-3">
-                    <Skeleton className="h-10 w-10 rounded-full" />
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Skeleton className="h-5 w-3/5" />
-                        <Skeleton className="h-5 w-1/5" />
-                      </div>
-                      <Skeleton className="h-4 w-full" />
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="divide-y divide-border/20">
-                  {recentActivities.map((activity) => (
-                    <div key={activity.id} className="py-3 flex items-start space-x-3">
-                      <div className="rounded-full bg-card p-2 border">
-                        {getActivityIcon(activity.type)}
-                      </div>
-                      <div className="flex-1 space-y-1">
-                        <div className="flex justify-between items-start">
-                          <div className="space-y-0.5">
-                            <div className="flex items-center gap-1.5">
-                              <p className="text-sm font-medium leading-none">
-                                {activity.title}
-                              </p>
-                              <div className="bg-muted px-1.5 py-0.5 rounded-sm flex items-center gap-1">
-                                {getActionIcon(activity.action)}
-                                <span className="text-xs">{activity.action}</span>
-                              </div>
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                              by {activity.user}
-                            </p>
-                          </div>
-                          <p className="text-xs text-muted-foreground">{activity.time}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+      {isLoading ? (
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+          <Card>
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-lg font-semibold">Total Users</CardTitle>
+              <CardDescription>Registered users on the platform</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <span className="text-3xl font-bold">{totalUsers}</span>
+                <div className="p-2 bg-primary/10 rounded-full">
+                  <Users className="h-6 w-6 text-primary" />
                 </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+              </div>
+            </CardContent>
+            <Link to="/admin/users" className="block">
+              <Button variant="link" className="justify-start">
+                View Users
+              </Button>
+            </Link>
+          </Card>
+
+          <Card>
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-lg font-semibold">Total Jobs</CardTitle>
+              <CardDescription>Active job listings</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <span className="text-3xl font-bold">{totalJobs}</span>
+                <div className="p-2 bg-green-500/10 rounded-full">
+                  <Briefcase className="h-6 w-6 text-green-500" />
+                </div>
+              </div>
+            </CardContent>
+            <Link to="/admin/jobs" className="block">
+              <Button variant="link" className="justify-start">
+                View Jobs
+              </Button>
+            </Link>
+          </Card>
+
+          <Card>
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-lg font-semibold">Active Jobs</CardTitle>
+              <CardDescription>Jobs currently open for applications</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <span className="text-3xl font-bold">{activeJobs}</span>
+                <div className="p-2 bg-green-500/10 rounded-full">
+                  <CheckCircle className="h-6 w-6 text-green-500" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-lg font-semibold">Pending Posts</CardTitle>
+              <CardDescription>User-submitted posts awaiting approval</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <span className="text-3xl font-bold">{pendingPosts}</span>
+                <div className="p-2 bg-amber-500/10 rounded-full">
+                  <FileText className="h-6 w-6 text-amber-500" />
+                </div>
+              </div>
+            </CardContent>
+            <Link to="/admin/posts" className="block">
+              <Button variant="link" className="justify-start">
+                View Posts
+              </Button>
+            </Link>
+          </Card>
+
+          <Card>
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-lg font-semibold">Upcoming Events</CardTitle>
+              <CardDescription>Scheduled events and workshops</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <span className="text-3xl font-bold">{upcomingEvents}</span>
+                <div className="p-2 bg-blue-500/10 rounded-full">
+                  <Calendar className="h-6 w-6 text-blue-500" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-lg font-semibold">Platform Growth</CardTitle>
+              <CardDescription>Recent trends and statistics</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <span className="text-3xl font-bold">+12%</span>
+                <div className="p-2 bg-purple-500/10 rounded-full">
+                  <TrendingUp className="h-6 w-6 text-purple-500" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

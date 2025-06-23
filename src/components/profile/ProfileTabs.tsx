@@ -1,8 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/integrations/firebase/client";
+import { collection, query, where, getDocs } from "firebase/firestore";
 import { Job, JobType, LocationType, RoleCategory } from "@/hooks/useJobsData";
 import AboutSection from "./AboutSection";
 import { PortfolioSection } from "./PortfolioSection";
@@ -89,25 +89,28 @@ const ProfileTabs = () => {
     
     try {
       // Get saved job IDs
-      const { data: savedData, error: savedError } = await supabase
-        .from('saved_jobs')
-        .select('job_id')
-        .eq('user_id', user.id);
+      const savedJobsRef = collection(db, 'savedJobs');
+      const q = query(savedJobsRef, where('user_id', '==', user.id));
+      const querySnapshot = await getDocs(q);
       
-      if (savedError) throw savedError;
+      const savedJobIds: string[] = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        savedJobIds.push(data.job_id);
+      });
       
-      if (savedData && savedData.length > 0) {
-        const jobIds = savedData.map(item => item.job_id);
-        
+      if (savedJobIds.length > 0) {
         // Fetch job details for saved jobs
-        const { data: jobsData, error: jobsError } = await supabase
-          .from('film_jobs')
-          .select('*')
-          .in('id', jobIds);
+        const jobsRef = collection(db, 'film_jobs');
+        const jobsQuery = query(jobsRef, where('id', 'in', savedJobIds));
+        const jobsSnapshot = await getDocs(jobsQuery);
         
-        if (jobsError) throw jobsError;
+        const typedJobs: Job[] = [];
+        jobsSnapshot.forEach((doc) => {
+          const jobData = doc.data() as RawJobData;
+          typedJobs.push(mapRawJobToJob(jobData));
+        });
         
-        const typedJobs = (jobsData || []).map(mapRawJobToJob);
         setSavedJobs(typedJobs);
       } else {
         setSavedJobs([]);
@@ -125,25 +128,28 @@ const ProfileTabs = () => {
     
     try {
       // Get applied job IDs
-      const { data: appliedData, error: appliedError } = await supabase
-        .from('job_applications')
-        .select('job_id')
-        .eq('user_id', user.id);
+      const applicationsRef = collection(db, 'jobApplications');
+      const q = query(applicationsRef, where('user_id', '==', user.id));
+      const querySnapshot = await getDocs(q);
       
-      if (appliedError) throw appliedError;
+      const appliedJobIds: string[] = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        appliedJobIds.push(data.job_id);
+      });
       
-      if (appliedData && appliedData.length > 0) {
-        const jobIds = appliedData.map(item => item.job_id);
-        
+      if (appliedJobIds.length > 0) {
         // Fetch job details for applied jobs
-        const { data: jobsData, error: jobsError } = await supabase
-          .from('film_jobs')
-          .select('*')
-          .in('id', jobIds);
+        const jobsRef = collection(db, 'film_jobs');
+        const jobsQuery = query(jobsRef, where('id', 'in', appliedJobIds));
+        const jobsSnapshot = await getDocs(jobsQuery);
         
-        if (jobsError) throw jobsError;
+        const typedJobs: Job[] = [];
+        jobsSnapshot.forEach((doc) => {
+          const jobData = doc.data() as RawJobData;
+          typedJobs.push(mapRawJobToJob(jobData));
+        });
         
-        const typedJobs = (jobsData || []).map(mapRawJobToJob);
         setAppliedJobs(typedJobs);
       } else {
         setAppliedJobs([]);

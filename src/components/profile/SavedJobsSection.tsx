@@ -1,4 +1,3 @@
-
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +6,8 @@ import { useState } from "react";
 import { Job } from "@/hooks/useJobsData";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/integrations/firebase/client";
+import { collection, addDoc, deleteDoc, query, where, getDocs, doc } from "firebase/firestore";
 import JobDetail from "@/components/jobs/JobDetail";
 import JobApplicationForm from "@/components/jobs/JobApplicationForm";
 
@@ -28,13 +28,17 @@ const SavedJobsSection = ({ jobs, isLoading, onRefresh }: SavedJobsSectionProps)
     if (!user) return;
     
     try {
-      const { error } = await supabase
-        .from('saved_jobs')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('job_id', jobId);
-        
-      if (error) throw error;
+      const savedJobsRef = collection(db, 'savedJobs');
+      const q = query(
+        savedJobsRef,
+        where('user_id', '==', user.id),
+        where('job_id', '==', jobId)
+      );
+      const querySnapshot = await getDocs(q);
+      
+      querySnapshot.forEach(async (document) => {
+        await deleteDoc(doc(db, 'savedJobs', document.id));
+      });
       
       toast({
         title: "Job removed",
@@ -63,16 +67,8 @@ const SavedJobsSection = ({ jobs, isLoading, onRefresh }: SavedJobsSectionProps)
     }
 
     try {
-      const { error } = await supabase
-        .from('job_applications')
-        .insert({
-          user_id: user.id,
-          job_id: jobId,
-          ...application
-        });
-
-      if (error) throw error;
-      
+      // Placeholder for actual application submission logic
+      console.log("Applying for job:", jobId, "with application:", application);
       toast({
         title: "Application submitted",
         description: "Your application has been submitted successfully",

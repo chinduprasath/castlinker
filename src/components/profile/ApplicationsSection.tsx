@@ -1,4 +1,3 @@
-
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +6,8 @@ import { useState, useEffect } from "react";
 import { Job } from "@/types/jobTypes";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/integrations/firebase/client";
+import { collection, query, where, getDocs } from "firebase/firestore";
 import JobDetail from "@/components/jobs/JobDetail";
 
 interface ApplicationsSectionProps {
@@ -45,20 +45,23 @@ const ApplicationsSection = ({ jobs, isLoading, onRefresh }: ApplicationsSection
     try {
       const jobIds = jobs.map(job => job.id);
       
-      const { data, error } = await supabase
-        .from('job_applications')
-        .select('*')
-        .eq('user_id', user.id)
-        .in('job_id', jobIds);
-        
-      if (error) throw error;
+      const applicationsRef = collection(db, 'jobApplications');
+      const q = query(applicationsRef, where('user_id', '==', user.id), where('job_id', 'in', jobIds));
+      const querySnapshot = await getDocs(q);
       
       const applicationsMap: Record<string, Application> = {};
-      if (data) {
-        data.forEach(app => {
-          applicationsMap[app.job_id] = app;
-        });
-      }
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        applicationsMap[data.job_id] = {
+          id: doc.id,
+          job_id: data.job_id,
+          user_id: data.user_id,
+          status: data.status,
+          created_at: data.applied_at?.toDate().toISOString() || '',
+          resume_url: data.resume_url,
+          cover_letter: data.cover_letter
+        };
+      });
       
       setApplications(applicationsMap);
     } catch (error: any) {
