@@ -32,8 +32,19 @@ import { fetchProjects, createProject } from '@/services/projectService';
 import { db } from '@/integrations/firebase/client';
 import { collection, deleteDoc, doc, addDoc } from 'firebase/firestore';
 
+interface Project {
+  id: string;
+  name: string;
+  description?: string;
+  current_status: string;
+  location?: string;
+  team_head_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
 const Projects = () => {
-  const [projects, setProjects] = useState([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -51,18 +62,17 @@ const Projects = () => {
 
   useEffect(() => {
     const loadProjects = async () => {
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       try {
-        if (!user) {
-          toast({
-            title: 'Not authenticated',
-            description: 'Please sign in to view your projects',
-            variant: 'destructive'
-          });
-          return;
-        }
+        console.log('Fetching projects for user:', user.id);
         const projectsData = await fetchProjects(user.id);
-        setProjects(projectsData);
+        console.log('Fetched projects:', projectsData);
+        setProjects(projectsData || []);
       } catch (error: any) {
         console.error('Error fetching projects:', error);
         toast({
@@ -70,13 +80,14 @@ const Projects = () => {
           description: error.message || 'Please try again later',
           variant: 'destructive'
         });
+        setProjects([]);
       } finally {
         setIsLoading(false);
       }
     };
 
     loadProjects();
-  }, [user]);
+  }, [user, toast]);
 
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,7 +101,7 @@ const Projects = () => {
       return;
     }
 
-    if (!name) {
+    if (!name.trim()) {
       toast({
         title: 'Project name required',
         description: 'Please enter a name for your project',
@@ -101,15 +112,18 @@ const Projects = () => {
 
     try {
       setIsSubmitting(true);
+      console.log('Creating project with data:', { name, description, location, status });
 
-      // Insert the project
+      // Create the project
       const projectData = await createProject({
-        name,
-        description,
-        location,
+        name: name.trim(),
+        description: description.trim(),
+        location: location.trim(),
         team_head_id: user.id,
         current_status: status
       });
+
+      console.log('Project created:', projectData);
 
       // Add the creator as a member (automatically accepted)
       const projectMembersRef = collection(db, 'projectMembers');
@@ -133,8 +147,8 @@ const Projects = () => {
       setIsCreateModalOpen(false);
 
       // Refresh projects list
-      const projectsData = await fetchProjects(user.id);
-      setProjects(projectsData);
+      const updatedProjects = await fetchProjects(user.id);
+      setProjects(updatedProjects || []);
     } catch (error: any) {
       console.error('Error creating project:', error);
       toast({
@@ -165,9 +179,21 @@ const Projects = () => {
     }
   };
 
+  const handleProjectClick = (projectId: string) => {
+    navigate(`/projects/${projectId}`);
+  };
+
   const filteredProjects = projects.filter(project =>
     project.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  if (!user) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <p className="text-muted-foreground">Please sign in to view your projects.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -180,7 +206,7 @@ const Projects = () => {
       </div>
 
       <Card>
-        <CardContent>
+        <CardContent className="p-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -201,45 +227,71 @@ const Projects = () => {
       </Card>
 
       {isLoading ? (
-        <div className="flex justify-center items-center">
+        <div className="flex justify-center items-center py-12">
           <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-gold border-solid"></div>
         </div>
       ) : filteredProjects.length === 0 ? (
         <Card className="bg-card-gradient border-gold/10 p-8 text-center">
           <div className="space-y-3">
-            <h3 className="text-xl font-medium">No projects yet</h3>
-            <p className="text-foreground/70">Get started by creating your first project.</p>
-            <Button onClick={() => setIsCreateModalOpen(true)} className="mt-4 bg-gold hover:bg-gold/90 text-black">
-              Create Project
-            </Button>
+            <Film className="h-16 w-16 text-muted-foreground mx-auto" />
+            <h3 className="text-xl font-medium">
+              {projects.length === 0 ? 'No projects yet' : 'No projects found'}
+            </h3>
+            <p className="text-foreground/70">
+              {projects.length === 0 
+                ? 'Get started by creating your first project.' 
+                : 'Try adjusting your search criteria.'
+              }
+            </p>
+            {projects.length === 0 && (
+              <Button onClick={() => setIsCreateModalOpen(true)} className="mt-4 bg-gold hover:bg-gold/90 text-black">
+                Create Project
+              </Button>
+            )}
           </div>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProjects.map(project => (
-            <Card key={project.id} className="bg-card-gradient border-gold/10 cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate(`/projects/${project.id}`)}>
-              <CardHeader>
+            <Card 
+              key={project.id} 
+              className="bg-card-gradient border-gold/10 cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-gold/30" 
+              onClick={() => handleProjectClick(project.id)}
+            >
+              <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <CardTitle className="text-lg">{project.name}</CardTitle>
-                    <CardDescription className="text-sm text-muted-foreground">
+                    <CardTitle className="text-lg font-semibold text-foreground">
+                      {project.name}
+                    </CardTitle>
+                    <CardDescription className="text-sm text-muted-foreground mt-1">
                       {new Date(project.created_at).toLocaleDateString()}
                     </CardDescription>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {project.description || 'No description provided'}
-                    </p>
                   </div>
-                  <Badge variant="secondary" className="ml-2">{project.current_status}</Badge>
+                  <Badge variant="secondary" className="ml-2 bg-gold/20 text-gold border-gold/20">
+                    {project.current_status}
+                  </Badge>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Users className="h-4 w-4" />
-                  <span>1</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4" />
-                  <span>0 milestones</span>
+              <CardContent className="pt-0">
+                <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                  {project.description || 'No description provided'}
+                </p>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Users className="h-4 w-4" />
+                    <span>1 member</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Clock className="h-4 w-4" />
+                    <span>0 milestones</span>
+                  </div>
+                  {project.location && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <MapPin className="h-4 w-4" />
+                      <span>{project.location}</span>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -322,7 +374,7 @@ const Projects = () => {
               </Button>
               <Button 
                 type="submit"
-                disabled={isSubmitting || !name}
+                disabled={isSubmitting || !name.trim()}
                 className="bg-gold hover:bg-gold/90 text-black gap-2"
               >
                 {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
