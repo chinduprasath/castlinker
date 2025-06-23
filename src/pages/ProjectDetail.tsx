@@ -70,8 +70,12 @@ const ProjectDetail = () => {
     try {
       const projectData = await fetchProjectById(projectId);
       if (projectData) {
-        setProject(projectData as Project);
-        setEditedDescription(projectData.description || '');
+        const projectWithDefaults = {
+          ...projectData,
+          description: projectData.description || ''
+        } as Project;
+        setProject(projectWithDefaults);
+        setEditedDescription(projectWithDefaults.description || '');
       } else {
         toast({
           title: 'Project not found',
@@ -83,8 +87,13 @@ const ProjectDetail = () => {
       }
 
       const teamData = await fetchTeamMembers(projectId);
-      setTeamMembers(teamData.accepted);
-      setPendingRequests(teamData.pending);
+      if (teamData && typeof teamData === 'object' && 'accepted' in teamData) {
+        setTeamMembers(teamData.accepted);
+        setPendingRequests(teamData.pending);
+      } else {
+        setTeamMembers([]);
+        setPendingRequests([]);
+      }
     } catch (error: any) {
       console.error('Error fetching project details:', error);
       toast({

@@ -12,25 +12,50 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/integrations/firebase/client';
 
-export const fetchTeamMembers = async (projectId: string) => {
+export const fetchTeamMembers = async (projectId?: string) => {
   try {
     const membersRef = collection(db, 'team_members');
-    const q = query(membersRef, where('project_id', '==', projectId));
+    let q;
+    
+    if (projectId) {
+      q = query(membersRef, where('project_id', '==', projectId));
+    } else {
+      q = query(membersRef);
+    }
+    
     const querySnapshot = await getDocs(q);
     
-    const accepted: any[] = [];
-    const pending: any[] = [];
-    
-    querySnapshot.forEach((doc) => {
-      const data = { id: doc.id, ...doc.data() };
-      if (data.status === 'accepted') {
-        accepted.push(data);
-      } else if (data.status === 'pending') {
-        pending.push(data);
-      }
-    });
-    
-    return { accepted, pending };
+    if (projectId) {
+      const accepted: any[] = [];
+      const pending: any[] = [];
+      
+      querySnapshot.forEach((doc) => {
+        const data = { id: doc.id, ...doc.data() };
+        if (data.status === 'accepted') {
+          accepted.push(data);
+        } else if (data.status === 'pending') {
+          pending.push(data);
+        }
+      });
+      
+      return { accepted, pending };
+    } else {
+      // For admin team management - return all members
+      const members: any[] = [];
+      querySnapshot.forEach((doc) => {
+        const data = { id: doc.id, ...doc.data() };
+        members.push({
+          id: data.id,
+          name: data.name || 'Unknown',
+          email: data.email || 'No email',
+          role_name: data.role_name || 'Member',
+          role: data.role,
+          joined_date: data.created_at || new Date().toISOString(),
+          avatar_url: data.avatar_url
+        });
+      });
+      return members;
+    }
   } catch (error) {
     console.error('Error fetching team members:', error);
     throw error;
@@ -49,6 +74,27 @@ export const createTeamMember = async (memberData: any) => {
     return { id: docRef.id };
   } catch (error) {
     console.error('Error creating team member:', error);
+    throw error;
+  }
+};
+
+export const updateTeamMemberRole = async (memberId: string, roleId: string) => {
+  try {
+    await updateDoc(doc(db, 'team_members', memberId), {
+      role_id: roleId,
+      updated_at: serverTimestamp()
+    });
+  } catch (error) {
+    console.error('Error updating team member role:', error);
+    throw error;
+  }
+};
+
+export const deleteTeamMember = async (memberId: string) => {
+  try {
+    await deleteDoc(doc(db, 'team_members', memberId));
+  } catch (error) {
+    console.error('Error deleting team member:', error);
     throw error;
   }
 };

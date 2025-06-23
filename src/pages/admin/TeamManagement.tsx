@@ -29,7 +29,15 @@ const TeamManagement = () => {
       ]);
       
       setRoles(rolesData);
-      setTeamMembers(membersData);
+      // Handle the case where membersData might be an object with accepted/pending or an array
+      if (Array.isArray(membersData)) {
+        setTeamMembers(membersData);
+      } else if (membersData && typeof membersData === 'object' && 'accepted' in membersData) {
+        // If it returns project-specific data, just use the accepted members
+        setTeamMembers(membersData.accepted || []);
+      } else {
+        setTeamMembers([]);
+      }
     } catch (error) {
       console.error("Error loading team data:", error);
       toast.error("Failed to load team data");
