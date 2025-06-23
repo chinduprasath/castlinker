@@ -31,11 +31,13 @@ export const fetchTeamMembers = async (projectId?: string) => {
       
       querySnapshot.forEach((doc) => {
         const docData = doc.data();
-        const data = { id: doc.id, ...docData };
-        if (docData.status === 'accepted') {
-          accepted.push(data);
-        } else if (docData.status === 'pending') {
-          pending.push(data);
+        if (docData && typeof docData === 'object') {
+          const data = { id: doc.id, ...docData };
+          if (docData.status === 'accepted') {
+            accepted.push(data);
+          } else if (docData.status === 'pending') {
+            pending.push(data);
+          }
         }
       });
       
@@ -45,16 +47,18 @@ export const fetchTeamMembers = async (projectId?: string) => {
       const members: any[] = [];
       querySnapshot.forEach((doc) => {
         const docData = doc.data();
-        const data = { id: doc.id, ...docData };
-        members.push({
-          id: data.id,
-          name: data.name || 'Unknown',
-          email: data.email || 'No email',
-          role_name: data.role_name || 'Member',
-          role: data.role,
-          joined_date: data.created_at || new Date().toISOString(),
-          avatar_url: data.avatar_url
-        });
+        if (docData && typeof docData === 'object') {
+          const data = { id: doc.id, ...docData };
+          members.push({
+            id: data.id,
+            name: data.name || 'Unknown',
+            email: data.email || 'No email',
+            role_name: data.role_name || 'Member',
+            role: data.role,
+            joined_date: data.created_at || new Date().toISOString(),
+            avatar_url: data.avatar_url
+          });
+        }
       });
       return members;
     }

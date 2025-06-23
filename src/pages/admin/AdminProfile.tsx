@@ -13,7 +13,7 @@ interface AdminProfileData {
   id: string;
   name: string;
   email: string;
-  avatar_url?: string;
+  avatar_url: string;
   phone?: string;
   location?: string;
   bio?: string;
@@ -39,18 +39,28 @@ const AdminProfile = () => {
       try {
         const userDoc = await getDoc(doc(db, "users_management", user.id));
         if (userDoc.exists()) {
-          const userData = userDoc.data() as AdminProfileData;
-          setProfile(userData);
-          setPhoneNumber(userData.phone || "");
-          setLocation(userData.location || "");
-          setBio(userData.bio || "");
+          const userData = userDoc.data();
+          const profileData: AdminProfileData = {
+            id: userData.id || user.id,
+            name: userData.name || user.email || "Admin",
+            email: userData.email || user.email || "",
+            avatar_url: userData.avatar_url || "",
+            phone: userData.phone || "",
+            location: userData.location || "",
+            bio: userData.bio || "",
+            role: userData.role || "administrator"
+          };
+          setProfile(profileData);
+          setPhoneNumber(profileData.phone || "");
+          setLocation(profileData.location || "");
+          setBio(profileData.bio || "");
 
           // Fetch admin role and user data
-          const adminRoleDoc = await getDoc(doc(db, "adminRoles", userData.role || "administrator"));
+          const adminRoleDoc = await getDoc(doc(db, "adminRoles", profileData.role || "administrator"));
           if (adminRoleDoc.exists()) {
             setAdminRole(adminRoleDoc.data());
           } else {
-            setAdminUser({ role: userData.role || "administrator" });
+            setAdminUser({ role: profileData.role || "administrator" });
           }
         } else {
           console.log("No such document!");

@@ -70,13 +70,14 @@ const ProjectDetail = () => {
     try {
       const projectData = await fetchProjectById(projectId);
       if (projectData) {
+        // Cast the project data to include all needed properties
         const projectWithDefaults = {
           id: projectData.id,
-          name: projectData.name || '',
-          description: projectData.description || '',
-          current_status: projectData.current_status || '',
-          location: projectData.location || '',
-          team_head_id: projectData.team_head_id || '',
+          name: (projectData as any).name || '',
+          description: (projectData as any).description || '',
+          current_status: (projectData as any).current_status || '',
+          location: (projectData as any).location || '',
+          team_head_id: (projectData as any).team_head_id || '',
           created_at: projectData.created_at || '',
           updated_at: projectData.updated_at || ''
         } as Project;
