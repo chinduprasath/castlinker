@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { TalentProfile } from '@/types/talent';
+import { TalentProfile } from '@/types/talentTypes';
 
 interface ConnectDialogProps {
   talent?: TalentProfile | null;
@@ -38,9 +38,9 @@ export function ConnectDialog({ talent, isOpen, onClose, onConnect }: ConnectDia
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Connect with {talent?.name || 'Talent'}</DialogTitle>
+          <DialogTitle>Connect with {talent?.full_name || 'Talent'}</DialogTitle>
           <DialogDescription>
-            Send a connection request to collaborate with this {talent?.role?.toLowerCase() || 'professional'}
+            Send a connection request to collaborate with this {talent?.profession_type?.toLowerCase() || 'professional'}
           </DialogDescription>
         </DialogHeader>
         

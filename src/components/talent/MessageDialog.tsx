@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Send } from 'lucide-react';
-import { TalentProfile } from '@/types/talent';
+import { TalentProfile } from '@/types/talentTypes';
 
 interface MessageDialogProps {
   talent?: TalentProfile | null;
@@ -43,9 +43,9 @@ export function MessageDialog({ talent, isOpen, onClose, onSendMessage }: Messag
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Message {talent?.name || 'Talent'}</DialogTitle>
+          <DialogTitle>Message {talent?.full_name || 'Talent'}</DialogTitle>
           <DialogDescription>
-            Send a direct message to this {talent?.role?.toLowerCase() || 'professional'}
+            Send a direct message to this {talent?.profession_type?.toLowerCase() || 'professional'}
           </DialogDescription>
         </DialogHeader>
         
