@@ -1,16 +1,22 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/integrations/firebase/client";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { Loader2 } from "lucide-react";
-const JobCreateForm = () => {
+
+interface JobCreateFormProps {
+  onJobCreated?: () => void;
+}
+
+const JobCreateForm = ({ onJobCreated }: JobCreateFormProps) => {
   const [title, setTitle] = useState("");
   const [company, setCompany] = useState("");
   const [description, setDescription] = useState("");
@@ -27,23 +33,24 @@ const JobCreateForm = () => {
   const [salaryPeriod, setSalaryPeriod] = useState("yearly");
   const [applicationDeadline, setApplicationDeadline] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const {
-    toast
-  } = useToast();
-  const {
-    user
-  } = useAuth();
+
+  const { toast } = useToast();
+  const { user } = useAuth();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (!user) {
       toast({
         title: "Authentication required",
         description: "Please log in to create a job posting.",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
+
     setIsLoading(true);
+
     try {
       const jobData = {
         title,
@@ -64,12 +71,14 @@ const JobCreateForm = () => {
         status: 'active',
         is_featured: false,
         created_at: serverTimestamp(),
-        user_id: user.id
+        user_id: user.id,
       };
+
       await addDoc(collection(db, 'film_jobs'), jobData);
+
       toast({
         title: "Job posted successfully!",
-        description: "Your job posting has been created and is now live."
+        description: "Your job posting has been created and is now live.",
       });
 
       // Reset form
@@ -88,20 +97,200 @@ const JobCreateForm = () => {
       setSalaryCurrency("USD");
       setSalaryPeriod("yearly");
       setApplicationDeadline("");
+
+      // Call callback to close dialog and refresh jobs
+      onJobCreated?.();
     } catch (error: any) {
       console.error('Error creating job:', error);
       toast({
         title: "Error creating job",
         description: error.message || "There was an error creating your job posting. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
   };
-  return <Card className="max-w-4xl mx-auto">
-      
-      
-    </Card>;
+
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle>Create Job Posting</DialogTitle>
+        <DialogDescription>
+          Post a new job opportunity for the film industry community
+        </DialogDescription>
+      </DialogHeader>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label htmlFor="title">Job Title</Label>
+            <Input
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="company">Company</Label>
+            <Input
+              id="company"
+              value={company}
+              onChange={(e) => setCompany(e.target.value)}
+              required
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="description">Job Description</Label>
+          <Textarea
+            id="description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={4}
+            required
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label htmlFor="jobType">Job Type</Label>
+            <Select value={jobType} onValueChange={setJobType}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select job type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Full-time">Full-time</SelectItem>
+                <SelectItem value="Part-time">Part-time</SelectItem>
+                <SelectItem value="Contract">Contract</SelectItem>
+                <SelectItem value="Temporary">Temporary</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="roleCategory">Role Category</Label>
+            <Select value={roleCategory} onValueChange={setRoleCategory}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select role category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Acting">Acting</SelectItem>
+                <SelectItem value="Directing">Directing</SelectItem>
+                <SelectItem value="Production">Production</SelectItem>
+                <SelectItem value="Cinematography">Cinematography</SelectItem>
+                <SelectItem value="Writing">Writing</SelectItem>
+                <SelectItem value="Editing">Editing</SelectItem>
+                <SelectItem value="Sound">Sound</SelectItem>
+                <SelectItem value="VFX">VFX</SelectItem>
+                <SelectItem value="Costume">Costume</SelectItem>
+                <SelectItem value="Makeup">Makeup</SelectItem>
+                <SelectItem value="Other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label htmlFor="location">Location</Label>
+            <Input
+              id="location"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="locationType">Location Type</Label>
+            <Select value={locationType} onValueChange={setLocationType}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select location type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="On-site">On-site</SelectItem>
+                <SelectItem value="Remote">Remote</SelectItem>
+                <SelectItem value="Hybrid">Hybrid</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="salaryMin">Min Salary</Label>
+            <Input
+              id="salaryMin"
+              type="number"
+              value={salaryMin}
+              onChange={(e) => setSalaryMin(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="salaryMax">Max Salary</Label>
+            <Input
+              id="salaryMax"
+              type="number"
+              value={salaryMax}
+              onChange={(e) => setSalaryMax(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="currency">Currency</Label>
+            <Select value={salaryCurrency} onValueChange={setSalaryCurrency}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="USD">USD</SelectItem>
+                <SelectItem value="EUR">EUR</SelectItem>
+                <SelectItem value="GBP">GBP</SelectItem>
+                <SelectItem value="CAD">CAD</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="period">Period</Label>
+            <Select value={salaryPeriod} onValueChange={setSalaryPeriod}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="yearly">Yearly</SelectItem>
+                <SelectItem value="monthly">Monthly</SelectItem>
+                <SelectItem value="weekly">Weekly</SelectItem>
+                <SelectItem value="daily">Daily</SelectItem>
+                <SelectItem value="hourly">Hourly</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="applicationDeadline">Application Deadline</Label>
+          <Input
+            id="applicationDeadline"
+            type="date"
+            value={applicationDeadline}
+            onChange={(e) => setApplicationDeadline(e.target.value)}
+            placeholder="mm/dd/yyyy"
+          />
+        </div>
+
+        <Button type="submit" className="w-full" disabled={isLoading}>
+          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Create Job Posting
+        </Button>
+      </form>
+    </>
+  );
 };
+
 export default JobCreateForm;

@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Plus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useJobsData, JobFilters, JobSort } from "@/hooks/useJobsData";
@@ -39,6 +40,11 @@ const Jobs = () => {
     updateFilters(searchFilters);
   };
 
+  const handleJobCreated = () => {
+    setIsCreateFormOpen(false);
+    refetchJobs();
+  };
+
   return (
     <div className="space-y-6 px-2 sm:px-0">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -50,13 +56,19 @@ const Jobs = () => {
         </div>
         
         {user && (
-          <Button 
-            className="bg-gold hover:bg-gold/90 text-white dark:text-black whitespace-nowrap"
-            onClick={() => setIsCreateFormOpen(true)}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Post a Job
-          </Button>
+          <Dialog open={isCreateFormOpen} onOpenChange={setIsCreateFormOpen}>
+            <DialogTrigger asChild>
+              <Button 
+                className="bg-gold hover:bg-gold/90 text-white dark:text-black whitespace-nowrap"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Post a Job
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <JobCreateForm onJobCreated={handleJobCreated} />
+            </DialogContent>
+          </Dialog>
         )}
       </div>
 
@@ -86,9 +98,6 @@ const Jobs = () => {
           />
         </div>
       </div>
-
-      {/* Job Create Form */}
-      <JobCreateForm />
     </div>
   );
 };
