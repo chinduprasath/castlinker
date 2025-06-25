@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MapPin, Star, MessageCircle, Users, Search, Filter, Grid, List } from "lucide-react";
+import { MapPin, Star, MessageCircle, Users, Search, Filter, Grid, List, Heart, Bookmark, Share, ArrowUpDown } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -28,6 +28,8 @@ const TalentDirectory = () => {
   const [selectedTalent, setSelectedTalent] = useState<TalentProfile | null>(null);
   const [isConnectDialogOpen, setIsConnectDialogOpen] = useState(false);
   const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
+  const [sortBy, setSortBy] = useState("highest-rated");
+  const [showFilters, setShowFilters] = useState(false);
 
   const { talents } = useTalentDirectory();
 
@@ -100,244 +102,190 @@ const TalentDirectory = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-4">Talent Directory</h1>
-
-      <div className="flex flex-col md:flex-row gap-4 mb-4">
-        <Input
-          type="text"
-          placeholder="Search by name"
-          value={searchTerm}
-          onChange={handleSearch}
-          className="md:w-1/3"
-        />
-        <Input
-          type="text"
-          placeholder="Filter by location"
-          value={locationFilter}
-          onChange={handleLocationFilter}
-          className="md:w-1/3"
-        />
-      </div>
-
-      <div className="flex flex-col md:flex-row gap-4 mb-4">
-        <Select onValueChange={handleProfessionFilter}>
-          <SelectTrigger className="md:w-1/4">
-            <SelectValue placeholder="Filter by profession" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Actor">Actor</SelectItem>
-            <SelectItem value="Director">Director</SelectItem>
-            <SelectItem value="Writer">Writer</SelectItem>
-            <SelectItem value="Editor">Editor</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select onValueChange={handleExperienceFilter}>
-          <SelectTrigger className="md:w-1/4">
-            <SelectValue placeholder="Filter by experience" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="1">1 year</SelectItem>
-            <SelectItem value="2">2 years</SelectItem>
-            <SelectItem value="5">5 years</SelectItem>
-            <SelectItem value="10">10+ years</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select onValueChange={handleAvailabilityFilter}>
-          <SelectTrigger className="md:w-1/4">
-            <SelectValue placeholder="Filter by availability" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="available">Available</SelectItem>
-            <SelectItem value="busy">Busy</SelectItem>
-            <SelectItem value="unavailable">Unavailable</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select onValueChange={handleRatingFilter}>
-          <SelectTrigger className="md:w-1/4">
-            <SelectValue placeholder="Filter by rating" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="1">1 star</SelectItem>
-            <SelectItem value="2">2 stars</SelectItem>
-            <SelectItem value="3">3 stars</SelectItem>
-            <SelectItem value="4">4 stars</SelectItem>
-            <SelectItem value="5">5 stars</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="mb-4">
-        <p className="text-sm font-medium">Filter by Skills:</p>
-        <div className="flex flex-wrap gap-2">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="skill-1"
-              checked={selectedSkills.includes("Directing")}
-              onCheckedChange={() => handleSkillSelect("Directing")}
-            />
-            <Label htmlFor="skill-1">Directing</Label>
+    <div className="min-h-screen bg-black text-white">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="flex justify-between items-start mb-8">
+          <div>
+            <h1 className="text-4xl font-bold mb-2 text-yellow-400">Talent Directory</h1>
+            <p className="text-gray-400 text-lg">
+              Discover and connect with talented film industry professionals from around the world.
+            </p>
           </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="skill-2"
-              checked={selectedSkills.includes("Writing")}
-              onCheckedChange={() => handleSkillSelect("Writing")}
-            />
-            <Label htmlFor="skill-2">Writing</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="skill-3"
-              checked={selectedSkills.includes("Editing")}
-              onCheckedChange={() => handleSkillSelect("Editing")}
-            />
-            <Label htmlFor="skill-3">Editing</Label>
-          </div>
-        </div>
-      </div>
-
-      <Button variant="outline" onClick={resetFilters} className="mb-4">
-        Reset Filters
-      </Button>
-
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">
-          {filteredTalents.length} Talents Found
-        </h2>
-        <div>
-          <Button
-            variant="ghost"
-            onClick={() => setIsGridView(true)}
-            className={isGridView ? "bg-secondary text-secondary-foreground" : ""}
-          >
-            <Grid className="mr-2 h-4 w-4" />
-            Grid
-          </Button>
-          <Button
-            variant="ghost"
-            onClick={() => setIsGridView(false)}
-            className={!isGridView ? "bg-secondary text-secondary-foreground" : ""}
-          >
-            <List className="mr-2 h-4 w-4" />
-            List
+          <Button className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold px-6 py-2">
+            <Users className="mr-2 h-4 w-4" />
+            Connect
           </Button>
         </div>
-      </div>
 
-      {isGridView ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Search and Sort Bar */}
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              type="text"
+              placeholder="Search by name, role, or keyword..."
+              value={searchTerm}
+              onChange={handleSearch}
+              className="pl-10 bg-gray-900 border-gray-700 text-white placeholder-gray-400 h-12"
+            />
+          </div>
+          <div className="flex gap-2">
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-48 bg-gray-900 border-gray-700 text-white h-12">
+                <ArrowUpDown className="mr-2 h-4 w-4" />
+                <SelectValue placeholder="Highest Rated" />
+              </SelectTrigger>
+              <SelectContent className="bg-gray-900 border-gray-700">
+                <SelectItem value="highest-rated">Highest Rated</SelectItem>
+                <SelectItem value="newest">Newest</SelectItem>
+                <SelectItem value="most-experienced">Most Experienced</SelectItem>
+                <SelectItem value="alphabetical">Alphabetical</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              onClick={() => setShowFilters(!showFilters)}
+              className="border-gray-700 text-white hover:bg-gray-800 h-12 px-6"
+            >
+              <Filter className="mr-2 h-4 w-4" />
+              Filters
+            </Button>
+          </div>
+        </div>
+
+        {/* Results Count */}
+        <div className="mb-6">
+          <p className="text-gray-400">
+            Found <span className="text-yellow-400 font-semibold">{filteredTalents.length}</span> talents
+          </p>
+        </div>
+
+        {/* Talent Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTalents.map((talent) => (
-            <Card key={talent.id} className="bg-white shadow-md rounded-md">
-              <CardHeader>
-                <div className="flex items-center">
-                  <Avatar className="mr-4">
-                    <AvatarImage src={talent.avatar_url} alt={talent.full_name} />
-                    <AvatarFallback>{talent.full_name.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <CardTitle>{talent.full_name}</CardTitle>
-                    <div className="flex items-center text-muted-foreground">
-                      <MapPin className="mr-1 h-4 w-4" />
-                      <span>{talent.location}</span>
+            <Card key={talent.id} className="bg-gray-900 border-gray-700 overflow-hidden">
+              <CardContent className="p-6">
+                {/* Header with Avatar and Rating */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-12 w-12">
+                      <AvatarImage src={talent.avatar_url} alt={talent.full_name} />
+                      <AvatarFallback className="bg-gray-700 text-white">
+                        {talent.full_name.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h3 className="font-semibold text-white text-lg">{talent.full_name}</h3>
+                      <div className="flex items-center gap-1 text-sm text-gray-400">
+                        <span>{talent.profession_type}</span>
+                        <span>•</span>
+                        <MapPin className="h-3 w-3" />
+                        <span>{talent.location}</span>
+                      </div>
                     </div>
                   </div>
+                  <div className="flex items-center gap-1 bg-yellow-500 text-black px-2 py-1 rounded text-sm font-semibold">
+                    <Star className="h-3 w-3 fill-current" />
+                    <span>{talent.rating || 0}</span>
+                  </div>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="mb-2">
-                  <Badge variant="secondary">{talent.profession_type}</Badge>
-                </div>
-                <div className="flex items-center mb-2">
-                  <Star className="mr-1 h-4 w-4 text-yellow-500" />
-                  <span>{talent.rating || 0}</span>
-                </div>
-                <div className="flex flex-wrap gap-1">
-                  {talent.skills.map((skill, index) => (
-                    <Badge key={index} variant="outline">{skill}</Badge>
+
+                {/* Description */}
+                <p className="text-gray-300 text-sm mb-4 line-clamp-3">
+                  Film industry professional with {talent.experience_years} years of experience in various productions.
+                </p>
+
+                {/* Skills */}
+                <div className="flex flex-wrap gap-1 mb-4">
+                  {talent.skills.slice(0, 3).map((skill, index) => (
+                    <Badge key={index} variant="outline" className="text-yellow-400 border-yellow-400 text-xs">
+                      {skill}
+                    </Badge>
                   ))}
                 </div>
-                <div className="flex justify-end mt-4">
-                  <Button variant="ghost" size="sm" onClick={() => { setSelectedTalent(talent); setIsConnectDialogOpen(true); }}>
-                    <Users className="mr-2 h-4 w-4" />
-                    Connect
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => { setSelectedTalent(talent); setIsMessageDialogOpen(true); }}>
-                    <MessageCircle className="mr-2 h-4 w-4" />
-                    Message
-                  </Button>
+
+                {/* Experience and Languages */}
+                <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
+                  <div>
+                    <span className="text-gray-400">Experience</span>
+                    <p className="text-white font-medium">{talent.experience_years} years</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-400">Languages</span>
+                    <p className="text-white font-medium">
+                      {talent.languages?.join(', ') || 'English'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex items-center justify-between">
+                  <div className="flex gap-2">
+                    <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white p-2">
+                      <Heart className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="text-yellow-400 hover:text-yellow-300 p-2">
+                      <Bookmark className="h-4 w-4 fill-current" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white p-2">
+                      <Share className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="border-gray-600 text-white hover:bg-gray-800"
+                      onClick={() => { setSelectedTalent(talent); setIsMessageDialogOpen(true); }}
+                    >
+                      <MessageCircle className="mr-2 h-4 w-4" />
+                      Message
+                    </Button>
+                    <Button 
+                      className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold" 
+                      size="sm"
+                      onClick={() => { setSelectedTalent(talent); setIsConnectDialogOpen(true); }}
+                    >
+                      <Users className="mr-2 h-4 w-4" />
+                      Connect
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-black"
+                      onClick={() => setSelectedTalent(talent)}
+                    >
+                      View Profile
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
-      ) : (
-        <div className="divide-y divide-border">
-          {filteredTalents.map((talent) => (
-            <div key={talent.id} className="py-4">
-              <div className="flex items-center">
-                <Avatar className="mr-4">
-                  <AvatarImage src={talent.avatar_url} alt={talent.full_name} />
-                  <AvatarFallback>{talent.full_name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <h3 className="text-lg font-semibold">{talent.full_name}</h3>
-                  <div className="flex items-center text-muted-foreground">
-                    <MapPin className="mr-1 h-4 w-4" />
-                    <span>{talent.location}</span>
-                  </div>
-                  <div className="mb-2">
-                    <Badge variant="secondary">{talent.profession_type}</Badge>
-                  </div>
-                  <div className="flex items-center mb-2">
-                    <Star className="mr-1 h-4 w-4 text-yellow-500" />
-                    <span>{talent.rating || 0}</span>
-                  </div>
-                  <div className="flex flex-wrap gap-1">
-                    {talent.skills.map((skill, index) => (
-                      <Badge key={index} variant="outline">{skill}</Badge>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div className="flex justify-end mt-4">
-                <Button variant="ghost" size="sm" onClick={() => { setSelectedTalent(talent); setIsConnectDialogOpen(true); }}>
-                  <Users className="mr-2 h-4 w-4" />
-                  Connect
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => { setSelectedTalent(talent); setIsMessageDialogOpen(true); }}>
-                  <MessageCircle className="mr-2 h-4 w-4" />
-                  Message
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
 
-      <TalentProfileModal
-        isOpen={selectedTalent !== null}
-        onClose={() => setSelectedTalent(null)}
-        profileId={selectedTalent?.id || null}
-        isLiked={false}
-        isWishlisted={false}
-        connectionStatus={null}
-      />
+        {/* Modals */}
+        <TalentProfileModal
+          isOpen={selectedTalent !== null}
+          onClose={() => setSelectedTalent(null)}
+          profileId={selectedTalent?.id || null}
+          isLiked={false}
+          isWishlisted={false}
+          connectionStatus={null}
+        />
 
-      <ConnectDialog
-        isOpen={isConnectDialogOpen}
-        onClose={() => setIsConnectDialogOpen(false)}
-        talent={selectedTalent}
-      />
+        <ConnectDialog
+          isOpen={isConnectDialogOpen}
+          onClose={() => setIsConnectDialogOpen(false)}
+          talent={selectedTalent}
+        />
 
-      <MessageDialog
-        isOpen={isMessageDialogOpen}
-        onClose={() => setIsMessageDialogOpen(false)}
-        talent={selectedTalent}
-      />
+        <MessageDialog
+          isOpen={isMessageDialogOpen}
+          onClose={() => setIsMessageDialogOpen(false)}
+          talent={selectedTalent}
+        />
+      </div>
     </div>
   );
 };
