@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,36 +12,20 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useTalentDirectory } from "@/hooks/useTalentDirectory";
 import TalentProfileModal from "@/components/talent/TalentProfileModal";
-import ConnectDialog from "@/components/talent/ConnectDialog";
-import MessageDialog from "@/components/talent/MessageDialog";
-
-interface Talent {
-  id: string;
-  name: string;
-  profession: string;
-  location: string;
-  skills: string[];
-  experience: string;
-  availability: string;
-  rating: number;
-  avatarUrl: string;
-  bio: string;
-}
-
-interface TalentDirectoryProps {
-  talents: Talent[];
-}
+import { ConnectDialog } from "@/components/talent/ConnectDialog";
+import { MessageDialog } from "@/components/talent/MessageDialog";
+import { TalentProfile } from "@/types/talentTypes";
 
 const TalentDirectory = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
-  const [professionFilter, setProfessionFilter] = useState<string | null>(null);
+  const [professionFilter, setProfessionFilter] = useState<string>("");
   const [experienceFilter, setExperienceFilter] = useState("");
   const [availabilityFilter, setAvailabilityFilter] = useState("");
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [ratingFilter, setRatingFilter] = useState("");
   const [isGridView, setIsGridView] = useState(true);
-  const [selectedTalent, setSelectedTalent] = useState<Talent | null>(null);
+  const [selectedTalent, setSelectedTalent] = useState<TalentProfile | null>(null);
   const [isConnectDialogOpen, setIsConnectDialogOpen] = useState(false);
   const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
 
@@ -54,16 +39,16 @@ const TalentDirectory = () => {
     setLocationFilter(e.target.value);
   };
 
-  const handleProfessionFilter = (value: string | null) => {
+  const handleProfessionFilter = (value: string) => {
     setProfessionFilter(value);
   };
 
-  const handleExperienceFilter = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setExperienceFilter(e.target.value);
+  const handleExperienceFilter = (value: string) => {
+    setExperienceFilter(value);
   };
 
-  const handleAvailabilityFilter = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setAvailabilityFilter(e.target.value);
+  const handleAvailabilityFilter = (value: string) => {
+    setAvailabilityFilter(value);
   };
 
   const handleSkillSelect = (skill: string) => {
@@ -74,27 +59,27 @@ const TalentDirectory = () => {
     );
   };
 
-  const handleRatingFilter = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setRatingFilter(e.target.value);
+  const handleRatingFilter = (value: string) => {
+    setRatingFilter(value);
   };
 
   const filteredTalents = talents.filter((talent) => {
     const searchRegex = new RegExp(searchTerm, "i");
     const locationRegex = new RegExp(locationFilter, "i");
     const professionMatch =
-      !professionFilter || talent.profession === professionFilter;
+      !professionFilter || talent.profession_type === professionFilter;
     const experienceMatch =
-      !experienceFilter || talent.experience === experienceFilter;
+      !experienceFilter || talent.experience_years.toString() === experienceFilter;
     const availabilityMatch =
-      !availabilityFilter || talent.availability === availabilityFilter;
+      !availabilityFilter || talent.availability_status === availabilityFilter;
     const skillsMatch =
       selectedSkills.length === 0 ||
       selectedSkills.every((skill) => talent.skills.includes(skill));
     const ratingMatch =
-      !ratingFilter || talent.rating >= parseInt(ratingFilter);
+      !ratingFilter || (talent.rating && talent.rating >= parseInt(ratingFilter));
 
     return (
-      searchRegex.test(talent.name) &&
+      searchRegex.test(talent.full_name) &&
       locationRegex.test(talent.location) &&
       professionMatch &&
       experienceMatch &&
@@ -107,7 +92,7 @@ const TalentDirectory = () => {
   const resetFilters = () => {
     setSearchTerm("");
     setLocationFilter("");
-    setProfessionFilter("" as const); // Cast to empty string literal type
+    setProfessionFilter("");
     setExperienceFilter("");
     setAvailabilityFilter("");
     setSelectedSkills([]);
@@ -153,9 +138,10 @@ const TalentDirectory = () => {
             <SelectValue placeholder="Filter by experience" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="Entry Level">Entry Level</SelectItem>
-            <SelectItem value="Mid Level">Mid Level</SelectItem>
-            <SelectItem value="Senior Level">Senior Level</SelectItem>
+            <SelectItem value="1">1 year</SelectItem>
+            <SelectItem value="2">2 years</SelectItem>
+            <SelectItem value="5">5 years</SelectItem>
+            <SelectItem value="10">10+ years</SelectItem>
           </SelectContent>
         </Select>
 
@@ -164,9 +150,9 @@ const TalentDirectory = () => {
             <SelectValue placeholder="Filter by availability" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="Available Now">Available Now</SelectItem>
-            <SelectItem value="In 1 Week">In 1 Week</SelectItem>
-            <SelectItem value="In 1 Month">In 1 Month</SelectItem>
+            <SelectItem value="available">Available</SelectItem>
+            <SelectItem value="busy">Busy</SelectItem>
+            <SelectItem value="unavailable">Unavailable</SelectItem>
           </SelectContent>
         </Select>
 
@@ -249,11 +235,11 @@ const TalentDirectory = () => {
               <CardHeader>
                 <div className="flex items-center">
                   <Avatar className="mr-4">
-                    <AvatarImage src={talent.avatarUrl} alt={talent.name} />
-                    <AvatarFallback>{talent.name.charAt(0)}</AvatarFallback>
+                    <AvatarImage src={talent.avatar_url} alt={talent.full_name} />
+                    <AvatarFallback>{talent.full_name.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <CardTitle>{talent.name}</CardTitle>
+                    <CardTitle>{talent.full_name}</CardTitle>
                     <div className="flex items-center text-muted-foreground">
                       <MapPin className="mr-1 h-4 w-4" />
                       <span>{talent.location}</span>
@@ -263,11 +249,11 @@ const TalentDirectory = () => {
               </CardHeader>
               <CardContent>
                 <div className="mb-2">
-                  <Badge variant="secondary">{talent.profession}</Badge>
+                  <Badge variant="secondary">{talent.profession_type}</Badge>
                 </div>
                 <div className="flex items-center mb-2">
                   <Star className="mr-1 h-4 w-4 text-yellow-500" />
-                  <span>{talent.rating}</span>
+                  <span>{talent.rating || 0}</span>
                 </div>
                 <div className="flex flex-wrap gap-1">
                   {talent.skills.map((skill, index) => (
@@ -294,21 +280,21 @@ const TalentDirectory = () => {
             <div key={talent.id} className="py-4">
               <div className="flex items-center">
                 <Avatar className="mr-4">
-                  <AvatarImage src={talent.avatarUrl} alt={talent.name} />
-                  <AvatarFallback>{talent.name.charAt(0)}</AvatarFallback>
+                  <AvatarImage src={talent.avatar_url} alt={talent.full_name} />
+                  <AvatarFallback>{talent.full_name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="text-lg font-semibold">{talent.name}</h3>
+                  <h3 className="text-lg font-semibold">{talent.full_name}</h3>
                   <div className="flex items-center text-muted-foreground">
                     <MapPin className="mr-1 h-4 w-4" />
                     <span>{talent.location}</span>
                   </div>
                   <div className="mb-2">
-                    <Badge variant="secondary">{talent.profession}</Badge>
+                    <Badge variant="secondary">{talent.profession_type}</Badge>
                   </div>
                   <div className="flex items-center mb-2">
                     <Star className="mr-1 h-4 w-4 text-yellow-500" />
-                    <span>{talent.rating}</span>
+                    <span>{talent.rating || 0}</span>
                   </div>
                   <div className="flex flex-wrap gap-1">
                     {talent.skills.map((skill, index) => (
@@ -333,9 +319,12 @@ const TalentDirectory = () => {
       )}
 
       <TalentProfileModal
-        talent={selectedTalent}
         isOpen={selectedTalent !== null}
         onClose={() => setSelectedTalent(null)}
+        profileId={selectedTalent?.id || null}
+        isLiked={false}
+        isWishlisted={false}
+        connectionStatus={null}
       />
 
       <ConnectDialog
