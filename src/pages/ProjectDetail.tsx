@@ -191,6 +191,8 @@ const ProjectDetail = () => {
         title: milestoneTitle,
         description: milestoneDesc,
         due_date: milestoneDate,
+        status: 'pending',
+        created_by: user.id,
         created_at: serverTimestamp(),
         updated_at: serverTimestamp(),
       });
@@ -204,6 +206,19 @@ const ProjectDetail = () => {
       toast({ title: 'Failed to add milestone', description: error.message || 'Please try again later', variant: 'destructive' });
     } finally {
       setIsMilestoneSubmitting(false);
+    }
+  };
+
+  const handleStatusChange = async (milestoneId: string, newStatus: string) => {
+    try {
+      await updateDoc(doc(db, 'project_milestones', milestoneId), {
+        status: newStatus,
+        updated_at: serverTimestamp(),
+      });
+      fetchMilestones();
+      toast({ title: 'Milestone status updated', description: `Status set to ${newStatus}.` });
+    } catch (error: any) {
+      toast({ title: 'Failed to update status', description: error.message || 'Please try again later', variant: 'destructive' });
     }
   };
 
@@ -355,7 +370,22 @@ const ProjectDetail = () => {
                     <div key={milestone.id} className="border rounded-lg p-4 bg-[#181818]">
                       <div className="flex justify-between items-center mb-2">
                         <div className="font-semibold text-lg text-gold">{milestone.title}</div>
-                        <div className="text-xs text-[#b3b3b3]">{milestone.due_date}</div>
+                        <div className="flex items-center gap-4">
+                          <div className="text-xs text-[#b3b3b3]">{milestone.due_date}</div>
+                          {milestone.created_by === user?.id ? (
+                            <select
+                              className="ml-2 rounded bg-[#222] text-gold px-2 py-1 border border-gold"
+                              value={milestone.status || 'pending'}
+                              onChange={e => handleStatusChange(milestone.id, e.target.value)}
+                            >
+                              <option value="pending">Pending</option>
+                              <option value="inprogress">In Progress</option>
+                              <option value="completed">Completed</option>
+                            </select>
+                          ) : (
+                            <span className="ml-2 text-xs text-gold">{milestone.status || 'pending'}</span>
+                          )}
+                        </div>
                       </div>
                       <div className="text-[#b3b3b3]">{milestone.description}</div>
                     </div>
