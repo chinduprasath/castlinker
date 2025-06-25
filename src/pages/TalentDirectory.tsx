@@ -102,13 +102,13 @@ const TalentDirectory = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-white text-gray-900">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex justify-between items-start mb-8">
           <div>
-            <h1 className="text-4xl font-bold mb-2 text-yellow-400">Talent Directory</h1>
-            <p className="text-gray-400 text-lg">
+            <h1 className="text-4xl font-bold mb-2 text-gray-900">Talent Directory</h1>
+            <p className="text-gray-600 text-lg">
               Discover and connect with talented film industry professionals from around the world.
             </p>
           </div>
@@ -127,16 +127,16 @@ const TalentDirectory = () => {
               placeholder="Search by name, role, or keyword..."
               value={searchTerm}
               onChange={handleSearch}
-              className="pl-10 bg-gray-900 border-gray-700 text-white placeholder-gray-400 h-12"
+              className="pl-10 bg-white border-gray-300 text-gray-900 placeholder-gray-500 h-12"
             />
           </div>
           <div className="flex gap-2">
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-48 bg-gray-900 border-gray-700 text-white h-12">
+              <SelectTrigger className="w-48 bg-white border-gray-300 text-gray-900 h-12">
                 <ArrowUpDown className="mr-2 h-4 w-4" />
                 <SelectValue placeholder="Highest Rated" />
               </SelectTrigger>
-              <SelectContent className="bg-gray-900 border-gray-700">
+              <SelectContent className="bg-white border-gray-300">
                 <SelectItem value="highest-rated">Highest Rated</SelectItem>
                 <SelectItem value="newest">Newest</SelectItem>
                 <SelectItem value="most-experienced">Most Experienced</SelectItem>
@@ -146,7 +146,7 @@ const TalentDirectory = () => {
             <Button
               variant="outline"
               onClick={() => setShowFilters(!showFilters)}
-              className="border-gray-700 text-white hover:bg-gray-800 h-12 px-6"
+              className="border-gray-300 text-gray-900 hover:bg-gray-100 h-12 px-6"
             >
               <Filter className="mr-2 h-4 w-4" />
               Filters
@@ -156,15 +156,15 @@ const TalentDirectory = () => {
 
         {/* Results Count */}
         <div className="mb-6">
-          <p className="text-gray-400">
-            Found <span className="text-yellow-400 font-semibold">{filteredTalents.length}</span> talents
+          <p className="text-gray-600">
+            Found <span className="text-gray-900 font-semibold">{filteredTalents.length}</span> talents
           </p>
         </div>
 
         {/* Talent Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTalents.map((talent) => (
-            <Card key={talent.id} className="bg-gray-900 border-gray-700 overflow-hidden">
+            <Card key={talent.id} className="bg-gray-900 text-white border-gray-700 overflow-hidden">
               <CardContent className="p-6">
                 {/* Header with Avatar and Rating */}
                 <div className="flex items-start justify-between mb-4">
@@ -185,9 +185,11 @@ const TalentDirectory = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 bg-yellow-500 text-black px-2 py-1 rounded text-sm font-semibold">
-                    <Star className="h-3 w-3 fill-current" />
-                    <span>{talent.rating || 0}</span>
+                  <div className="flex items-center gap-1">
+                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                    <span className="text-white font-semibold">{talent.rating || 0}</span>
+                    <Heart className="h-4 w-4 text-red-500 ml-2" />
+                    <span className="text-gray-400 text-sm">{talent.likes || 0}</span>
                   </div>
                 </div>
 
@@ -199,7 +201,7 @@ const TalentDirectory = () => {
                 {/* Skills */}
                 <div className="flex flex-wrap gap-1 mb-4">
                   {talent.skills.slice(0, 3).map((skill, index) => (
-                    <Badge key={index} variant="outline" className="text-yellow-400 border-yellow-400 text-xs">
+                    <Badge key={index} className="bg-yellow-500 text-black text-xs border-0 hover:bg-yellow-400">
                       {skill}
                     </Badge>
                   ))}
@@ -220,44 +222,49 @@ const TalentDirectory = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between pt-4 border-t border-gray-700">
                   <div className="flex gap-2">
                     <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white p-2">
                       <Heart className="h-4 w-4" />
+                      <span className="ml-1 text-xs">Like</span>
                     </Button>
-                    <Button variant="ghost" size="sm" className="text-yellow-400 hover:text-yellow-300 p-2">
-                      <Bookmark className="h-4 w-4 fill-current" />
+                    <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white p-2">
+                      <Bookmark className="h-4 w-4" />
+                      <span className="ml-1 text-xs">Save</span>
                     </Button>
                     <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white p-2">
                       <Share className="h-4 w-4" />
+                      <span className="ml-1 text-xs">Share</span>
                     </Button>
                   </div>
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="border-gray-600 text-white hover:bg-gray-800"
-                      onClick={() => { setSelectedTalent(talent); setIsMessageDialogOpen(true); }}
-                    >
-                      <MessageCircle className="mr-2 h-4 w-4" />
-                      Message
-                    </Button>
-                    <Button 
-                      className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold" 
-                      size="sm"
-                      onClick={() => { setSelectedTalent(talent); setIsConnectDialogOpen(true); }}
-                    >
-                      <Users className="mr-2 h-4 w-4" />
-                      Connect
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-black"
-                      onClick={() => setSelectedTalent(talent)}
-                    >
-                      View Profile
-                    </Button>
-                  </div>
+                </div>
+
+                {/* Bottom Action Buttons */}
+                <div className="flex gap-2 mt-4">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1 border-gray-600 text-white hover:bg-gray-800"
+                    onClick={() => { setSelectedTalent(talent); setIsMessageDialogOpen(true); }}
+                  >
+                    <MessageCircle className="mr-2 h-4 w-4" />
+                    Message
+                  </Button>
+                  <Button 
+                    className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold" 
+                    size="sm"
+                    onClick={() => { setSelectedTalent(talent); setIsConnectDialogOpen(true); }}
+                  >
+                    <Users className="mr-2 h-4 w-4" />
+                    Connect
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-black"
+                    onClick={() => setSelectedTalent(talent)}
+                  >
+                    View Profile
+                  </Button>
                 </div>
               </CardContent>
             </Card>
