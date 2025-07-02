@@ -1,11 +1,12 @@
-
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Check, Star, Users, Film, Award, MessageCircle, Briefcase, Shield } from "lucide-react";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const Features = () => {
+  const { theme } = useTheme();
   const featuresList = [
     {
       title: "Professional Profiles",
@@ -40,12 +41,12 @@ const Features = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-cinematic text-foreground">
+    <div className={`min-h-screen ${theme === 'light' ? 'bg-gray-50 text-gray-900' : 'bg-cinematic text-foreground'} transition-colors`}>
       <Navbar />
       <div className="container mx-auto px-4 pt-24 pb-16">
         <div className="text-center mb-16">
           <h1 className="text-4xl font-bold mb-4 gold-gradient-text">Platform Features</h1>
-          <p className="text-xl text-foreground/70 max-w-2xl mx-auto">
+          <p className={`text-xl ${theme === 'light' ? 'text-gray-700' : 'text-foreground/70'} max-w-2xl mx-auto`}>
             Everything you need to succeed in the film industry, all in one place.
           </p>
         </div>
@@ -54,63 +55,61 @@ const Features = () => {
           {featuresList.map((feature, index) => (
             <div 
               key={index} 
-              className="bg-card-gradient border border-gold/10 rounded-xl p-6 hover:border-gold/30 transition-all"
+              className={`rounded-xl p-6 hover:border-gold/30 transition-all border ${theme === 'light' ? 'bg-white border-gray-200' : 'bg-card-gradient border-gold/10'}`}
             >
               <div className="mb-4">
                 {feature.icon}
               </div>
-              <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
-              <p className="text-foreground/70">{feature.description}</p>
+              <h3 className={`text-xl font-bold mb-2 ${theme === 'light' ? '' : 'text-white'}`}>{feature.title}</h3>
+              <p className={`${theme === 'light' ? 'text-gray-700' : 'text-foreground/70'}`}>{feature.description}</p>
             </div>
           ))}
         </div>
 
-        <div className="bg-card-gradient border border-gold/10 rounded-xl p-8 lg:p-12 mb-16">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            <div>
-              <h2 className="text-3xl font-bold mb-6">Compare Plans</h2>
-              <p className="text-foreground/80 mb-8">
-                Choose the plan that's right for you and take your film career to the next level.
-              </p>
-              <Link to="/pricing">
-                <Button className="bg-gold hover:bg-gold-dark text-cinematic">
-                  View Pricing Details
-                </Button>
-              </Link>
+        <div className={`grid grid-cols-1 lg:grid-cols-2 gap-12 ${theme === 'light' ? '' : 'text-white'}`}>
+          <div>
+            <h2 className="text-3xl font-bold mb-6">Compare Plans</h2>
+            <p className={`mb-8 ${theme === 'light' ? 'text-gray-700' : 'text-foreground/80'}`}>
+              Choose the plan that's right for you and take your film career to the next level.
+            </p>
+            <Link to="/pricing">
+              <Button className="bg-gold hover:bg-gold-dark text-cinematic">
+                View Pricing Details
+              </Button>
+            </Link>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <Check className="text-gold" />
+              <span>Advanced profile customization options</span>
             </div>
-            
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <Check className="text-gold" />
-                <span>Advanced profile customization options</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Check className="text-gold" />
-                <span>Priority listing in search results</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Check className="text-gold" />
-                <span>Early access to exclusive casting calls</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Check className="text-gold" />
-                <span>Unlimited messaging with industry professionals</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Check className="text-gold" />
-                <span>AI-powered portfolio optimization tools</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Check className="text-gold" />
-                <span>Access to industry learning resources</span>
-              </div>
+            <div className="flex items-center gap-3">
+              <Check className="text-gold" />
+              <span>Priority listing in search results</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <Check className="text-gold" />
+              <span>Early access to exclusive casting calls</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <Check className="text-gold" />
+              <span>Unlimited messaging with industry professionals</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <Check className="text-gold" />
+              <span>AI-powered portfolio optimization tools</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <Check className="text-gold" />
+              <span>Access to industry learning resources</span>
             </div>
           </div>
         </div>
         
         <div className="text-center">
           <h2 className="text-3xl font-bold mb-6">Ready to Join CastLinker?</h2>
-          <p className="text-xl text-foreground/70 mb-8 max-w-2xl mx-auto">
+          <p className={`text-xl mb-8 max-w-2xl mx-auto ${theme === 'light' ? 'text-gray-700' : 'text-foreground/70'}`}>
             Join thousands of film professionals who are already using CastLinker to advance their careers.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

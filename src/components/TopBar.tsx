@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
@@ -12,7 +11,8 @@ import {
   HelpCircle, 
   ChevronDown,
   Menu,
-  X
+  X,
+  Ticket
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -162,6 +162,10 @@ const TopBar = () => {
                 <DropdownMenuItem onClick={() => navigate('/billing')} className="rounded-lg">
                   <CreditCard className="mr-2 h-4 w-4" />
                   Billing
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/tickets')} className="rounded-lg">
+                  <Ticket className="mr-2 h-4 w-4" />
+                  Tickets
                 </DropdownMenuItem>
               </DropdownMenuGroup>
               

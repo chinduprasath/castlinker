@@ -1,4 +1,3 @@
-
 import { useState, memo, useCallback, useEffect } from "react";
 import { Job, JobSort } from "@/types/jobTypes";
 import JobDetail from "./JobDetail";
@@ -110,8 +109,6 @@ const JobResults = memo(({
               {error ? 'An error occurred' : 'Showing available opportunities'}
             </span>
           </h3>
-          
-          <JobSortSelect onSort={onSort} />
         </div>
         
         {error ? (

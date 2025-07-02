@@ -35,6 +35,7 @@ import CancellationRefundPolicy from '@/pages/CancellationRefundPolicy';
 import NotFound from '@/pages/NotFound';
 import BlogPage from '@/pages/BlogPage';
 import Events from '@/pages/Events';
+import Tickets from '@/pages/Tickets';
 
 // Project Pages
 import Projects from '@/pages/Projects';
@@ -62,6 +63,8 @@ import AdminPostDetail from '@/pages/admin/AdminPostDetail';
 import ManagePage from '@/pages/ManagePage';
 import UserJobDetail from '@/pages/UserJobDetail';
 import UserPostDetail from '@/pages/UserPostDetail';
+import ManagePostsPage from '@/pages/manage/posts';
+import ManageJobsPage from '@/pages/manage/jobs';
 
 // Guards
 import PrivateRoute from '@/components/auth/PrivateRoute';
@@ -233,13 +236,6 @@ const App = () => {
                 </AppLayout>
               </PrivateRoute>
             } />
-            <Route path="/industry-hub" element={
-              <PrivateRoute>
-                <AppLayout>
-                  <IndustryHub />
-                </AppLayout>
-              </PrivateRoute>
-            } />
             <Route path="/chat" element={
               <PrivateRoute>
                 <AppLayout>
@@ -275,17 +271,17 @@ const App = () => {
                 </AppLayout>
               </PrivateRoute>
             } />
-            <Route path="/manage/jobs/:jobId" element={
+            <Route path="/manage/jobs" element={
               <PrivateRoute>
                 <AppLayout>
-                  <UserJobDetail />
+                  <ManageJobsPage />
                 </AppLayout>
               </PrivateRoute>
             } />
-            <Route path="/manage/posts/:postId" element={
+            <Route path="/manage/posts" element={
               <PrivateRoute>
                 <AppLayout>
-                  <UserPostDetail />
+                  <ManagePostsPage />
                 </AppLayout>
               </PrivateRoute>
             } />
@@ -481,6 +477,23 @@ const App = () => {
 
             {/* 404 Route */}
             <Route path="*" element={<NotFound />} />
+
+            {/* New Protected Route */}
+            <Route path="/industry-hub" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <IndustryHub />
+                </AppLayout>
+              </PrivateRoute>
+            } />
+
+            <Route path="/tickets" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <Tickets />
+                </AppLayout>
+              </PrivateRoute>
+            } />
           </Routes>
           
           {/* Toast notifications */}

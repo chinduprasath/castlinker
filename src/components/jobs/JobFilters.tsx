@@ -198,20 +198,17 @@ const JobFiltersComponent = ({ onFilterChange, onResetFilters }: JobFiltersProps
       <Separator className="bg-border/60" />
       
       <div>
-        <div className="flex justify-between mb-2">
-          <h4 className="font-medium">Pay Range</h4>
-          <span className="text-sm text-muted-foreground">
-            ${payRange[0].toLocaleString()} - ${payRange[1].toLocaleString()}
-          </span>
+        <h4 className="font-medium mb-2">Pay Range</h4>
+        <div className="flex items-center justify-between text-xs mb-1">
+          <span>₹{payRange[0].toLocaleString()}</span>
+          <span>₹{payRange[1].toLocaleString()}</span>
         </div>
         <Slider
-          defaultValue={[0, 200000]}
           min={0}
           max={200000}
-          step={5000}
+          step={1000}
           value={payRange}
-          onValueChange={setPayRange}
-          className="mt-4"
+          onValueChange={vals => setPayRange([Math.min(...vals), Math.max(...vals)])}
         />
       </div>
     </div>

@@ -39,7 +39,7 @@ export const fetchJobs = async (filters: JobFilters, sort: { field: string; dire
     
     // If there's a search term, use the search function
     if (filters.search && filters.search.trim() !== '') {
-      return await searchJobs(filters.search);
+      return await searchJobs(filters.search, filters);
     }
     
     // Otherwise use the regular filtering approach
@@ -59,11 +59,11 @@ export const fetchJobs = async (filters: JobFilters, sort: { field: string; dire
 };
 
 // Specialized function for text search
-const searchJobs = async (searchTerm: string): Promise<JobsQueryResult> => {
+const searchJobs = async (searchTerm: string, filters?: JobFilters): Promise<JobsQueryResult> => {
   console.log('Using search term:', searchTerm);
   
   try {
-    const jobsRef = collection(db, 'jobs');
+    const jobsRef = collection(db, 'film_jobs');
     const q = query(
       jobsRef,
       where('status', '==', 'active'),
@@ -83,12 +83,19 @@ const searchJobs = async (searchTerm: string): Promise<JobsQueryResult> => {
     });
     
     // Filter jobs that match the search term (client-side filtering for flexibility)
-    const filteredJobs = allJobs.filter(job => 
+    let filteredJobs = allJobs.filter(job => 
       job.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       job.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       job.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       job.company?.toLowerCase().includes(searchTerm.toLowerCase())
     );
+    
+    // If filters.location is set, further filter by location
+    if (filters && filters.location) {
+      filteredJobs = filteredJobs.filter(job =>
+        job.location?.toLowerCase().includes(filters.location!.toLowerCase())
+      );
+    }
     
     console.log('Search results:', filteredJobs.length, 'jobs found');
     return { data: filteredJobs, count: filteredJobs.length };
@@ -101,7 +108,7 @@ const searchJobs = async (searchTerm: string): Promise<JobsQueryResult> => {
 // Specialized function for filtering jobs
 const filterJobs = async (filters: JobFilters, sort: { field: string; direction: string }): Promise<JobsQueryResult> => {
   try {
-    const jobsRef = collection(db, 'jobs');
+    const jobsRef = collection(db, 'film_jobs');
     let constraints: any[] = [where('status', '==', 'active')];
 
     // Apply job type filters

@@ -1,140 +1,78 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Bell, Check, Film, Calendar, MessageCircle, Building2, Award, Mail } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { Bell, Check, Film, Calendar, MessageCircle, Building2, Award, Mail, X, Users, Briefcase, MessageSquare, Clock } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from 'date-fns';
+import { collection, query, where, orderBy, onSnapshot, updateDoc, doc, deleteDoc, getDocs } from 'firebase/firestore';
+import { db } from '@/integrations/firebase/client';
+import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
 
 // Define notification object type
 interface Notification {
   id: string;
+  type: 'team_invite' | 'job_application' | 'message' | 'system';
+  status: 'pending' | 'accepted' | 'rejected' | 'read';
+  title: string;
   message: string;
-  created_at: string;
-  read: boolean;
-  user_id: string;
-  type: string; // Added type property
+  projectId?: string;
+  projectName?: string;
+  inviterId?: string;
+  inviterName?: string;
+  createdAt: any;
+  userId: string;
 }
 
 const NotificationsPage = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
   
   // Fetch notifications (simulated)
   useEffect(() => {
-    const fetchNotifications = async () => {
-      setIsLoading(true);
-      
-      try {
-        // Simulate API call with timeout
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Sample notifications with the type property added
-        const sampleNotifications: Notification[] = [
-          {
-            id: '1',
-            message: 'Your application for "Lead Role in Indie Feature" has been received.',
-            created_at: new Date(Date.now() - 1000 * 60 * 15).toISOString(), // 15 minutes ago
-            read: false,
-            user_id: user?.id || '',
-            type: 'application'
-          },
-          {
-            id: '2',
-            message: 'Sarah Johnson sent you a message about the upcoming project.',
-            created_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
-            read: true,
-            user_id: user?.id || '',
-            type: 'message'
-          },
-          {
-            id: '3',
-            message: 'Casting call for "High Budget Thriller" has been posted.',
-            created_at: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(), // 5 hours ago
-            read: false,
-            user_id: user?.id || '',
-            type: 'job'
-          },
-          {
-            id: '4',
-            message: 'Your profile has been viewed by 5 casting directors this week.',
-            created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
-            read: true,
-            user_id: user?.id || '',
-            type: 'profile'
-          },
-          {
-            id: '5',
-            message: 'Reminder: Your audition for "Commercial Shoot" is tomorrow at 2 PM.',
-            created_at: new Date(Date.now() - 1000 * 60 * 60 * 36).toISOString(), // 1.5 days ago
-            read: false,
-            user_id: user?.id || '',
-            type: 'event'
-          },
-          {
-            id: '6',
-            message: 'New industry webinar: "Breaking into Hollywood" - Register now.',
-            created_at: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(), // 2 days ago
-            read: true,
-            user_id: user?.id || '',
-            type: 'event'
-          },
-          {
-            id: '7',
-            message: 'Your subscription will renew in 3 days. Update payment method if needed.',
-            created_at: new Date(Date.now() - 1000 * 60 * 60 * 72).toISOString(), // 3 days ago
-            read: false,
-            user_id: user?.id || '',
-            type: 'billing'
-          }
-        ];
-        
-        setNotifications(sampleNotifications);
-      } catch (error) {
-        console.error('Error fetching notifications:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load notifications',
-          variant: 'destructive',
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchNotifications();
-  }, [user?.id, toast]);
+    if (!user?.id) return;
+
+    const notificationsRef = collection(db, 'notifications');
+    const q = query(
+      notificationsRef,
+      where('userId', '==', user.id),
+      orderBy('createdAt', 'desc')
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const notifs = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Notification[];
+      setNotifications(notifs);
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user?.id]);
   
   // Filter notifications based on active tab
   const filteredNotifications = notifications.filter(notification => {
     if (activeTab === 'all') return true;
-    if (activeTab === 'unread') return !notification.read;
+    if (activeTab === 'unread') return notification.status === 'pending';
     return notification.type === activeTab;
   });
   
   // Get notification icon based on type
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'application':
-        return <Film className="h-5 w-5 text-blue-500" />;
+      case 'team_invite':
+        return <Users className="h-5 w-5 text-blue-500" />;
+      case 'job_application':
+        return <Briefcase className="h-5 w-5 text-green-500" />;
       case 'message':
-        return <MessageCircle className="h-5 w-5 text-purple-500" />;
-      case 'job':
-        return <Building2 className="h-5 w-5 text-gold" />;
-      case 'profile':
-        return <Award className="h-5 w-5 text-green-500" />;
-      case 'event':
-        return <Calendar className="h-5 w-5 text-red-500" />;
-      case 'billing':
-        return <Mail className="h-5 w-5 text-amber-500" />;
+        return <MessageSquare className="h-5 w-5 text-purple-500" />;
       default:
-        return <Bell className="h-5 w-5 text-muted-foreground" />;
+        return <Bell className="h-5 w-5 text-gray-500" />;
     }
   };
   
@@ -159,167 +97,386 @@ const NotificationsPage = () => {
   };
   
   // Mark notification as read
-  const markAsRead = (id: string) => {
-    setNotifications(prev => 
-      prev.map(notification => 
-        notification.id === id ? { ...notification, read: true } : notification
-      )
-    );
+  const markAsRead = async (notificationId: string) => {
+    try {
+      await updateDoc(doc(db, 'notifications', notificationId), {
+        status: 'read',
+        updatedAt: new Date()
+      });
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
   };
   
   // Mark all notifications as read
   const markAllAsRead = () => {
     setNotifications(prev => 
-      prev.map(notification => ({ ...notification, read: true }))
+      prev.map(notification => ({ ...notification, status: 'read' }))
     );
     
-    toast({
-      title: 'Success',
-      description: 'All notifications marked as read',
-    });
+    toast.success('All notifications marked as read');
   };
   
+  const handleAcceptTeamInvite = async (notification: Notification) => {
+    if (!notification.projectId) return;
+
+    try {
+      // Update team member status to accepted
+      const teamMembersRef = collection(db, 'projects', notification.projectId, 'team_members');
+      const teamQuery = query(teamMembersRef, where('email', '==', user?.email));
+      const teamSnapshot = await getDocs(teamQuery);
+      console.log('Accept invite: user email', user?.email, 'teamSnapshot size', teamSnapshot.size);
+      if (!teamSnapshot.empty) {
+        const teamMemberDoc = teamSnapshot.docs[0];
+        await updateDoc(teamMemberDoc.ref, {
+          status: 'accepted',
+          updated_at: new Date()
+        });
+        // Update notification status
+        await updateDoc(doc(db, 'notifications', notification.id), {
+          status: 'accepted',
+          updatedAt: new Date()
+        });
+        toast.success('Team invite accepted! You can now access the project.');
+      } else {
+        toast.error('No matching team member found for your email.');
+        console.error('No team member found for email', user?.email, 'in project', notification.projectId);
+      }
+    } catch (error) {
+      console.error('Error accepting team invite:', error);
+      toast.error('Failed to accept team invite');
+    }
+  };
+
+  const handleRejectTeamInvite = async (notification: Notification) => {
+    if (!notification.projectId) return;
+
+    try {
+      // Remove team member from project
+      const teamMembersRef = collection(db, 'projects', notification.projectId, 'team_members');
+      const teamQuery = query(teamMembersRef, where('email', '==', user?.email));
+      const teamSnapshot = await getDocs(teamQuery);
+      
+      if (!teamSnapshot.empty) {
+        const teamMemberDoc = teamSnapshot.docs[0];
+        await deleteDoc(teamMemberDoc.ref);
+      }
+
+      // Update notification status
+      await updateDoc(doc(db, 'notifications', notification.id), {
+        status: 'rejected',
+        updatedAt: new Date()
+      });
+
+      toast.success('Team invite rejected');
+    } catch (error) {
+      console.error('Error rejecting team invite:', error);
+      toast.error('Failed to reject team invite');
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+      case 'accepted':
+        return <Badge variant="secondary" className="bg-green-100 text-green-800">Accepted</Badge>;
+      case 'rejected':
+        return <Badge variant="secondary" className="bg-red-100 text-red-800">Rejected</Badge>;
+      case 'read':
+        return <Badge variant="secondary" className="bg-gray-100 text-gray-800">Read</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
+    }
+  };
+
+  const formatDate = (timestamp: any) => {
+    if (!timestamp) return '';
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+  };
+
+  const pendingNotifications = notifications.filter(n => n.status === 'pending');
+  const acceptedNotifications = notifications.filter(n => n.status === 'accepted');
+  const rejectedNotifications = notifications.filter(n => n.status === 'rejected');
+  const readNotifications = notifications.filter(n => n.status === 'read');
+
+  if (isLoading) {
   return (
-    <div className="space-y-4 pr-1">
-      <div className="flex flex-col space-y-1">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-gold to-gold-light">
-                Notifications
-              </span>
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Stay updated with your activity, messages, and opportunities
-            </p>
-          </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="border-gold/20 text-foreground/80 gap-1"
-            onClick={markAllAsRead}
-          >
-            <Check className="h-4 w-4 text-gold" />
-            <span>Mark all as read</span>
-          </Button>
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gold"></div>
         </div>
       </div>
-      
-      <Tabs defaultValue="all" className="mb-6" onValueChange={setActiveTab}>
-        <TabsList className="bg-cinematic-dark/50 border border-gold/10 w-full justify-start mb-6">
-          <TabsTrigger 
-            value="all" 
-            className="data-[state=active]:text-gold data-[state=active]:border-gold data-[state=active]:bg-transparent border-b-2 border-transparent"
-          >
-            All
-          </TabsTrigger>
-          <TabsTrigger 
-            value="unread" 
-            className="data-[state=active]:text-gold data-[state=active]:border-gold data-[state=active]:bg-transparent border-b-2 border-transparent"
-          >
-            Unread
-          </TabsTrigger>
-          <TabsTrigger 
-            value="application" 
-            className="data-[state=active]:text-gold data-[state=active]:border-gold data-[state=active]:bg-transparent border-b-2 border-transparent"
-          >
-            Applications
-          </TabsTrigger>
-          <TabsTrigger 
-            value="job" 
-            className="data-[state=active]:text-gold data-[state=active]:border-gold data-[state=active]:bg-transparent border-b-2 border-transparent"
-          >
-            Jobs
-          </TabsTrigger>
-          <TabsTrigger 
-            value="message" 
-            className="data-[state=active]:text-gold data-[state=active]:border-gold data-[state=active]:bg-transparent border-b-2 border-transparent"
-          >
-            Messages
-          </TabsTrigger>
+    );
+  }
+
+  return (
+    <div className="container mx-auto p-6">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-gold mb-2">Notifications</h1>
+        <p className="text-muted-foreground">Stay updated with your latest activities and invites</p>
+      </div>
+
+      <Tabs defaultValue="all" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="all">All ({notifications.length})</TabsTrigger>
+          <TabsTrigger value="pending">Pending ({pendingNotifications.length})</TabsTrigger>
+          <TabsTrigger value="accepted">Accepted ({acceptedNotifications.length})</TabsTrigger>
+          <TabsTrigger value="rejected">Rejected ({rejectedNotifications.length})</TabsTrigger>
+          <TabsTrigger value="read">Read ({readNotifications.length})</TabsTrigger>
         </TabsList>
         
-        <TabsContent value={activeTab}>
+        <TabsContent value="all" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="h-5 w-5 text-gold" />
+                All Notifications
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {notifications.length === 0 ? (
+                <div className="text-center py-8">
+                  <Bell className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-muted-foreground">No notifications yet</p>
+                </div>
+              ) : (
           <div className="space-y-4">
-            {isLoading ? (
-              // Loading skeletons
-              Array(5).fill(0).map((_, i) => (
-                <Card key={i} className="bg-card border-gold/10 shadow-md overflow-hidden">
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <Skeleton className="h-10 w-10 rounded-full" />
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <Skeleton className="h-4 w-32" />
-                          <Skeleton className="h-3 w-16" />
+                  {notifications.map((notification) => (
+                    <NotificationCard
+                      key={notification.id}
+                      notification={notification}
+                      onAccept={handleAcceptTeamInvite}
+                      onReject={handleRejectTeamInvite}
+                      onRead={markAsRead}
+                      getIcon={getNotificationIcon}
+                      getStatusBadge={getStatusBadge}
+                      formatDate={formatDate}
+                    />
+                  ))}
                         </div>
-                        <Skeleton className="h-12 w-full" />
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="pending" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-yellow-500" />
+                Pending Notifications
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {pendingNotifications.length === 0 ? (
+                <div className="text-center py-8">
+                  <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-muted-foreground">No pending notifications</p>
                       </div>
+              ) : (
+                <div className="space-y-4">
+                  {pendingNotifications.map((notification) => (
+                    <NotificationCard
+                      key={notification.id}
+                      notification={notification}
+                      onAccept={handleAcceptTeamInvite}
+                      onReject={handleRejectTeamInvite}
+                      onRead={markAsRead}
+                      getIcon={getNotificationIcon}
+                      getStatusBadge={getStatusBadge}
+                      formatDate={formatDate}
+                    />
+                  ))}
                     </div>
+              )}
                   </CardContent>
                 </Card>
-              ))
-            ) : filteredNotifications.length > 0 ? (
-              // Notification cards
-              filteredNotifications.map(notification => (
-                <Card 
+        </TabsContent>
+
+        <TabsContent value="accepted" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Check className="h-5 w-5 text-green-500" />
+                Accepted Notifications
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {acceptedNotifications.length === 0 ? (
+                <div className="text-center py-8">
+                  <Check className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-muted-foreground">No accepted notifications</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {acceptedNotifications.map((notification) => (
+                    <NotificationCard
                   key={notification.id} 
-                  className={`
-                    bg-card border-gold/10 shadow-md overflow-hidden
-                    ${!notification.read ? 'border-l-4 border-l-gold' : ''}
-                    ${!notification.read ? 'bg-gradient-to-r from-gold/5 to-transparent' : ''}
-                  `}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="h-10 w-10 rounded-full bg-card/80 flex items-center justify-center border border-gold/20">
-                        {getNotificationIcon(notification.type)}
+                      notification={notification}
+                      onAccept={handleAcceptTeamInvite}
+                      onReject={handleRejectTeamInvite}
+                      onRead={markAsRead}
+                      getIcon={getNotificationIcon}
+                      getStatusBadge={getStatusBadge}
+                      formatDate={formatDate}
+                    />
+                  ))}
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs font-medium text-muted-foreground">
-                            {notification.type.charAt(0).toUpperCase() + notification.type.slice(1)}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {formatRelativeTime(notification.created_at)}
-                          </span>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="rejected" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <X className="h-5 w-5 text-red-500" />
+                Rejected Notifications
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {rejectedNotifications.length === 0 ? (
+                <div className="text-center py-8">
+                  <X className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-muted-foreground">No rejected notifications</p>
                         </div>
-                        <p className={`text-sm ${!notification.read ? 'font-medium' : 'text-muted-foreground'}`}>
-                          {notification.message}
-                        </p>
+              ) : (
+                <div className="space-y-4">
+                  {rejectedNotifications.map((notification) => (
+                    <NotificationCard
+                      key={notification.id}
+                      notification={notification}
+                      onAccept={handleAcceptTeamInvite}
+                      onReject={handleRejectTeamInvite}
+                      onRead={markAsRead}
+                      getIcon={getNotificationIcon}
+                      getStatusBadge={getStatusBadge}
+                      formatDate={formatDate}
+                    />
+                  ))}
                       </div>
-                    </div>
+              )}
                   </CardContent>
-                  {!notification.read && (
-                    <CardFooter className="pt-0 pb-3 px-4 flex justify-end">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-8 text-xs"
-                        onClick={() => markAsRead(notification.id)}
-                      >
-                        Mark as read
-                      </Button>
-                    </CardFooter>
-                  )}
                 </Card>
-              ))
-            ) : (
-              // Empty state
-              <div className="bg-card border border-gold/10 rounded-xl p-8 text-center">
-                <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">No notifications yet</h3>
-                <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                  {activeTab === 'all'
-                    ? "You don't have any notifications at the moment. Check back later!"
-                    : `You don't have any ${activeTab === 'unread' ? 'unread' : activeTab} notifications.`
-                  }
-                </p>
+        </TabsContent>
+
+        <TabsContent value="read" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="h-5 w-5 text-gray-500" />
+                Read Notifications
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {readNotifications.length === 0 ? (
+                <div className="text-center py-8">
+                  <Bell className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-muted-foreground">No read notifications</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {readNotifications.map((notification) => (
+                    <NotificationCard
+                      key={notification.id}
+                      notification={notification}
+                      onAccept={handleAcceptTeamInvite}
+                      onReject={handleRejectTeamInvite}
+                      onRead={markAsRead}
+                      getIcon={getNotificationIcon}
+                      getStatusBadge={getStatusBadge}
+                      formatDate={formatDate}
+                    />
+                  ))}
               </div>
             )}
-          </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
+    </div>
+  );
+};
+
+interface NotificationCardProps {
+  notification: Notification;
+  onAccept: (notification: Notification) => void;
+  onReject: (notification: Notification) => void;
+  onRead: (notificationId: string) => void;
+  getIcon: (type: string) => React.ReactNode;
+  getStatusBadge: (status: string) => React.ReactNode;
+  formatDate: (timestamp: any) => string;
+}
+
+const NotificationCard: React.FC<NotificationCardProps> = ({
+  notification,
+  onAccept,
+  onReject,
+  onRead,
+  getIcon,
+  getStatusBadge,
+  formatDate
+}) => {
+  return (
+    <div className="border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+      <div className="flex items-start gap-4">
+        <div className="flex-shrink-0">
+          {getIcon(notification.type)}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-semibold text-lg">
+              {notification.type === 'team_invite' && notification.projectName
+                ? notification.projectName
+                : notification.title}
+            </h3>
+            <div className="flex items-center gap-2">
+              {getStatusBadge(notification.status)}
+              <span className="text-xs text-gray-500">{formatDate(notification.createdAt)}</span>
+            </div>
+          </div>
+          {notification.type === 'team_invite' && notification.inviterName && (
+            <div className="text-sm text-gray-500 mb-1">Invited by <span className="font-medium text-gold">{notification.inviterName}</span></div>
+          )}
+          <p className="text-gray-600 dark:text-gray-300 mb-3">{notification.message}</p>
+          
+          {notification.type === 'team_invite' && notification.status === 'pending' && (
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                onClick={() => onAccept(notification)}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <Check className="h-4 w-4 mr-1" />
+                Accept
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onReject(notification)}
+                className="border-red-300 text-red-600 hover:bg-red-50"
+              >
+                <X className="h-4 w-4 mr-1" />
+                Reject
+              </Button>
+            </div>
+          )}
+          
+          {notification.status === 'pending' && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => onRead(notification.id)}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              Mark as Read
+            </Button>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

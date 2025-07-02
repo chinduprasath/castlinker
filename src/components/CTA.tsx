@@ -1,12 +1,14 @@
-
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const CTA = () => {
+  const { theme } = useTheme();
+
   return (
-    <section className="py-12 sm:py-20 px-4 bg-cinematic-dark relative overflow-hidden">
+    <section className={`py-12 sm:py-20 px-4 relative overflow-hidden ${theme === 'light' ? 'bg-gray-50' : 'bg-cinematic-dark'} transition-colors`}>
       {/* Background Elements */}
       <div className="absolute top-0 left-0 w-full h-full opacity-10">
         <div className="absolute top-10 left-10 w-24 sm:w-32 h-24 sm:h-32 rounded-full bg-gold/20 blur-3xl"></div>
@@ -15,16 +17,16 @@ const CTA = () => {
       
       <div className="container mx-auto relative z-10">
         <motion.div 
-          className="bg-card-gradient border border-gold/10 rounded-2xl p-6 sm:p-10 md:p-16 text-center max-w-4xl mx-auto"
+          className={`rounded-2xl p-6 sm:p-10 md:p-16 text-center max-w-4xl mx-auto border transition-colors ${theme === 'light' ? 'bg-white border-gray-200' : 'bg-card-gradient border-gold/10'}`}
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7 }}
           viewport={{ once: true }}
         >
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6">
+          <h2 className={`text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 ${theme === 'light' ? 'text-gray-900' : ''}`}>
             Ready to Take Your Film Career to the <span className="gold-gradient-text">Next Level</span>?
           </h2>
-          <p className="text-sm sm:text-lg text-foreground/80 mb-6 sm:mb-8 max-w-2xl mx-auto">
+          <p className={`text-sm sm:text-lg mb-6 sm:mb-8 max-w-2xl mx-auto ${theme === 'light' ? 'text-gray-700' : 'text-foreground/80'}`}>
             Join thousands of film professionals already using CastLinker to find opportunities, 
             showcase their work, and connect with the industry's best talent.
           </p>

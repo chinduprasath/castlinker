@@ -1,4 +1,3 @@
-
 import { 
   collection, 
   doc, 
@@ -11,7 +10,8 @@ import {
   orderBy, 
   where,
   serverTimestamp,
-  Timestamp
+  Timestamp,
+  increment
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from "@/integrations/firebase/client";
@@ -279,6 +279,7 @@ export const getApplicationsForPost = async (post_id: string) => {
 export const togglePostLike = async (post_id: string, user_id: string) => {
   try {
     const likesRef = collection(db, 'postLikes');
+    const postRef = doc(db, 'posts', post_id);
     const q = query(
       likesRef,
       where('post_id', '==', post_id),
@@ -291,6 +292,8 @@ export const togglePostLike = async (post_id: string, user_id: string) => {
       querySnapshot.forEach(async (document) => {
         await deleteDoc(doc(db, 'postLikes', document.id));
       });
+      // Decrement like_count
+      await updateDoc(postRef, { like_count: increment(-1) });
       return false;
     } else {
       // Add like
@@ -299,6 +302,8 @@ export const togglePostLike = async (post_id: string, user_id: string) => {
         user_id,
         created_at: serverTimestamp()
       });
+      // Increment like_count
+      await updateDoc(postRef, { like_count: increment(1) });
       return true;
     }
   } catch (error) {
@@ -359,5 +364,39 @@ export const getUserProfileById = async (userId: string) => {
   } catch (error) {
     console.error("Error fetching user profile:", error);
     return null;
+  }
+};
+
+export const fetchPostsByUser = async (userId: string) => {
+  try {
+    const postsRef = collection(db, 'posts');
+    const q = query(postsRef, where('created_by', '==', userId), orderBy('created_at', 'desc'));
+    const querySnapshot = await getDocs(q);
+    const posts: Post[] = [];
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      posts.push({
+        id: doc.id,
+        ...data,
+        created_at: convertTimestamp(data.created_at),
+        updated_at: convertTimestamp(data.updated_at)
+      } as Post);
+    });
+    return posts;
+  } catch (error) {
+    console.error("Error fetching user posts:", error);
+    return [];
+  }
+};
+
+export const getLikeCountForPost = async (postId: string) => {
+  try {
+    const likesRef = collection(db, 'postLikes');
+    const q = query(likesRef, where('post_id', '==', postId));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.size;
+  } catch (error) {
+    console.error('Error getting like count:', error);
+    return 0;
   }
 };

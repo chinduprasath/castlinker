@@ -1,4 +1,3 @@
-
 import { 
   collection, 
   doc, 
@@ -12,71 +11,56 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/integrations/firebase/client';
 
-export const fetchTeamMembers = async (projectId?: string) => {
+export const fetchTeamMembers = async (projectId: string) => {
   try {
-    const membersRef = collection(db, 'team_members');
-    let q;
-    
-    if (projectId) {
-      q = query(membersRef, where('project_id', '==', projectId));
-    } else {
-      q = query(membersRef);
-    }
-    
-    const querySnapshot = await getDocs(q);
-    
-    if (projectId) {
-      const accepted: any[] = [];
-      const pending: any[] = [];
-      
-      querySnapshot.forEach((doc) => {
-        const docData = doc.data();
-        if (docData && typeof docData === 'object') {
-          const data = { id: doc.id, ...docData } as any;
-          if ((docData as any).status === 'accepted') {
-            accepted.push(data);
-          } else if ((docData as any).status === 'pending') {
-            pending.push(data);
-          }
-        }
-      });
-      
-      return { accepted, pending };
-    } else {
-      // For admin team management - return all members
-      const members: any[] = [];
-      querySnapshot.forEach((doc) => {
-        const docData = doc.data();
-        if (docData && typeof docData === 'object') {
-          const data = { id: doc.id, ...docData } as any;
-          members.push({
-            id: data.id,
-            name: data.name || 'Unknown',
-            email: data.email || 'No email',
-            role_name: data.role_name || 'Member',
-            role: data.role,
-            joined_date: data.created_at || new Date().toISOString(),
-            avatar_url: data.avatar_url
-          });
-        }
-      });
-      return members;
-    }
+    const membersRef = collection(db, 'projects', projectId, 'team_members');
+    const querySnapshot = await getDocs(membersRef);
+    const members: any[] = [];
+    querySnapshot.forEach((doc) => {
+      const docData = doc.data();
+      if (docData && typeof docData === 'object') {
+        members.push({ id: doc.id, ...docData });
+      }
+    });
+    return members;
   } catch (error) {
     console.error('Error fetching team members:', error);
     throw error;
   }
 };
 
-export const createTeamMember = async (memberData: any) => {
+export const sendTeamInviteNotification = async (userId, projectId, projectName, inviterId, inviterName) => {
+  await addDoc(collection(db, 'notifications'), {
+    userId,
+    type: 'team_invite',
+    projectId,
+    projectName,
+    inviterId,
+    inviterName,
+    status: 'pending',
+    createdAt: serverTimestamp(),
+  });
+};
+
+export const createTeamMember = async (projectId: string, memberData: any, projectName?: string, inviterId?: string, inviterName?: string) => {
   try {
-    const membersRef = collection(db, 'team_members');
+    const membersRef = collection(db, 'projects', projectId, 'team_members');
+    // Prevent duplicate by email
+    const q = query(membersRef, where('email', '==', memberData.email));
+    const existing = await getDocs(q);
+    if (!existing.empty) {
+      throw new Error('Member with this email already exists.');
+    }
     const docRef = await addDoc(membersRef, {
       ...memberData,
+      status: 'pending',
       created_at: serverTimestamp(),
       updated_at: serverTimestamp()
     });
-    
+    // Send notification if userId is provided
+    if (memberData.userId && projectName && inviterId && inviterName) {
+      await sendTeamInviteNotification(memberData.userId, projectId, projectName, inviterId, inviterName);
+    }
     return { id: docRef.id };
   } catch (error) {
     console.error('Error creating team member:', error);
@@ -84,9 +68,9 @@ export const createTeamMember = async (memberData: any) => {
   }
 };
 
-export const updateTeamMemberRole = async (memberId: string, roleId: string) => {
+export const updateTeamMemberRole = async (projectId: string, memberId: string, roleId: string) => {
   try {
-    await updateDoc(doc(db, 'team_members', memberId), {
+    await updateDoc(doc(db, 'projects', projectId, 'team_members', memberId), {
       role_id: roleId,
       updated_at: serverTimestamp()
     });
@@ -96,9 +80,9 @@ export const updateTeamMemberRole = async (memberId: string, roleId: string) => 
   }
 };
 
-export const deleteTeamMember = async (memberId: string) => {
+export const deleteTeamMember = async (projectId: string, memberId: string) => {
   try {
-    await deleteDoc(doc(db, 'team_members', memberId));
+    await deleteDoc(doc(db, 'projects', projectId, 'team_members', memberId));
   } catch (error) {
     console.error('Error deleting team member:', error);
     throw error;
@@ -107,9 +91,8 @@ export const deleteTeamMember = async (memberId: string) => {
 
 export const requestToJoinTeam = async (projectId: string, userId: string) => {
   try {
-    const membersRef = collection(db, 'team_members');
+    const membersRef = collection(db, 'projects', projectId, 'team_members');
     await addDoc(membersRef, {
-      project_id: projectId,
       user_id: userId,
       status: 'pending',
       created_at: serverTimestamp(),
@@ -121,21 +104,11 @@ export const requestToJoinTeam = async (projectId: string, userId: string) => {
   }
 };
 
-export const respondToTeamRequest = async (projectId: string, userId: string, action: 'accept' | 'reject') => {
+export const respondToTeamRequest = async (projectId: string, memberId: string, action: 'accept' | 'reject') => {
   try {
-    const membersRef = collection(db, 'team_members');
-    const q = query(
-      membersRef, 
-      where('project_id', '==', projectId),
-      where('user_id', '==', userId)
-    );
-    const querySnapshot = await getDocs(q);
-    
-    querySnapshot.forEach(async (docSnapshot) => {
-      await updateDoc(doc(db, 'team_members', docSnapshot.id), {
-        status: action === 'accept' ? 'accepted' : 'rejected',
-        updated_at: serverTimestamp()
-      });
+    await updateDoc(doc(db, 'projects', projectId, 'team_members', memberId), {
+      status: action === 'accept' ? 'accepted' : 'rejected',
+      updated_at: serverTimestamp()
     });
   } catch (error) {
     console.error('Error responding to team request:', error);

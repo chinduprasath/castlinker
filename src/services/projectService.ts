@@ -23,18 +23,16 @@ const convertTimestamp = (timestamp: any): string => {
   return timestamp || new Date().toISOString();
 };
 
-export const fetchProjects = async (userId: string) => {
+export const fetchProjects = async (userId: string, userEmail: string) => {
   try {
     const projectsRef = collection(db, 'projects');
-    // Use only the where clause without orderBy to avoid composite index requirement
+    // 1. Projects where user is team_head_id
     const q = query(
       projectsRef,
       where('team_head_id', '==', userId)
     );
-    
     const querySnapshot = await getDocs(q);
     const projects: any[] = [];
-    
     querySnapshot.forEach((doc) => {
       const data = doc.data();
       projects.push({
@@ -44,10 +42,30 @@ export const fetchProjects = async (userId: string) => {
         updated_at: convertTimestamp(data.updated_at)
       });
     });
+
+    // 2. Projects where user is an accepted team member (by email)
+    const allProjectsSnapshot = await getDocs(projectsRef);
+    for (const projectDoc of allProjectsSnapshot.docs) {
+      const projectId = projectDoc.id;
+      const teamMembersRef = collection(db, 'projects', projectId, 'team_members');
+      const memberQuery = query(teamMembersRef, where('email', '==', userEmail), where('status', '==', 'accepted'));
+      const memberSnapshot = await getDocs(memberQuery);
+      if (!memberSnapshot.empty) {
+        // Only add if not already in the list
+        if (!projects.some(p => p.id === projectId)) {
+          const data = projectDoc.data();
+          projects.push({
+            id: projectId,
+            ...data,
+            created_at: convertTimestamp(data.created_at),
+            updated_at: convertTimestamp(data.updated_at)
+          });
+        }
+      }
+    }
     
     // Sort the projects in JavaScript instead of in the query
     projects.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    
     return projects;
   } catch (error) {
     console.error('Error fetching projects:', error);

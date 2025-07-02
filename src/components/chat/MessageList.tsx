@@ -1,11 +1,11 @@
 import React from 'react';
 import { format } from 'date-fns';
 import { useAuth } from '../../hooks/useAuth';
-import { Message } from '../../types/chat';
+import { ChatMessage } from '../../hooks/useChat.tsx';
 import { EmojiPicker } from './EmojiPicker';
 
 interface MessageListProps {
-    messages: Message[];
+    messages: ChatMessage[];
     onDelete: (messageId: string, forEveryone: boolean) => Promise<void>;
     onEdit: (messageId: string, newContent: string) => Promise<void>;
     onReaction: (messageId: string, emoji: string) => Promise<void>;
@@ -23,7 +23,7 @@ export const MessageList: React.FC<MessageListProps> = ({
     const [editingMessageId, setEditingMessageId] = React.useState<string | null>(null);
     const [editContent, setEditContent] = React.useState('');
 
-    const handleEditStart = (message: Message) => {
+    const handleEditStart = (message: ChatMessage) => {
         setEditingMessageId(message.id);
         setEditContent(message.content);
     };
@@ -41,8 +41,8 @@ export const MessageList: React.FC<MessageListProps> = ({
         setEditContent('');
     };
 
-    const renderMessageContent = (message: Message) => {
-        if (message.is_deleted) {
+    const renderMessageContent = (message: ChatMessage) => {
+        if (message.isDeleted) {
             return (
                 <span className="italic text-gray-400">
                     This message was deleted
@@ -76,36 +76,11 @@ export const MessageList: React.FC<MessageListProps> = ({
             );
         }
 
-        switch (message.type) {
-            case 'text':
-                return <p className="whitespace-pre-wrap">{message.content}</p>;
-            case 'image':
-                return (
-                    <img
-                        src={message.content}
-                        alt="Image message"
-                        className="max-w-sm rounded-lg"
-                    />
-                );
-            case 'video':
-                return (
-                    <video
-                        controls
-                        className="max-w-sm rounded-lg"
-                    >
-                        <source src={message.content} />
-                    </video>
-                );
-            case 'audio':
-                return (
-                    <audio controls className="max-w-sm">
-                        <source src={message.content} />
-                    </audio>
-                );
-            case 'document':
-                return (
-                    <a
-                        href={message.content}
+        if (message.attachments && message.attachments.length > 0) {
+            return message.attachments.map((att) => (
+                <a
+                    key={att.id}
+                    href={att.fileUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 text-blue-600 hover:text-blue-700"
@@ -123,12 +98,11 @@ export const MessageList: React.FC<MessageListProps> = ({
                                 d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
                             />
                         </svg>
-                        {message.metadata.fileName}
+                    {att.fileName}
                     </a>
-                );
-            default:
-                return null;
+            ));
         }
+        return <p className="whitespace-pre-wrap">{message.content}</p>;
     };
 
     return (
@@ -137,23 +111,23 @@ export const MessageList: React.FC<MessageListProps> = ({
                 <div
                     key={message.id}
                     className={`flex ${
-                        message.sender_id === user?.id ? 'justify-end' : 'justify-start'
+                        message.senderId === user?.id ? 'justify-end' : 'justify-start'
                     }`}
                 >
                     <div
                         className={`max-w-[70%] rounded-lg p-3 ${
-                            message.sender_id === user?.id
+                            message.senderId === user?.id
                                 ? 'bg-blue-600 text-white'
                                 : 'bg-gray-100 text-gray-900'
                         }`}
                     >
                         {renderMessageContent(message)}
                         <div className="flex items-center justify-between mt-1 text-xs">
-                            <span className={message.sender_id === user?.id ? 'text-blue-100' : 'text-gray-500'}>
-                                {format(new Date(message.created_at), 'h:mm a')}
+                            <span className={message.senderId === user?.id ? 'text-blue-100' : 'text-gray-500'}>
+                                {message.timestamp}
                             </span>
-                            {message.is_edited && (
-                                <span className={message.sender_id === user?.id ? 'text-blue-100' : 'text-gray-500'}>
+                            {message.isEdited && (
+                                <span className={message.senderId === user?.id ? 'text-blue-100' : 'text-gray-500'}>
                                     (edited)
                                 </span>
                             )}
@@ -162,16 +136,16 @@ export const MessageList: React.FC<MessageListProps> = ({
                             <div className="flex flex-wrap gap-1 mt-2">
                                 {message.reactions.map((reaction) => (
                                     <span
-                                        key={`${reaction.emoji}-${reaction.user_id}`}
+                                        key={`${reaction.emoji}-${reaction.userId}`}
                                         className="px-2 py-1 text-xs bg-white rounded-full shadow-sm"
                                         onClick={() => onRemoveReaction(message.id, reaction.emoji)}
                                     >
-                                        {reaction.emoji} {reaction.count}
+                                        {reaction.emoji}
                                     </span>
                                 ))}
                             </div>
                         )}
-                        {message.sender_id === user?.id && !message.is_deleted && (
+                        {message.senderId === user?.id && !message.isDeleted && (
                             <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button
                                     onClick={() => handleEditStart(message)}

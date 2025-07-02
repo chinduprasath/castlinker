@@ -1,4 +1,3 @@
-
 export interface TalentProfile {
   id: string;
   full_name: string;
@@ -66,7 +65,20 @@ export const PROFESSION_OPTIONS: ProfessionOption[] = [
   { value: 'Actor', label: 'Actor' },
   { value: 'Director', label: 'Director' },
   { value: 'Producer', label: 'Producer' },
-  { value: 'Writer', label: 'Writer' },
+  { value: 'Screenwriter', label: 'Screenwriter' },
   { value: 'Cinematographer', label: 'Cinematographer' },
-  { value: 'Editor', label: 'Editor' }
+  { value: 'Casting Director', label: 'Casting Director' },
+  { value: 'Agent', label: 'Agent' },
+  { value: 'Production Company', label: 'Production Company' },
+  { value: 'Editor', label: 'Editor' },
+  { value: 'Sound Designer', label: 'Sound Designer' },
+  { value: 'Production Designer', label: 'Production Designer' },
+  { value: 'Costume Designer', label: 'Costume Designer' },
+  { value: 'Makeup Artist', label: 'Makeup Artist' },
+  { value: 'Stunt Coordinator', label: 'Stunt Coordinator' },
+  { value: 'Visual Effects Artist', label: 'Visual Effects Artist' },
+  { value: 'Music Composer', label: 'Music Composer' },
+  { value: 'Art Director', label: 'Art Director' },
+  { value: 'Location Manager', label: 'Location Manager' },
+  { value: 'others', label: 'Others' }
 ];

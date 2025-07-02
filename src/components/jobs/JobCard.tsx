@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { Bookmark, BookmarkCheck, Calendar, ChevronDown, DollarSign, MapPin } from "lucide-react";
+import { Bookmark, BookmarkCheck, Calendar, ChevronDown, MapPin } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -80,7 +79,6 @@ const JobCard = ({
             )}
             
             <div className="flex items-center gap-1 text-muted-foreground">
-              <DollarSign className="h-3 w-3 sm:h-4 sm:w-4" />
               <span>{formatSalary(job)}</span>
             </div>
           </div>

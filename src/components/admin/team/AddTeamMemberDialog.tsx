@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AdminRole } from "@/types/rbacTypes";
@@ -9,13 +8,17 @@ interface AddTeamMemberDialogProps {
   onClose: () => void;
   onSuccess?: () => void;
   availableRoles: AdminRole[];
+  projectId: string;
+  projectName: string;
 }
 
 const AddTeamMemberDialog: React.FC<AddTeamMemberDialogProps> = ({
   isOpen,
   onClose,
   onSuccess,
-  availableRoles
+  availableRoles,
+  projectId,
+  projectName
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -34,6 +37,8 @@ const AddTeamMemberDialog: React.FC<AddTeamMemberDialogProps> = ({
           }}
           onCancel={onClose}
           availableRoles={availableRoles}
+          projectId={projectId}
+          projectName={projectName}
         />
       </DialogContent>
     </Dialog>

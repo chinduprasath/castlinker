@@ -1,13 +1,14 @@
-
 import { motion } from "framer-motion";
 import { ArrowRight, Video, UserCheck, Award } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import DemoVideo from "./DemoVideo";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const Hero = () => {
   const [isDemoOpen, setIsDemoOpen] = useState(false);
+  const { theme } = useTheme();
   
   const fadeIn = {
     hidden: { opacity: 0, y: 20 },
@@ -19,22 +20,24 @@ const Hero = () => {
   };
 
   return (
-    <section className="relative min-h-screen pt-20 overflow-hidden film-strip">
+    <section className={`relative min-h-screen pt-20 overflow-hidden film-strip ${theme === 'light' ? 'bg-yellow-50' : 'bg-cinematic-dark'}`}>
       <div 
         className="absolute inset-0 bg-hero-gradient"
         style={{
-          backgroundImage: "url('https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2156&q=80')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundBlendMode: "overlay",
-          opacity: 0.4
+          backgroundImage: theme === 'light'
+            ? "url('https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2156&q=80')"
+            : undefined,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundBlendMode: 'overlay',
+          opacity: theme === 'light' ? 0.15 : 0.3
         }}
       />
       
       <div className="container mx-auto px-4 py-20 md:py-32 relative z-10">
         <div className="max-w-4xl mx-auto text-center">
           <motion.h1 
-            className="text-3xl sm:text-4xl md:text-6xl font-bold mb-6 leading-tight"
+            className={`text-3xl sm:text-4xl md:text-6xl font-bold mb-6 leading-tight ${theme === 'light' ? 'text-black' : 'text-white'}`}
             variants={fadeIn}
             initial="hidden"
             animate="visible"
@@ -43,7 +46,7 @@ const Hero = () => {
           </motion.h1>
           
           <motion.p 
-            className="text-base sm:text-lg md:text-xl text-foreground/80 mb-8 max-w-2xl mx-auto"
+            className={`text-base sm:text-lg md:text-xl mb-8 max-w-2xl mx-auto ${theme === 'light' ? 'text-gray-700' : 'text-foreground/80'}`}
             variants={fadeIn}
             initial="hidden"
             animate="visible"

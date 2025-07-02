@@ -1,7 +1,7 @@
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Check } from 'lucide-react';
-import { Message } from '@/types/chat';
+import type { ChatMessage } from '@/hooks/useChat.tsx';
 import { format } from 'date-fns';
 
 // Define MediaAttachment from types
@@ -20,35 +20,6 @@ export interface MessageReaction {
   emoji: string;
   user_id: string;
   count: number;
-}
-
-// Define ChatMessage type without extending Message to avoid type conflicts
-export interface ChatMessage {
-  id: string;
-  room_id: string;
-  sender_id: string;
-  content: string;
-  type: 'text' | 'image' | 'video' | 'audio' | 'document' | 'system';
-  metadata: {
-    fileName?: string;
-    fileSize?: number;
-    mimeType?: string;
-    duration?: number;
-    dimensions?: {
-      width: number;
-      height: number;
-    };
-  };
-  created_at: string;
-  updated_at: string;
-  is_edited: boolean;
-  is_deleted: boolean;
-  reply_to_id?: string;
-  reactions?: MessageReaction[];
-  senderName?: string;
-  senderRole?: string;
-  isMe?: boolean;
-  status?: 'sent' | 'delivered' | 'seen';
 }
 
 type MessageProps = {
@@ -72,18 +43,13 @@ export function ChatMessage({
     <div className={`flex ${message.isMe ? 'justify-end' : 'justify-start'} mb-4 group`}>
       {!message.isMe && showAvatar && (
         <Avatar className="h-10 w-10 mr-3 mt-1">
-          <AvatarImage src="/placeholder.svg" alt={message.senderName || 'User'} />
-          <AvatarFallback>{(message.senderName || 'U').charAt(0)}</AvatarFallback>
+          <AvatarImage src="/placeholder.svg" alt="User" />
+          <AvatarFallback>U</AvatarFallback>
         </Avatar>
       )}
       
       <div className="flex flex-col max-w-[80%]">
-        {!message.isMe && showAvatar && (
-          <div className="mb-1 text-sm text-gold/80">
-            {message.senderName && <span className="font-medium">{message.senderName}</span>}
-            {message.senderRole && <span className="text-xs ml-2 text-gold/60">{message.senderRole}</span>}
-          </div>
-        )}
+        {/* No senderName or senderRole in ChatMessage type */}
         
         <div className={`p-4 rounded-2xl ${message.isMe 
           ? 'bg-gold/20 text-white rounded-tr-none' 
@@ -91,14 +57,14 @@ export function ChatMessage({
         >
           <p className="text-sm">{message.content}</p>
           
-          {message.is_edited && (
+          {message.isEdited && (
             <span className="text-xs text-gold/40 mt-1 inline-block">(edited)</span>
           )}
         </div>
         
         <div className={`flex items-center mt-1 text-xs ${message.isMe ? 'justify-end' : 'justify-start'}`}>
           <span className="text-gray-400">
-            {message.created_at && format(new Date(message.created_at), 'h:mm a')}
+            {message.timestamp}
           </span>
           
           {message.isMe && message.status === 'seen' && (
@@ -112,7 +78,7 @@ export function ChatMessage({
       {message.isMe && showAvatar && (
         <Avatar className="h-10 w-10 ml-3 mt-1">
           <AvatarImage src="/placeholder.svg" alt="You" />
-          <AvatarFallback>{(message.senderName || 'Y').charAt(0)}</AvatarFallback>
+          <AvatarFallback>Y</AvatarFallback>
         </Avatar>
       )}
     </div>

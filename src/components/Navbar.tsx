@@ -12,11 +12,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { theme } = useTheme();
 
   const handleLogout = async () => {
     await logout();
@@ -24,7 +26,7 @@ const Navbar = () => {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-cinematic/80 backdrop-blur-md border-b border-gold/10">
+    <header className={`fixed top-0 left-0 right-0 z-50 border-b ${theme === 'light' ? 'bg-white border-gray-200' : 'bg-cinematic/80 border-gold/10'} transition-colors`}>
       <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-3 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2 z-20">
           <span className="text-xl sm:text-2xl font-bold gold-gradient-text">CastLinker</span>

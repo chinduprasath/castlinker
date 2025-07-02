@@ -28,6 +28,7 @@ import { updateDoc, doc, collection, addDoc, serverTimestamp, deleteDoc, getDocs
 import { db } from '@/integrations/firebase/client';
 import { Label } from '@/components/ui/label';
 import { MapPin } from 'lucide-react';
+import { sendProjectMessage, subscribeToProjectChat } from '@/services/projectChatService';
 
 interface Project {
   id: string;
@@ -45,7 +46,6 @@ const ProjectDetail = () => {
   const [project, setProject] = useState<Project | null>(null);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [message, setMessage] = useState('');
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -62,12 +62,20 @@ const ProjectDetail = () => {
   const [milestoneDate, setMilestoneDate] = useState('');
   const [isMilestoneSubmitting, setIsMilestoneSubmitting] = useState(false);
   const [milestones, setMilestones] = useState<any[]>([]);
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [chatInput, setChatInput] = useState('');
 
   useEffect(() => {
     if (projectId) {
       fetchData();
       fetchMilestones();
     }
+  }, [projectId]);
+
+  useEffect(() => {
+    if (!projectId) return;
+    const unsub = subscribeToProjectChat(projectId, setChatMessages);
+    return () => unsub();
   }, [projectId]);
 
   const fetchData = async () => {
@@ -97,11 +105,7 @@ const ProjectDetail = () => {
       }
 
       const teamData = await fetchTeamMembers(projectId);
-      if (teamData && typeof teamData === 'object' && 'accepted' in teamData) {
-        setTeamMembers(teamData.accepted);
-      } else {
-        setTeamMembers([]);
-      }
+      setTeamMembers(teamData || []);
     } catch (error: any) {
       console.error('Error fetching project details:', error);
       toast({
@@ -117,9 +121,8 @@ const ProjectDetail = () => {
   const fetchMilestones = async () => {
     if (!projectId) return;
     try {
-      const milestonesRef = collection(db, 'project_milestones');
-      const q = query(milestonesRef, where('project_id', '==', projectId));
-      const querySnapshot = await getDocs(q);
+      const milestonesRef = collection(db, 'projects', projectId, 'milestones');
+      const querySnapshot = await getDocs(milestonesRef);
       const milestoneList: any[] = [];
       querySnapshot.forEach((doc) => {
         milestoneList.push({ id: doc.id, ...doc.data() });
@@ -130,13 +133,21 @@ const ProjectDetail = () => {
     }
   };
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const isTeamMember = !!user && !!project && (
+    user.id === project.team_head_id ||
+    teamMembers.some((m) => m.email === user.email)
+  );
+
+  const handleSendChat = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!message.trim()) return;
-    
-    // Here you would implement the actual message sending logic
-    console.log('Sending message:', message);
-    setMessage('');
+    if (!chatInput.trim() || !user || !isTeamMember) return;
+    await sendProjectMessage(projectId, {
+      text: chatInput,
+      senderId: user.id,
+      senderName: user.name || user.email,
+      senderAvatar: user.avatar || '',
+    });
+    setChatInput('');
   };
 
   const openEditModal = () => {
@@ -186,8 +197,7 @@ const ProjectDetail = () => {
     if (!project) return;
     try {
       setIsMilestoneSubmitting(true);
-      await addDoc(collection(db, 'project_milestones'), {
-        project_id: project.id,
+      await addDoc(collection(db, 'projects', project.id, 'milestones'), {
         title: milestoneTitle,
         description: milestoneDesc,
         due_date: milestoneDate,
@@ -211,7 +221,7 @@ const ProjectDetail = () => {
 
   const handleStatusChange = async (milestoneId: string, newStatus: string) => {
     try {
-      await updateDoc(doc(db, 'project_milestones', milestoneId), {
+      await updateDoc(doc(db, 'projects', projectId, 'milestones', milestoneId), {
         status: newStatus,
         updated_at: serverTimestamp(),
       });
@@ -282,24 +292,60 @@ const ProjectDetail = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="min-h-[400px] flex flex-col justify-center items-center text-center space-y-4 border-2 border-dashed border-border rounded-lg">
-                <MessageSquare className="h-16 w-16 text-muted-foreground" />
-                <div>
-                  <h3 className="text-lg font-medium text-muted-foreground">No messages yet. Start the conversation!</h3>
-                </div>
+              <div
+                className="min-h-[500px] max-h-[600px] overflow-y-auto flex flex-col gap-4 border-2 border-dashed border-border rounded-lg p-4 bg-background relative"
+                ref={el => {
+                  if (el) el.scrollTop = el.scrollHeight;
+                }}
+              >
+                {chatMessages.length === 0 ? (
+                  <div className="flex flex-col justify-center items-center text-center flex-1">
+                    <MessageSquare className="h-16 w-16 text-muted-foreground" />
+                    <div>
+                      <h3 className="text-lg font-medium text-muted-foreground">No messages yet. Start the conversation!</h3>
+                    </div>
+                  </div>
+                ) : (
+                  chatMessages.map(msg => {
+                    const isOwn = user && msg.senderId === user.id;
+                    return (
+                      <div
+                        key={msg.id}
+                        className={`flex items-end gap-3 ${isOwn ? 'flex-row-reverse self-end' : 'self-start'}`}
+                        style={{ maxWidth: '100%' }}
+                      >
+                        <div className="h-10 w-10 rounded-full bg-gold/20 flex items-center justify-center font-bold text-gold text-base overflow-hidden">
+                          {msg.senderAvatar
+                            ? <img src={msg.senderAvatar} alt={msg.senderName} className="h-10 w-10 rounded-full object-cover" />
+                            : (msg.senderName?.[0]?.toUpperCase() || '?')}
+                        </div>
+                        <div className={`bg-gray-100 dark:bg-[#232323] rounded-xl px-4 py-2 min-w-[200px] w-auto max-w-[50%] ${isOwn ? 'text-right' : ''}`}> 
+                          <div className="flex items-center gap-2 mb-1 whitespace-nowrap">
+                            <span className="text-xs text-gray-400">{msg.createdAt?.toDate?.() ? msg.createdAt.toDate().toLocaleString() : ''}</span>
+                            <span className="font-semibold text-xs text-gold">{msg.senderName}</span>
+                          </div>
+                          <div className="text-sm break-words whitespace-pre-line text-justify">{msg.text}</div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
-              
-              <form onSubmit={handleSendMessage} className="flex gap-2">
-                <Input
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Type a message..."
-                  className="flex-1"
-                />
-                <Button type="submit" size="icon" className="bg-gold hover:bg-gold/90 text-black">
-                  <Send className="h-4 w-4" />
-                </Button>
-              </form>
+              {isTeamMember ? (
+                <form onSubmit={handleSendChat} className="flex gap-2">
+                  <Input
+                    value={chatInput}
+                    onChange={e => setChatInput(e.target.value)}
+                    placeholder="Type a message..."
+                    className="flex-1"
+                  />
+                  <Button type="submit" size="icon" className="bg-gold hover:bg-gold/90 text-black">
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </form>
+              ) : (
+                <div className="text-center text-muted-foreground text-sm">Only team members can send messages.</div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -326,15 +372,21 @@ const ProjectDetail = () => {
               {teamMembers.length === 0 ? (
                 <p className="text-muted-foreground">No team members yet.</p>
               ) : (
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                   {teamMembers.map((member) => (
-                    <div key={member.id} className="flex items-center space-x-3 p-3 rounded-lg border">
-                      <div className="h-10 w-10 rounded-full bg-gold/20 flex items-center justify-center">
-                        <Users className="h-5 w-5 text-gold" />
+                    <div key={member.id} className="flex flex-col justify-between p-5 rounded-xl border bg-white dark:bg-[#181818] shadow min-h-[140px] h-full">
+                      <div className="flex items-center gap-4 mb-2">
+                        <div className="h-14 w-14 rounded-full bg-gold/20 flex items-center justify-center">
+                          <Users className="h-7 w-7 text-gold" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-lg truncate">{member.name || 'Team Member'}</p>
+                          <p className="text-xs text-gray-500 truncate">{member.email}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium">{member.name || 'Team Member'}</p>
-                        <p className="text-sm text-muted-foreground">{member.role || 'Member'}</p>
+                      <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-100 dark:border-[#232323]">
+                        <span className="text-xs font-medium text-muted-foreground truncate">{member.roleId || member.role || 'Member'}</span>
+                        <span className={`inline-block px-3 py-1 rounded text-xs ml-2 ${member.status === 'accepted' ? 'bg-green-100 text-green-700' : member.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'}`}>{member.status || 'unknown'}</span>
                       </div>
                     </div>
                   ))}
@@ -342,7 +394,7 @@ const ProjectDetail = () => {
               )}
             </CardContent>
           </Card>
-          <AddTeamMemberDialog isOpen={showAddMember} onClose={() => setShowAddMember(false)} availableRoles={[]} />
+          <AddTeamMemberDialog isOpen={showAddMember} onClose={() => setShowAddMember(false)} availableRoles={[]} projectId={project.id} projectName={project?.name || ''} onSuccess={fetchData} />
         </TabsContent>
 
         <TabsContent value="milestones" className="space-y-4">
@@ -367,27 +419,31 @@ const ProjectDetail = () => {
               ) : (
                 <div className="space-y-4">
                   {milestones.map((milestone) => (
-                    <div key={milestone.id} className="border rounded-lg p-4 bg-[#181818]">
-                      <div className="flex justify-between items-center mb-2">
+                    <div
+                      key={milestone.id}
+                      className="rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between transition-colors
+                        bg-[#f7f7f7] text-gray-900 dark:bg-[#181818] dark:text-gold border border-transparent dark:border-[#232323]"
+                    >
+                      <div>
                         <div className="font-semibold text-lg text-gold">{milestone.title}</div>
-                        <div className="flex items-center gap-4">
-                          <div className="text-xs text-[#b3b3b3]">{milestone.due_date}</div>
-                          {milestone.created_by === user?.id ? (
-                            <select
-                              className="ml-2 rounded bg-[#222] text-gold px-2 py-1 border border-gold"
-                              value={milestone.status || 'pending'}
-                              onChange={e => handleStatusChange(milestone.id, e.target.value)}
-                            >
-                              <option value="pending">Pending</option>
-                              <option value="inprogress">In Progress</option>
-                              <option value="completed">Completed</option>
-                            </select>
-                          ) : (
-                            <span className="ml-2 text-xs text-gold">{milestone.status || 'pending'}</span>
-                          )}
-                        </div>
+                        <div className="text-[#b3b3b3] dark:text-gray-400">{milestone.description}</div>
                       </div>
-                      <div className="text-[#b3b3b3]">{milestone.description}</div>
+                      <div className="flex flex-col md:items-end md:justify-between gap-2 mt-2 md:mt-0">
+                        <div className="text-xs text-gray-500 dark:text-gray-300">{milestone.due_date}</div>
+                        {milestone.created_by === user?.id ? (
+                          <select
+                            className="ml-2 rounded bg-white dark:bg-[#222] text-gold px-2 py-1 border border-gold"
+                            value={milestone.status || 'pending'}
+                            onChange={e => handleStatusChange(milestone.id, e.target.value)}
+                          >
+                            <option value="pending">Pending</option>
+                            <option value="inprogress">In Progress</option>
+                            <option value="completed">Completed</option>
+                          </select>
+                        ) : (
+                          <span className="ml-2 text-xs px-2 py-1 rounded bg-gold/10 text-gold border border-gold">{milestone.status || 'pending'}</span>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

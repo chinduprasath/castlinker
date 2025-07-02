@@ -1,4 +1,3 @@
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink, Mail } from "lucide-react";
@@ -20,7 +19,6 @@ const JobDetailTabs = ({ job, activeTab, setActiveTab, onApply }: JobDetailTabsP
         <TabsTrigger value="details">Details</TabsTrigger>
         <TabsTrigger value="requirements">Requirements</TabsTrigger>
         <TabsTrigger value="responsibilities">Responsibilities</TabsTrigger>
-        <TabsTrigger value="apply">Apply</TabsTrigger>
       </TabsList>
       
       <TabsContent value="details" className="mt-4 text-foreground/80 leading-relaxed">
@@ -60,42 +58,6 @@ const JobDetailTabs = ({ job, activeTab, setActiveTab, onApply }: JobDetailTabsP
         ) : (
           <p className="text-foreground/60">No specific responsibilities listed.</p>
         )}
-      </TabsContent>
-      
-      <TabsContent value="apply" className="mt-4">
-        <h3 className="text-lg font-medium mb-4">Apply for This Position</h3>
-        <div className="space-y-6">
-          <div className="bg-cinematic-dark/30 p-4 rounded-lg border border-gold/10">
-            <h4 className="font-medium mb-2">Application Options:</h4>
-            <div className="space-y-3">
-              {job.application_url && (
-                <div>
-                  <Button variant="outline" className="w-full border-gold/30">
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Apply on External Website
-                  </Button>
-                </div>
-              )}
-              {job.application_email && (
-                <div>
-                  <Button variant="outline" className="w-full border-gold/30">
-                    <Mail className="h-4 w-4 mr-2" />
-                    Email Your Application
-                  </Button>
-                </div>
-              )}
-              <div>
-                <Button className="w-full bg-gold hover:bg-gold-dark text-cinematic" onClick={onApply}>
-                  Apply Through CastLinker
-                </Button>
-              </div>
-            </div>
-          </div>
-          
-          <div className="text-sm text-foreground/60">
-            <p>This job will be accepting applications until {formatDate(job.application_deadline)}</p>
-          </div>
-        </div>
       </TabsContent>
     </Tabs>
   );

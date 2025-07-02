@@ -1,10 +1,10 @@
-
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Plus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useJobsData, JobFilters, JobSort } from "@/hooks/useJobsData";
+import { useNavigate } from 'react-router-dom';
 
 // Import our components
 import JobListingHeader from "@/components/jobs/JobListingHeader";
@@ -31,6 +31,7 @@ const Jobs = () => {
   } = useJobsData();
 
   const [isCreateFormOpen, setIsCreateFormOpen] = useState(false);
+  const navigate = useNavigate();
 
   const handleFilterChange = (newFilters: Partial<JobFilters>) => {
     updateFilters(newFilters);
@@ -56,23 +57,32 @@ const Jobs = () => {
         </div>
         
         {user && (
-          <Dialog open={isCreateFormOpen} onOpenChange={setIsCreateFormOpen}>
-            <DialogTrigger asChild>
-              <Button 
-                className="bg-gold hover:bg-gold/90 text-white dark:text-black whitespace-nowrap"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Post a Job
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <JobCreateForm onJobCreated={handleJobCreated} />
-            </DialogContent>
-          </Dialog>
+          <div className="flex gap-2">
+            <Dialog open={isCreateFormOpen} onOpenChange={setIsCreateFormOpen}>
+              <DialogTrigger asChild>
+                <Button 
+                  className="bg-gold hover:bg-gold/90 text-white dark:text-black whitespace-nowrap"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Post a Job
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                <JobCreateForm onJobCreated={handleJobCreated} />
+              </DialogContent>
+            </Dialog>
+            <Button
+              variant="outline"
+              className="whitespace-nowrap border-gold text-gold hover:bg-gold/10"
+              onClick={() => navigate('/manage/jobs')}
+            >
+              Manage Jobs
+            </Button>
+          </div>
         )}
       </div>
 
-      <JobListingHeader onSearch={handleSearch} />
+      <JobListingHeader onSearch={handleSearch} jobs={jobs} />
 
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
         {/* Sidebar Filters - Collapsible on mobile */}

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,9 +7,11 @@ import { Form, FormField, FormItem, FormLabel, FormControl } from "@/components/
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const AboutSection = () => {
   const [isEditing, setIsEditing] = useState(false);
+  const { theme } = useTheme();
   
   // In a real app, this data would come from API/context
   const about = {
@@ -52,10 +53,10 @@ const AboutSection = () => {
 
   return (
     <div className="space-y-6">
-      <Card className="bg-card-gradient border-gold/10">
+      <Card className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-card-gradient border-gold/10'} transition-colors`}>
         <CardContent className="p-6">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold">Biography</h3>
+            <h3 className={`text-lg font-semibold ${theme === 'light' ? 'text-gray-900' : ''}`}>Biography</h3>
             <Button 
               variant="ghost" 
               size="sm"
@@ -65,16 +66,14 @@ const AboutSection = () => {
               <Edit className="h-4 w-4 mr-1" /> Edit
             </Button>
           </div>
-          <div className="whitespace-pre-line text-foreground/80">
-            {about.bio}
-          </div>
+          <div className={`whitespace-pre-line ${theme === 'light' ? 'text-gray-800' : 'text-foreground/80'}`}>{about.bio}</div>
         </CardContent>
       </Card>
       
-      <Card className="bg-card-gradient border-gold/10">
+      <Card className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-card-gradient border-gold/10'} transition-colors`}>
         <CardContent className="p-6">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold">Details</h3>
+            <h3 className={`text-lg font-semibold ${theme === 'light' ? 'text-gray-900' : ''}`}>Details</h3>
             <Button 
               variant="ghost" 
               size="sm"
@@ -87,8 +86,8 @@ const AboutSection = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {about.details.map((detail, index) => (
               <div key={index} className="flex">
-                <div className="w-1/3 text-foreground/60">{detail.label}:</div>
-                <div className="w-2/3 font-medium">{detail.value}</div>
+                <div className={`${theme === 'light' ? 'text-gray-500' : 'text-foreground/60'} w-1/3`}>{detail.label}:</div>
+                <div className={`w-2/3 font-medium ${theme === 'light' ? 'text-gray-900' : ''}`}>{detail.value}</div>
               </div>
             ))}
           </div>

@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,28 +13,74 @@ import { Loader2 } from "lucide-react";
 
 interface JobCreateFormProps {
   onJobCreated?: () => void;
+  initialValues?: Partial<any>;
+  onUpdate?: (jobId: string, jobData: any) => Promise<void>;
 }
 
-const JobCreateForm = ({ onJobCreated }: JobCreateFormProps) => {
-  const [title, setTitle] = useState("");
-  const [company, setCompany] = useState("");
-  const [description, setDescription] = useState("");
-  const [requirements, setRequirements] = useState("");
-  const [responsibilities, setResponsibilities] = useState("");
-  const [jobType, setJobType] = useState("");
-  const [roleCategory, setRoleCategory] = useState("");
-  const [experienceLevel, setExperienceLevel] = useState("");
-  const [location, setLocation] = useState("");
-  const [locationType, setLocationType] = useState("");
-  const [salaryMin, setSalaryMin] = useState("");
-  const [salaryMax, setSalaryMax] = useState("");
-  const [salaryCurrency, setSalaryCurrency] = useState("USD");
-  const [salaryPeriod, setSalaryPeriod] = useState("yearly");
-  const [applicationDeadline, setApplicationDeadline] = useState("");
+const ROLE_CATEGORIES = [
+  "Actor",
+  "Director",
+  "Producer",
+  "Screenwriter",
+  "Cinematographer",
+  "Casting Director",
+  "Agent",
+  "Production Company",
+  "Editor",
+  "Sound Designer",
+  "Production Designer",
+  "Costume Designer",
+  "Makeup Artist",
+  "Stunt Coordinator",
+  "Visual Effects Artist",
+  "Music Composer",
+  "Art Director",
+  "Location Manager",
+  "other"
+];
+
+const JobCreateForm = ({ onJobCreated, initialValues, onUpdate }: JobCreateFormProps) => {
+  const [title, setTitle] = useState(initialValues?.title || "");
+  const [company, setCompany] = useState(initialValues?.company || "");
+  const [description, setDescription] = useState(initialValues?.description || "");
+  const [requirements, setRequirements] = useState(initialValues?.requirements ? Array.isArray(initialValues.requirements) ? initialValues.requirements.join('\n') : initialValues.requirements : "");
+  const [responsibilities, setResponsibilities] = useState(initialValues?.responsibilities ? Array.isArray(initialValues.responsibilities) ? initialValues.responsibilities.join('\n') : initialValues.responsibilities : "");
+  const [jobType, setJobType] = useState(initialValues?.job_type || "");
+  const [roleCategory, setRoleCategory] = useState(initialValues?.role_category || "");
+  const [experienceLevel, setExperienceLevel] = useState(initialValues?.experience_level || "");
+  const [location, setLocation] = useState(initialValues?.location || "");
+  const [locationType, setLocationType] = useState(initialValues?.location_type || "");
+  const [salaryMin, setSalaryMin] = useState(initialValues?.salary_min ? String(initialValues.salary_min) : "");
+  const [salaryMax, setSalaryMax] = useState(initialValues?.salary_max ? String(initialValues.salary_max) : "");
+  const [salaryCurrency, setSalaryCurrency] = useState(initialValues?.salary_currency || "INR");
+  const [salaryPeriod, setSalaryPeriod] = useState(initialValues?.salary_period || "yearly");
+  const [applicationDeadline, setApplicationDeadline] = useState(initialValues?.application_deadline ? (typeof initialValues.application_deadline === 'string' ? initialValues.application_deadline : (initialValues.application_deadline?.seconds ? new Date(initialValues.application_deadline.seconds * 1000).toISOString().slice(0,10) : '')) : "");
+  const [experience, setExperience] = useState(initialValues?.experience || "");
   const [isLoading, setIsLoading] = useState(false);
 
   const { toast } = useToast();
   const { user } = useAuth();
+
+  useEffect(() => {
+    if (initialValues) {
+      setTitle(initialValues.title || "");
+      setCompany(initialValues.company || "");
+      setDescription(initialValues.description || "");
+      setRequirements(initialValues.requirements ? Array.isArray(initialValues.requirements) ? initialValues.requirements.join('\n') : initialValues.requirements : "");
+      setResponsibilities(initialValues.responsibilities ? Array.isArray(initialValues.responsibilities) ? initialValues.responsibilities.join('\n') : initialValues.responsibilities : "");
+      setJobType(initialValues.job_type || "");
+      setRoleCategory(initialValues.role_category || "");
+      setExperienceLevel(initialValues.experience_level || "");
+      setLocation(initialValues.location || "");
+      setLocationType(initialValues.location_type || "");
+      setSalaryMin(initialValues.salary_min ? String(initialValues.salary_min) : "");
+      setSalaryMax(initialValues.salary_max ? String(initialValues.salary_max) : "");
+      setSalaryCurrency(initialValues.salary_currency || "INR");
+      setSalaryPeriod(initialValues.salary_period || "yearly");
+      setApplicationDeadline(initialValues.application_deadline ? (typeof initialValues.application_deadline === 'string' ? initialValues.application_deadline : (initialValues.application_deadline?.seconds ? new Date(initialValues.application_deadline.seconds * 1000).toISOString().slice(0,10) : '')) : "");
+      setExperience(initialValues.experience || "");
+    }
+  }, [initialValues]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,11 +113,17 @@ const JobCreateForm = ({ onJobCreated }: JobCreateFormProps) => {
         salary_currency: salaryCurrency,
         salary_period: salaryPeriod,
         application_deadline: applicationDeadline || null,
+        experience,
         status: 'active',
         is_featured: false,
-        created_at: serverTimestamp(),
-        user_id: user.id,
+        created_at: initialValues?.created_at || serverTimestamp(),
+        created_by: user.id,
       };
+
+      if (initialValues && initialValues.id && onUpdate) {
+        await onUpdate(initialValues.id, jobData);
+        return;
+      }
 
       await addDoc(collection(db, 'film_jobs'), jobData);
 
@@ -94,9 +145,10 @@ const JobCreateForm = ({ onJobCreated }: JobCreateFormProps) => {
       setLocationType("");
       setSalaryMin("");
       setSalaryMax("");
-      setSalaryCurrency("USD");
+      setSalaryCurrency("INR");
       setSalaryPeriod("yearly");
       setApplicationDeadline("");
+      setExperience("");
 
       // Call callback to close dialog and refresh jobs
       onJobCreated?.();
@@ -115,9 +167,9 @@ const JobCreateForm = ({ onJobCreated }: JobCreateFormProps) => {
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Create Job Posting</DialogTitle>
+        <DialogTitle>{initialValues ? 'Edit Job Posting' : 'Create Job Posting'}</DialogTitle>
         <DialogDescription>
-          Post a new job opportunity for the film industry community
+          {initialValues ? 'Edit your job opportunity details' : 'Post a new job opportunity for the film industry community'}
         </DialogDescription>
       </DialogHeader>
 
@@ -154,6 +206,28 @@ const JobCreateForm = ({ onJobCreated }: JobCreateFormProps) => {
             required
           />
         </div>
+        <div className="space-y-2">
+          <Label htmlFor="requirements">Requirements</Label>
+          <Textarea
+            id="requirements"
+            value={requirements}
+            onChange={(e) => setRequirements(e.target.value)}
+            rows={3}
+            placeholder="One per line"
+          />
+          <span className="text-xs text-muted-foreground">One per line</span>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="responsibilities">Responsibilities</Label>
+          <Textarea
+            id="responsibilities"
+            value={responsibilities}
+            onChange={(e) => setResponsibilities(e.target.value)}
+            rows={3}
+            placeholder="One per line"
+          />
+          <span className="text-xs text-muted-foreground">One per line</span>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
@@ -178,17 +252,9 @@ const JobCreateForm = ({ onJobCreated }: JobCreateFormProps) => {
                 <SelectValue placeholder="Select role category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Acting">Acting</SelectItem>
-                <SelectItem value="Directing">Directing</SelectItem>
-                <SelectItem value="Production">Production</SelectItem>
-                <SelectItem value="Cinematography">Cinematography</SelectItem>
-                <SelectItem value="Writing">Writing</SelectItem>
-                <SelectItem value="Editing">Editing</SelectItem>
-                <SelectItem value="Sound">Sound</SelectItem>
-                <SelectItem value="VFX">VFX</SelectItem>
-                <SelectItem value="Costume">Costume</SelectItem>
-                <SelectItem value="Makeup">Makeup</SelectItem>
-                <SelectItem value="Other">Other</SelectItem>
+                {ROLE_CATEGORIES.map((role) => (
+                  <SelectItem key={role} value={role}>{role}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -222,7 +288,7 @@ const JobCreateForm = ({ onJobCreated }: JobCreateFormProps) => {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="salaryMin">Min Salary</Label>
+            <Label htmlFor="salaryMin">Min Salary (INR)</Label>
             <Input
               id="salaryMin"
               type="number"
@@ -232,7 +298,7 @@ const JobCreateForm = ({ onJobCreated }: JobCreateFormProps) => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="salaryMax">Max Salary</Label>
+            <Label htmlFor="salaryMax">Max Salary (INR)</Label>
             <Input
               id="salaryMax"
               type="number"
@@ -242,16 +308,15 @@ const JobCreateForm = ({ onJobCreated }: JobCreateFormProps) => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="currency">Currency</Label>
-            <Select value={salaryCurrency} onValueChange={setSalaryCurrency}>
+            <Label htmlFor="experience">Experience</Label>
+            <Select value={experience} onValueChange={setExperience}>
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder="Select experience" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="USD">USD</SelectItem>
-                <SelectItem value="EUR">EUR</SelectItem>
-                <SelectItem value="GBP">GBP</SelectItem>
-                <SelectItem value="CAD">CAD</SelectItem>
+                <SelectItem value="Entry Level">Entry Level</SelectItem>
+                <SelectItem value="Mid Level">Mid Level</SelectItem>
+                <SelectItem value="Senior Level">Senior Level</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -286,7 +351,7 @@ const JobCreateForm = ({ onJobCreated }: JobCreateFormProps) => {
 
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Create Job Posting
+          {initialValues ? 'Update Job' : 'Create Job Posting'}
         </Button>
       </form>
     </>

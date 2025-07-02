@@ -1,4 +1,3 @@
-
 import { 
   Home, 
   Film, 
@@ -50,18 +49,13 @@ export const mainMenuItems: MenuItem[] = [
   },
   {
     icon: MessageSquare,
-    text: "Messages",
+    text: "Connections",
     path: "/chat"
   },
   {
     icon: Bell,
     text: "Notifications",
     path: "/notifications"
-  },
-  {
-    icon: Ticket,
-    text: "Tickets",
-    path: "/tickets"
   }
 ];
 

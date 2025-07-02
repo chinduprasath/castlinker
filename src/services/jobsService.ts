@@ -1,6 +1,5 @@
-
 import { db } from '@/integrations/firebase/client';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy, where } from 'firebase/firestore';
 
 // Example service functions for jobs using Firebase Firestore
 
@@ -60,6 +59,26 @@ export const deleteJob = async (jobId: string) => {
     return true;
   } catch (error) {
     console.error('Error deleting job:', error);
+    throw error;
+  }
+};
+
+export const fetchJobsByUser = async (userId: string) => {
+  try {
+    const jobsRef = collection(db, 'film_jobs');
+    const q = query(jobsRef, where('created_by', '==', userId), orderBy('created_at', 'desc'));
+    const querySnapshot = await getDocs(q);
+    const jobs: any[] = [];
+    querySnapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      jobs.push({
+        id: docSnap.id,
+        ...data
+      });
+    });
+    return jobs;
+  } catch (error) {
+    console.error('Error fetching user jobs:', error);
     throw error;
   }
 };

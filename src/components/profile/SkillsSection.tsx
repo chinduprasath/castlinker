@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { useForm } from "react-hook-form";
 import { Textarea } from "@/components/ui/textarea";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const SkillsSection = () => {
   const [isEditingActing, setIsEditingActing] = useState(false);
@@ -84,6 +85,8 @@ const SkillsSection = () => {
     }
   });
 
+  const { theme } = useTheme();
+
   const handleSaveActing = async (data: any) => {
     console.log("Saving acting skills:", data);
     return Promise.resolve();
@@ -106,10 +109,10 @@ const SkillsSection = () => {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <Card className="bg-card-gradient border-gold/10">
+      <Card className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-card-gradient border-gold/10'} transition-colors`}>
         <CardContent className="p-6">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold">Acting Skills</h3>
+            <h3 className={`text-lg font-semibold ${theme === 'light' ? 'text-gray-900' : ''}`}>Acting Skills</h3>
             <Button 
               variant="ghost" 
               size="sm"
@@ -123,12 +126,12 @@ const SkillsSection = () => {
             {skills.acting.map((skill) => (
               <div key={skill.name}>
                 <div className="flex justify-between mb-1">
-                  <span className="text-foreground/80">{skill.name}</span>
+                  <span className={`${theme === 'light' ? 'text-gray-800' : 'text-foreground/80'}`}>{skill.name}</span>
                   <span className="text-gold">{skill.level}%</span>
                 </div>
                 <Progress 
                   value={skill.level} 
-                  className="h-2 bg-cinematic-dark"
+                  className={`h-2 ${theme === 'light' ? 'bg-gray-200' : 'bg-cinematic-dark'}`}
                   indicatorClassName="bg-gradient-to-r from-gold-light to-gold"
                 />
               </div>
@@ -137,10 +140,10 @@ const SkillsSection = () => {
         </CardContent>
       </Card>
       
-      <Card className="bg-card-gradient border-gold/10">
+      <Card className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-card-gradient border-gold/10'} transition-colors`}>
         <CardContent className="p-6">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold">Technical Skills</h3>
+            <h3 className={`text-lg font-semibold ${theme === 'light' ? 'text-gray-900' : ''}`}>Technical Skills</h3>
             <Button 
               variant="ghost" 
               size="sm"
@@ -154,12 +157,12 @@ const SkillsSection = () => {
             {skills.technical.map((skill) => (
               <div key={skill.name}>
                 <div className="flex justify-between mb-1">
-                  <span className="text-foreground/80">{skill.name}</span>
+                  <span className={`${theme === 'light' ? 'text-gray-800' : 'text-foreground/80'}`}>{skill.name}</span>
                   <span className="text-gold">{skill.level}%</span>
                 </div>
                 <Progress 
                   value={skill.level} 
-                  className="h-2 bg-cinematic-dark"
+                  className={`h-2 ${theme === 'light' ? 'bg-gray-200' : 'bg-cinematic-dark'}`}
                   indicatorClassName="bg-gradient-to-r from-gold-light to-gold"
                 />
               </div>
@@ -168,10 +171,10 @@ const SkillsSection = () => {
         </CardContent>
       </Card>
       
-      <Card className="bg-card-gradient border-gold/10">
+      <Card className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-card-gradient border-gold/10'} transition-colors`}>
         <CardContent className="p-6">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold">Special Skills</h3>
+            <h3 className={`text-lg font-semibold ${theme === 'light' ? 'text-gray-900' : ''}`}>Special Skills</h3>
             <Button 
               variant="ghost" 
               size="sm"
@@ -185,7 +188,7 @@ const SkillsSection = () => {
             {skills.specialSkills.map((skill, index) => (
               <span 
                 key={index} 
-                className="px-3 py-1 bg-cinematic-dark/70 text-foreground/80 text-sm rounded-full border border-gold/10"
+                className={`px-3 py-1 ${theme === 'light' ? 'bg-gray-200' : 'bg-cinematic-dark/70'} text-foreground/80 text-sm rounded-full border border-gold/10`}
               >
                 {skill}
               </span>
@@ -194,10 +197,10 @@ const SkillsSection = () => {
         </CardContent>
       </Card>
       
-      <Card className="bg-card-gradient border-gold/10">
+      <Card className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-card-gradient border-gold/10'} transition-colors`}>
         <CardContent className="p-6">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold">Physical Attributes</h3>
+            <h3 className={`text-lg font-semibold ${theme === 'light' ? 'text-gray-900' : ''}`}>Physical Attributes</h3>
             <Button 
               variant="ghost" 
               size="sm"

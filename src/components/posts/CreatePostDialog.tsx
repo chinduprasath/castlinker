@@ -23,14 +23,16 @@ import { createPost } from '@/services/postsService';
 interface CreatePostDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (postData: any) => void;
+  onSubmit?: (postData: any) => void;
+  initialValues?: Partial<any>;
+  onUpdate?: (postId: string, postData: any) => void;
 }
 
-const CreatePostDialog: React.FC<CreatePostDialogProps> = ({ isOpen, onClose, onSubmit }) => {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('');
-  const [location, setLocation] = useState('');
+const CreatePostDialog: React.FC<CreatePostDialogProps> = ({ isOpen, onClose, onSubmit, initialValues, onUpdate }) => {
+  const [title, setTitle] = useState(initialValues?.title || '');
+  const [description, setDescription] = useState(initialValues?.description || '');
+  const [category, setCategory] = useState(initialValues?.category || '');
+  const [location, setLocation] = useState(initialValues?.location || '');
   const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [isPublic, setIsPublic] = useState(true);
@@ -40,16 +42,31 @@ const CreatePostDialog: React.FC<CreatePostDialogProps> = ({ isOpen, onClose, on
   const [contactEmail, setContactEmail] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [website, setWebsite] = useState('');
-  const [tags, setTags] = useState<string[]>([]);
+  const [tags, setTags] = useState<string[]>(initialValues?.tags || []);
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
-  const [eventDate, setEventDate] = useState<Date | undefined>(undefined);
-  const [externalUrl, setExternalUrl] = useState('');
-  const [placeName, setPlaceName] = useState('');
-  const [pincode, setPincode] = useState('');
-  const [landmark, setLandmark] = useState('');
+  const [eventDate, setEventDate] = useState<Date | undefined>(initialValues?.event_date ? new Date(initialValues.event_date) : undefined);
+  const [externalUrl, setExternalUrl] = useState(initialValues?.external_url || '');
+  const [placeName, setPlaceName] = useState(initialValues?.place || '');
+  const [pincode, setPincode] = useState(initialValues?.pincode || '');
+  const [landmark, setLandmark] = useState(initialValues?.landmark || '');
   const [tagsInput, setTagsInput] = useState('');
+
+  React.useEffect(() => {
+    if (initialValues) {
+      setTitle(initialValues.title || '');
+      setDescription(initialValues.description || '');
+      setCategory(initialValues.category || '');
+      setLocation(initialValues.location || '');
+      setTags(initialValues.tags || []);
+      setEventDate(initialValues.event_date ? new Date(initialValues.event_date) : undefined);
+      setExternalUrl(initialValues.external_url || '');
+      setPlaceName(initialValues.place || '');
+      setPincode(initialValues.pincode || '');
+      setLandmark(initialValues.landmark || '');
+    }
+  }, [initialValues, isOpen]);
 
   const handleMediaTypeChange = (type: 'image' | 'video' | null) => {
     setMediaType(type);
@@ -75,24 +92,20 @@ const CreatePostDialog: React.FC<CreatePostDialogProps> = ({ isOpen, onClose, on
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-
     if (!title || !description || !category) {
       toast.error('Please fill in all required fields.');
       return;
     }
-
     setIsLoading(true);
     try {
-      let mediaUrl = '';
-      let mediaType = null;
+      let mediaUrl = initialValues?.media_url || '';
+      let mediaType = initialValues?.media_type || null;
       if (mediaFile) {
-        // Optionally, add upload progress feedback here
         const storageRef = ref(storage, `posts/${mediaFile.name}`);
         await uploadBytes(storageRef, mediaFile);
         mediaUrl = await getDownloadURL(storageRef);
         mediaType = mediaFile.type.startsWith('image') ? 'image' : 'video';
       }
-
       const postData = {
         title,
         description,
@@ -110,22 +123,27 @@ const CreatePostDialog: React.FC<CreatePostDialogProps> = ({ isOpen, onClose, on
         creator_name: user?.name || null,
         creator_profession: user?.role || null,
       };
-
-      // Use the createPost service to store in 'posts' collection
-      const created = await createPost(postData);
-      if (created) {
-        toast.success('Post created successfully!');
+      if (initialValues && initialValues.id && onUpdate) {
+        await onUpdate(initialValues.id, postData);
+        toast.success('Post updated successfully!');
+        setIsLoading(false);
         onClose();
-        onSubmit(created);
-        resetForm();
-      } else {
-        toast.error('Failed to create post.');
+      } else if (onSubmit) {
+        const created = await createPost(postData);
+        if (created) {
+          toast.success('Post created successfully!');
+          setIsLoading(false);
+          onClose();
+          onSubmit(created);
+          resetForm();
+        } else {
+          toast.error('Failed to create post.');
+          setIsLoading(false);
+        }
       }
     } catch (error: any) {
-      console.error('Error creating post:', error);
-      toast.error(`Failed to create post: ${error.message}`);
-      setIsLoading(false);
-    } finally {
+      console.error('Error creating/updating post:', error);
+      toast.error(`Failed to save post: ${error.message}`);
       setIsLoading(false);
     }
   };

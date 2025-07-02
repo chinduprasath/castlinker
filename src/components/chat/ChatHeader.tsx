@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Phone, Video, Info } from "lucide-react";
@@ -16,7 +15,7 @@ const ChatHeader = ({ chat }: ChatHeaderProps) => {
   if (!chat) return null;
 
   return (
-    <div className="p-4 border-b border-white/10 flex justify-between items-center">
+    <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-[#232323] bg-white dark:bg-[#181818] text-gray-900 dark:text-white">
       <div className="flex items-center gap-3">
         <Avatar className="h-12 w-12">
           <AvatarImage src={chat.avatar} alt={chat.name} />

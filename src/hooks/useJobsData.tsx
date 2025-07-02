@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,15 +8,18 @@ import {
   applyForJob as applyForJobService
 } from '@/services/jobs';
 import { Job, JobFilters, JobSort } from '@/types/jobTypes';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '@/integrations/firebase/client';
 
 export type { Job, JobFilters, JobSort, JobType, LocationType, RoleCategory, ExperienceLevel, PostedWithin } from '@/types/jobTypes';
 
 export const useJobsData = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [allJobs, setAllJobs] = useState<Job[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<JobFilters>({});
-  const [sort, setSort] = useState<JobSort>({ field: 'relevance', direction: 'desc' });
+  const [sort, setSort] = useState<JobSort>({ field: 'created_at', direction: 'desc' });
   const [savedJobs, setSavedJobs] = useState<string[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const { toast } = useToast();
@@ -27,6 +29,100 @@ export const useJobsData = () => {
   const initialRenderCompleted = useRef(false);
   // Add a ref for ongoing fetch operations
   const fetchInProgress = useRef(false);
+
+  // Fetch all jobs on mount
+  useEffect(() => {
+    const fetchAllJobs = async () => {
+      setIsLoading(true);
+      try {
+        const jobsRef = collection(db, 'film_jobs');
+        const querySnapshot = await getDocs(jobsRef);
+        const all = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            title: data.title || '',
+            company: data.company || '',
+            description: data.description || '',
+            job_type: data.job_type || '',
+            role_category: data.role_category || '',
+            location: data.location || '',
+            location_type: data.location_type || '',
+            requirements: data.requirements || [],
+            responsibilities: data.responsibilities || [],
+            experience_level: data.experience_level || '',
+            salary_min: data.salary_min,
+            salary_max: data.salary_max,
+            salary_currency: data.salary_currency,
+            salary_period: data.salary_period,
+            tags: data.tags || [],
+            application_deadline: data.application_deadline,
+            application_url: data.application_url,
+            application_email: data.application_email,
+            is_featured: data.is_featured,
+            is_verified: data.is_verified,
+            created_at: data.created_at,
+            status: data.status,
+          };
+        });
+        setAllJobs(all);
+        setJobs(all);
+        setTotalCount(all.length);
+      } catch (error: any) {
+        setError(error.message || 'Failed to fetch jobs.');
+        setJobs([]);
+        setAllJobs([]);
+        setTotalCount(0);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchAllJobs();
+  }, []);
+
+  // Instant search/filtering on the frontend
+  useEffect(() => {
+    let filtered = allJobs;
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      filtered = filtered.filter(job =>
+        job.title?.toLowerCase().includes(searchLower) ||
+        job.role_category?.toLowerCase().includes(searchLower)
+      );
+    }
+    if (filters.location) {
+      filtered = filtered.filter(job =>
+        job.location?.toLowerCase().includes(filters.location.toLowerCase())
+      );
+    }
+    if (filters.jobTypes && filters.jobTypes.length > 0) {
+      filtered = filtered.filter(job =>
+        filters.jobTypes.includes(job.job_type as import('@/types/jobTypes').JobType)
+      );
+    }
+    if (filters.roleCategories && filters.roleCategories.length > 0) {
+      filtered = filtered.filter(job =>
+        filters.roleCategories.includes(job.role_category)
+      );
+    }
+    if (filters.experienceLevels && filters.experienceLevels.length > 0) {
+      filtered = filtered.filter(job =>
+        filters.experienceLevels.includes(job.experience_level as import('@/types/jobTypes').ExperienceLevel)
+      );
+    }
+    if (filters.salaryMin !== undefined) {
+      filtered = filtered.filter(job =>
+        typeof job.salary_min === 'number' && job.salary_min >= filters.salaryMin
+      );
+    }
+    if (filters.salaryMax !== undefined) {
+      filtered = filtered.filter(job =>
+        typeof job.salary_max === 'number' && job.salary_max <= filters.salaryMax
+      );
+    }
+    setJobs(filtered);
+    setTotalCount(filtered.length);
+  }, [filters, allJobs]);
 
   // Fetch jobs based on filters and sorting
   const getJobs = useCallback(async () => {

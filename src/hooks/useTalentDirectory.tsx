@@ -1,8 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { TalentProfile, ConnectionRequest, Profession, TalentFilters, PROFESSION_OPTIONS } from '@/types/talentTypes';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '@/integrations/firebase/client';
 
 export const useTalentDirectory = () => {
   const [talents, setTalents] = useState<TalentProfile[]>([]);
@@ -43,42 +44,43 @@ export const useTalentDirectory = () => {
   const fetchTalents = async () => {
     setIsLoading(true);
     try {
-      // Mock data with proper typing
-      const mockTalents: TalentProfile[] = [
-        {
-          id: '1',
-          full_name: 'Sarah Johnson',
-          profession_type: 'Actor',
-          location: 'Los Angeles, CA',
-          avatar_url: '/placeholder.svg',
-          rating: 4.8,
-          is_verified: true,
-          availability_status: 'available',
-          skills: ['Drama', 'Comedy', 'Action'],
-          experience_years: 8,
-          languages: ['English', 'Spanish'],
-          description: 'Experienced actor with a passion for storytelling',
-          achievements: ['Best Actress Award 2023'],
-          likes: 150,
-          created_at: '2023-01-01T00:00:00Z',
-          updated_at: '2024-01-01T00:00:00Z',
-          user_id: 'user1',
-          name: 'Sarah Johnson',
-          role: 'Actor',
-          avatar: '/placeholder.svg',
-          reviews: 45,
-          is_premium: true,
-          is_available: true,
-          experience: 8,
-          bio: 'Experienced actor with a passion for storytelling',
-          featured_in: ['Film A', 'TV Show B'],
-          likes_count: 150,
-          joined_date: '2023-01-01T00:00:00Z'
-        }
-      ];
-      
-      setTalents(mockTalents);
-      setTotalCount(mockTalents.length);
+      const usersRef = collection(db, 'users');
+      const querySnapshot = await getDocs(usersRef);
+      const userTalents: TalentProfile[] = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          full_name: data.full_name || data.name || '',
+          profession_type: data.profession_type || data.role || '',
+          location: data.location || '',
+          avatar_url: data.avatar_url || data.avatar || '/placeholder.svg',
+          rating: data.rating || 0,
+          is_verified: data.is_verified || false,
+          availability_status: data.availability_status || 'available',
+          skills: data.skills || [],
+          experience_years: data.experience_years || data.experience || 0,
+          languages: data.languages || [],
+          description: data.description || '',
+          achievements: data.achievements || [],
+          likes: data.likes || data.likes_count || 0,
+          created_at: data.created_at || '',
+          updated_at: data.updated_at || '',
+          user_id: doc.id,
+          name: data.name || '',
+          role: data.role || '',
+          avatar: data.avatar || '',
+          reviews: data.reviews || 0,
+          is_premium: data.is_premium || false,
+          is_available: data.is_available || false,
+          experience: data.experience || 0,
+          bio: data.bio || '',
+          featured_in: data.featured_in || [],
+          likes_count: data.likes_count || 0,
+          joined_date: data.joined_date || '',
+        };
+      });
+      setTalents(userTalents);
+      setTotalCount(userTalents.length);
     } catch (error) {
       console.error('Error fetching talents:', error);
     } finally {

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,7 @@ import { Form, FormField, FormItem, FormLabel, FormControl } from "@/components/
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const ExperienceSection = () => {
   const [editingExperience, setEditingExperience] = useState<{type: string, index: number} | null>(null);
@@ -91,6 +91,8 @@ const ExperienceSection = () => {
     }
   });
 
+  const { theme } = useTheme();
+
   // Set form values when editing an experience
   const handleEdit = (type: string, index: number) => {
     const experience = experiences[type as keyof typeof experiences][index];
@@ -148,12 +150,12 @@ const ExperienceSection = () => {
       </div>
       <div className="space-y-4">
         {data.map((exp, index) => (
-          <Card key={index} className="bg-card-gradient border-gold/10">
+          <Card key={index} className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-card-gradient border-gold/10'} transition-colors`}>
             <CardContent className="p-6">
               <div className="flex flex-col md:flex-row md:items-center justify-between mb-3">
-                <h4 className="text-lg font-medium">{exp.title}</h4>
+                <h4 className={`text-lg font-medium ${theme === 'light' ? 'text-gray-900' : ''}`}>{exp.title}</h4>
                 <div className="flex items-center gap-2">
-                  <span className="text-foreground/60 text-sm">{exp.year}</span>
+                  <span className={`${theme === 'light' ? 'text-gray-500' : 'text-foreground/60'} text-sm`}>{exp.year}</span>
                   <Button 
                     variant="ghost" 
                     size="sm"
@@ -165,11 +167,11 @@ const ExperienceSection = () => {
                 </div>
               </div>
               <p className="text-gold mb-2">{exp.role}</p>
-              <div className="flex flex-col md:flex-row gap-2 md:gap-6 text-sm text-foreground/70 mb-4">
+              <div className={`flex flex-col md:flex-row gap-2 md:gap-6 text-sm ${theme === 'light' ? 'text-gray-700' : 'text-foreground/70'} mb-4`}>
                 <span>Director: {exp.director}</span>
                 <span>{type === 'television' ? 'Network' : 'Production'}: {exp.company}</span>
               </div>
-              <p className="text-foreground/80 text-sm">{exp.description}</p>
+              <p className={`${theme === 'light' ? 'text-gray-800' : 'text-foreground/80'} text-sm`}>{exp.description}</p>
             </CardContent>
           </Card>
         ))}

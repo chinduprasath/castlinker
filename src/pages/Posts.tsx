@@ -33,6 +33,7 @@ import { toast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { useNavigate } from "react-router-dom";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 
 const CATEGORIES = [
   "Audition",
@@ -67,6 +68,7 @@ const Posts = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [selectedPost, setSelectedPost] = useState(null);
   
   const {
     posts,
@@ -108,7 +110,7 @@ const Posts = () => {
   };
 
   const handleViewDetails = (post) => {
-    navigate(`/posts/${post.id}`);
+    setSelectedPost(post);
   };
 
   const handleCreatePostSubmit = async (postData: any) => {
@@ -199,159 +201,150 @@ const Posts = () => {
 
   return (
     <div className="container max-w-6xl py-8">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Posts</h1>
-          <p className="text-muted-foreground mt-1">
-            Find opportunities for auditions, collaborations, and more
-          </p>
-        </div>
-        {user && (
-          <Button 
-            onClick={() => setShowCreateDialog(true)}
-            className="flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" />
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold gold-gradient-text">Posts</h1>
+        <div className="flex gap-2">
+          <Button onClick={() => setShowCreateDialog(true)} className="bg-gold hover:bg-gold/90 text-black">
+            <Plus className="h-4 w-4 mr-2" />
             Create Post
           </Button>
-        )}
+          <Button variant="outline" onClick={() => navigate('/manage/posts')} className="border-gold text-gold hover:bg-gold/10">
+            Manage Posts
+          </Button>
+        </div>
       </div>
 
       <div className="bg-card p-4 rounded-lg mb-6">
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search posts..."
-                className="pl-8"
-                value={filters.searchTerm}
-                onChange={(e) => updateFilters({ searchTerm: e.target.value })}
-              />
-            </div>
-            
-            <Select
-              value={filters.category}
-              onValueChange={(value) => updateFilters({ category: value })}
-            >
-              <SelectTrigger className="w-full md:w-[180px]">
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {CATEGORIES.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <div className="flex flex-col md:flex-row md:items-center md:gap-4 gap-4 flex-wrap">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search posts..."
+              className="pl-8"
+              value={filters.searchTerm}
+              onChange={(e) => updateFilters({ searchTerm: e.target.value })}
+            />
           </div>
-          
-          <div className="flex flex-col md:flex-row gap-4">
-            <Select
-              value={selectedLocation || "any"}
-              onValueChange={setSelectedLocation}
-            >
-              <SelectTrigger className="w-full md:w-[180px]">
-                <SelectValue placeholder="Location">
-                  <div className="flex items-center gap-2">
-                    {selectedLocation && <MapPin className="h-4 w-4" />}
-                    {selectedLocation || "Location"}
-                  </div>
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="any">Any Location</SelectItem>
-                {LOCATIONS.filter(location => location !== "Any Location").map((location) => (
-                  <SelectItem key={location} value={location}>
-                    {location}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "justify-start text-left font-normal w-full md:w-[240px]",
-                    !postDateRange && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {postDateRange?.from ? (
-                    postDateRange.to ? (
-                      <>
-                        {format(postDateRange.from, "LLL dd, y")} - {format(postDateRange.to, "LLL dd, y")}
-                      </>
-                    ) : (
-                      format(postDateRange.from, "LLL dd, y")
-                    )
-                  ) : (
-                    <span>Post Date Range</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  initialFocus
-                  mode="range"
-                  defaultMonth={postDateRange?.from}
-                  selected={postDateRange}
-                  onSelect={setPostDateRange}
-                  numberOfMonths={2}
-                />
-              </PopoverContent>
-            </Popover>
-            
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "justify-start text-left font-normal w-full md:w-[240px]",
-                    !deadlineDateRange && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {deadlineDateRange?.from ? (
-                    deadlineDateRange.to ? (
-                      <>
-                        {format(deadlineDateRange.from, "LLL dd, y")} - {format(deadlineDateRange.to, "LLL dd, y")}
-                      </>
-                    ) : (
-                      format(deadlineDateRange.from, "LLL dd, y")
-                    )
-                  ) : (
-                    <span>Event Date Range</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  initialFocus
-                  mode="range"
-                  defaultMonth={deadlineDateRange?.from}
-                  selected={deadlineDateRange}
-                  onSelect={setDeadlineDateRange}
-                  numberOfMonths={2}
-                />
-              </PopoverContent>
-            </Popover>
-            
-            {hasActiveFilters && (
-              <Button 
-                variant="outline" 
-                onClick={handleClearFilters}
-                className="flex items-center gap-2"
+
+          <Select
+            value={filters.category}
+            onValueChange={(value) => updateFilters({ category: value })}
+          >
+            <SelectTrigger className="w-full md:w-[180px]">
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {CATEGORIES.map((category) => (
+                <SelectItem key={category} value={category}>
+                  {category}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={selectedLocation || "any"}
+            onValueChange={setSelectedLocation}
+          >
+            <SelectTrigger className="w-full md:w-[180px]">
+              <SelectValue placeholder="Location">
+                <div className="flex items-center gap-2">
+                  {selectedLocation && <MapPin className="h-4 w-4" />}
+                  {selectedLocation || "Location"}
+                </div>
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="any">Any Location</SelectItem>
+              {LOCATIONS.filter(location => location !== "Any Location").map((location) => (
+                <SelectItem key={location} value={location}>
+                  {location}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "justify-start text-left font-normal w-full md:w-[180px]",
+                  !postDateRange && "text-muted-foreground"
+                )}
               >
-                <X className="h-4 w-4" />
-                Clear Filters
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {postDateRange?.from ? (
+                  postDateRange.to ? (
+                    <>
+                      {format(postDateRange.from, "LLL dd, y")} - {format(postDateRange.to, "LLL dd, y")}
+                    </>
+                  ) : (
+                    format(postDateRange.from, "LLL dd, y")
+                  )
+                ) : (
+                  <span>Post Date Range</span>
+                )}
               </Button>
-            )}
-          </div>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                initialFocus
+                mode="range"
+                defaultMonth={postDateRange?.from}
+                selected={postDateRange}
+                onSelect={setPostDateRange}
+                numberOfMonths={2}
+              />
+            </PopoverContent>
+          </Popover>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "justify-start text-left font-normal w-full md:w-[180px]",
+                  !deadlineDateRange && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {deadlineDateRange?.from ? (
+                  deadlineDateRange.to ? (
+                    <>
+                      {format(deadlineDateRange.from, "LLL dd, y")} - {format(deadlineDateRange.to, "LLL dd, y")}
+                    </>
+                  ) : (
+                    format(deadlineDateRange.from, "LLL dd, y")
+                  )
+                ) : (
+                  <span>Event Date Range</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                initialFocus
+                mode="range"
+                defaultMonth={deadlineDateRange?.from}
+                selected={deadlineDateRange}
+                onSelect={setDeadlineDateRange}
+                numberOfMonths={2}
+              />
+            </PopoverContent>
+          </Popover>
+
+          {hasActiveFilters && (
+            <Button 
+              variant="outline" 
+              onClick={handleClearFilters}
+              className="flex items-center gap-2"
+            >
+              <X className="h-4 w-4" />
+              Clear Filters
+            </Button>
+          )}
         </div>
       </div>
 
@@ -474,6 +467,64 @@ const Posts = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!selectedPost} onOpenChange={(open) => { if (!open) setSelectedPost(null); }}>
+        <DialogContent className="max-w-2xl">
+          {selectedPost && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{selectedPost.title}</DialogTitle>
+                <DialogDescription>
+                  Posted by {selectedPost.creator_name || 'Anonymous'}
+                  {selectedPost.creator_profession && <span> • {selectedPost.creator_profession}</span>}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="my-4">
+                <p className="mb-2"><strong>Category:</strong> {selectedPost.category}</p>
+                <p className="mb-2"><strong>Description:</strong> {selectedPost.description}</p>
+                {selectedPost.media_url && (
+                  <div className="mb-2">
+                    {selectedPost.media_type === 'image' ? (
+                      <img src={selectedPost.media_url} alt={selectedPost.title} className="w-full max-h-64 object-contain rounded" />
+                    ) : selectedPost.media_type === 'video' ? (
+                      <video src={selectedPost.media_url} controls className="w-full max-h-64 object-contain rounded" />
+                    ) : null}
+                  </div>
+                )}
+                {selectedPost.event_date && (
+                  <p className="mb-2"><strong>Event/Deadline Date:</strong> {format(new Date(selectedPost.event_date), 'PPP')}</p>
+                )}
+                {selectedPost.external_url && (
+                  <p className="mb-2"><strong>External URL:</strong> <a href={selectedPost.external_url} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">{selectedPost.external_url.length > 50 ? selectedPost.external_url.slice(0, 50) + '...' : selectedPost.external_url}</a></p>
+                )}
+                {(selectedPost.place || selectedPost.location || selectedPost.pincode || selectedPost.landmark) && (
+                  <div className="mb-2">
+                    <strong>Address Information:</strong>
+                    <div className="ml-2">
+                      {selectedPost.place && <div>Place: {selectedPost.place}</div>}
+                      {selectedPost.location && <div>Location: {selectedPost.location}</div>}
+                      {selectedPost.pincode && <div>Pincode: {selectedPost.pincode}</div>}
+                      {selectedPost.landmark && <div>Landmark: {selectedPost.landmark}</div>}
+                    </div>
+                  </div>
+                )}
+                {selectedPost.tags && selectedPost.tags.length > 0 && (
+                  <div className="mb-2">
+                    <strong>Tags:</strong> {selectedPost.tags.map((tag, idx) => <span key={idx} className="inline-block bg-gray-200 text-gray-800 rounded px-2 py-1 text-xs mr-1">{tag}</span>)}
+                  </div>
+                )}
+                <p className="mb-2"><strong>Total Applicants:</strong> {applicationCounts[selectedPost.id] || 0}</p>
+                <p className="mb-2 text-sm text-muted-foreground">Created: {format(new Date(selectedPost.created_at), 'PPP')}</p>
+              </div>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline">Close</Button>
+                </DialogClose>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

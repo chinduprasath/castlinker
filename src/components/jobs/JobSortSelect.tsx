@@ -1,4 +1,3 @@
-
 import { JobSort } from "@/types/jobTypes";
 import { memo, useCallback } from "react";
 
@@ -7,7 +6,7 @@ interface JobSortSelectProps {
   defaultValue?: string;
 }
 
-const JobSortSelect = memo(({ onSort, defaultValue = "relevance" }: JobSortSelectProps) => {
+const JobSortSelect = memo(({ onSort, defaultValue = "date" }: JobSortSelectProps) => {
   const handleSortChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
     let sort: JobSort;
@@ -34,7 +33,6 @@ const JobSortSelect = memo(({ onSort, defaultValue = "relevance" }: JobSortSelec
         onChange={handleSortChange}
         defaultValue={defaultValue}
       >
-        <option value="relevance">Most Relevant</option>
         <option value="date">Most Recent</option>
         <option value="salary">Highest Pay</option>
       </select>

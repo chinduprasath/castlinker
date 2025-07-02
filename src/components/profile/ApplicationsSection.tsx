@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/integrations/firebase/client";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import JobDetail from "@/components/jobs/JobDetail";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface ApplicationsSectionProps {
   jobs: Job[];
@@ -32,6 +33,7 @@ const ApplicationsSection = ({ jobs, isLoading, onRefresh }: ApplicationsSection
   const [applications, setApplications] = useState<Record<string, Application>>({});
   const { toast } = useToast();
   const { user } = useAuth();
+  const { theme } = useTheme();
 
   useEffect(() => {
     if (user && jobs.length > 0) {
@@ -105,10 +107,10 @@ const ApplicationsSection = ({ jobs, isLoading, onRefresh }: ApplicationsSection
 
   if (jobs.length === 0) {
     return (
-      <Card className="bg-card-gradient border-gold/10 p-8 text-center">
+      <Card className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-card-gradient border-gold/10'} p-8 text-center transition-colors`}>
         <div className="space-y-3">
-          <h3 className="text-xl font-medium">No applications</h3>
-          <p className="text-foreground/70">You haven't applied to any jobs yet. Browse the jobs page to find opportunities that interest you.</p>
+          <h3 className={`text-xl font-medium ${theme === 'light' ? 'text-gray-900' : ''}`}>No applications</h3>
+          <p className={`${theme === 'light' ? 'text-gray-700' : 'text-foreground/70'}`}>You haven't applied to any jobs yet. Browse the jobs page to find opportunities that interest you.</p>
           <Button className="mt-4 bg-gold hover:bg-gold/90 text-black" asChild>
             <a href="/jobs">Browse Jobs</a>
           </Button>
@@ -120,22 +122,22 @@ const ApplicationsSection = ({ jobs, isLoading, onRefresh }: ApplicationsSection
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Job Applications</h2>
+        <h2 className={`text-2xl font-bold ${theme === 'light' ? 'text-gray-900' : ''}`}>Job Applications</h2>
         <Button variant="outline" onClick={onRefresh} size="sm">Refresh</Button>
       </div>
       
       <div className="space-y-4">
         {jobs.map(job => (
-          <Card key={job.id} className="bg-card-gradient border-gold/10">
+          <Card key={job.id} className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-card-gradient border-gold/10'} transition-colors`}>
             <CardContent className="p-4">
               <div className="flex flex-col lg:flex-row justify-between gap-4">
                 <div className="space-y-2">
                   <div>
-                    <h3 className="text-lg font-bold">{job.title}</h3>
-                    <p className="text-sm text-foreground/70">{job.company}</p>
+                    <h3 className={`text-lg font-bold ${theme === 'light' ? 'text-gray-900' : ''}`}>{job.title}</h3>
+                    <p className={`${theme === 'light' ? 'text-gray-700' : 'text-foreground/70'} text-sm`}>{job.company}</p>
                   </div>
                   
-                  <div className="flex flex-wrap gap-2 text-sm text-foreground/60">
+                  <div className={`flex flex-wrap gap-2 text-sm ${theme === 'light' ? 'text-gray-500' : 'text-foreground/60'}`}>
                     <span className="flex items-center gap-1">
                       <MapPin className="h-4 w-4" />
                       {job.location} • {job.location_type}

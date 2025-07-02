@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { db } from '@/integrations/firebase/client';
+import { collection, addDoc, query, where, orderBy, onSnapshot, serverTimestamp, updateDoc, doc, setDoc, getDoc, getDocs } from 'firebase/firestore';
 
 export type ChatUser = {
   id: string;
@@ -21,7 +23,7 @@ export type ChatMessage = {
   timestamp: string;
   status: 'sent' | 'delivered' | 'seen';
   isMe: boolean;
-  attachments?: Attachment[];
+  attachments?: Attachment[] | undefined;
   reactions?: Reaction[];
   isEdited: boolean;
   isDeleted: boolean;
@@ -55,11 +57,10 @@ export type Reaction = {
   emoji: string;
 };
 
-export const useChat = () => {
+export const useChat = (chatId: string, participants: string[] = []) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [chats, setChats] = useState<Chat[]>([]);
-  const [activeChat, setActiveChat] = useState<Chat | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -68,6 +69,8 @@ export const useChat = () => {
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'active'>('newest');
   const [userTyping, setUserTyping] = useState<{userId: string, chatId: string} | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [typingUsers, setTypingUsers] = useState<string[]>([]);
+  const typingTimeout = useRef<NodeJS.Timeout | null>(null);
   
   useEffect(() => {
     if (!user) return;
@@ -125,9 +128,6 @@ export const useChat = () => {
         ];
         
         setChats(dummyChats);
-        if (dummyChats.length > 0) {
-          setActiveChat(dummyChats[0]);
-        }
       } catch (error) {
         console.error('Error loading chats:', error);
         toast({
@@ -141,137 +141,52 @@ export const useChat = () => {
     };
     
     loadChats();
-    setupRealtimeSubscription();
     
     return () => {
-      cleanupRealtimeSubscription();
     };
   }, [user]);
   
   useEffect(() => {
-    if (!activeChat) return;
-    
-    const loadMessages = async () => {
-      setIsLoading(true);
-      try {
-        if (activeChat.id === "1") {
-          const dummyMessages = [
-            {
-              id: "m1",
-              senderId: "user123",
-              recipientId: user?.id,
-              chatId: "1",
-              content: "Hi James, I saw your profile and I'm impressed with your work!",
-              timestamp: "10:15 AM",
-              status: 'seen' as const,
-              isMe: false,
-              isEdited: false,
-              isDeleted: false
-            },
-            {
-              id: "m2",
-              senderId: user?.id || "",
-              recipientId: "user123",
-              chatId: "1",
-              content: "Thank you, Sarah! I'm glad you liked my portfolio.",
-              timestamp: "10:17 AM",
-              status: 'seen' as const,
-              isMe: true,
-              isEdited: false,
-              isDeleted: false
-            },
-            {
-              id: "m3",
-              senderId: "user123",
-              recipientId: user?.id,
-              chatId: "1",
-              content: "I'm working on a new indie film and I think you'd be perfect for one of the roles.",
-              timestamp: "10:20 AM",
-              status: 'seen' as const,
-              isMe: false,
-              isEdited: false,
-              isDeleted: false
-            },
-            {
-              id: "m4",
-              senderId: user?.id || "",
-              recipientId: "user123",
-              chatId: "1",
-              content: "That sounds interesting! I'd love to hear more about it.",
-              timestamp: "10:22 AM",
-              status: 'seen' as const,
-              isMe: true,
-              isEdited: false,
-              isDeleted: false
-            },
-            {
-              id: "m5",
-              senderId: "user123",
-              recipientId: user?.id,
-              chatId: "1",
-              content: "Great! It's a drama set in the 1960s. The character I'm thinking of is a struggling musician with a complicated past.",
-              timestamp: "10:25 AM",
-              status: 'seen' as const,
-              isMe: false,
-              isEdited: false,
-              isDeleted: false
-            },
-            {
-              id: "m6",
-              senderId: "user123",
-              recipientId: user?.id,
-              chatId: "1",
-              content: "Would you be able to send me an audition tape with a few scenes? I can send over the script excerpts.",
-              timestamp: "10:26 AM",
-              status: 'seen' as const,
-              isMe: false,
-              isEdited: false,
-              isDeleted: false
-            },
-            {
-              id: "m7",
-              senderId: user?.id || "",
-              recipientId: "user123",
-              chatId: "1",
-              content: "That sounds like a challenging role, I'm definitely interested! Yes, I can prepare an audition tape once I receive the script.",
-              timestamp: "10:28 AM",
-              status: 'seen' as const,
-              isMe: true,
-              isEdited: false,
-              isDeleted: false
-            },
-            {
-              id: "m8",
-              senderId: "user123",
-              recipientId: user?.id,
-              chatId: "1",
-              content: "When can you send the audition tape?",
-              timestamp: "10:30 AM",
-              status: 'delivered' as const,
-              isMe: false,
-              isEdited: false,
-              isDeleted: false
-            }
-          ];
-          setMessages(dummyMessages);
-        } else {
-          setMessages([]);
-        }
-      } catch (error) {
-        console.error('Error loading messages:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load messages",
-          variant: "destructive"
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    loadMessages();
-    markChatAsRead(activeChat.id);
-  }, [activeChat, user]);
+    if (!user || !chatId) return;
+    console.log('[useChat] Listening for messages in chat_rooms/' + chatId + '/messages');
+    // Listen for messages in Firestore for this chat room (subcollection)
+    const q = query(
+      collection(db, 'chat_rooms', chatId, 'messages'),
+      orderBy('createdAt', 'asc')
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const msgs = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          senderId: data.senderId,
+          recipientId: data.recipientId,
+          chatId: chatId,
+          content: data.content,
+          timestamp: data.createdAt ? new Date(data.createdAt.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+          status: (data.status as 'sent' | 'delivered' | 'seen') || 'sent',
+          isMe: data.senderId === user.id,
+          attachments: Array.isArray(data.attachments) ? data.attachments : undefined,
+          isEdited: data.isEdited || false,
+          isDeleted: data.isDeleted || false,
+        };
+      });
+      setMessages(msgs);
+    });
+    return () => unsubscribe();
+  }, [user, chatId]);
+  
+  useEffect(() => {
+    if (!user || !chatId) return;
+    const typingRef = collection(db, 'chat_rooms', chatId, 'typing');
+    const unsubscribe = onSnapshot(typingRef, (snapshot) => {
+      const typing = snapshot.docs
+        .filter(doc => doc.id !== user.id && doc.data().isTyping)
+        .map(doc => doc.id);
+      setTypingUsers(typing);
+    });
+    return () => unsubscribe();
+  }, [user, chatId]);
   
   useEffect(() => {
     let filtered = [...chats];
@@ -304,37 +219,51 @@ export const useChat = () => {
   }, [chats, searchQuery, showUnreadOnly, sortBy]);
   
   const sendMessage = async (content: string, attachments?: File[], replyToMessageId?: string) => {
-    if (!user || !activeChat) return false;
-    
+    if (!user || !chatId) return false;
     try {
-      const newMessage = {
-        id: `m${messages.length + 1}`,
-        senderId: user.id,
-        recipientId: activeChat.isGroup ? null : activeChat.participants.find(id => id !== user.id),
-        chatId: activeChat.id,
-        content,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        status: 'sent' as const,
-        isMe: true,
-        attachments: attachments ? attachments.map(file => ({
+      const recipientId = participants.find((id) => id !== user.id);
+      // Generate a message id for attachments
+      const newMessageId = Math.random().toString(36).substring(7);
+      let attachmentData: Attachment[] | undefined = undefined;
+      if (attachments && attachments.length > 0) {
+        // For demo: just use local URLs. In production, upload to storage and use download URLs.
+        attachmentData = await Promise.all(attachments.map(async (file) => ({
           id: Math.random().toString(36).substring(7),
-          messageId: `m${messages.length + 1}`,
+          messageId: newMessageId,
           fileName: file.name,
           fileType: file.type,
           fileSize: file.size,
           fileUrl: URL.createObjectURL(file),
-        })) : undefined,
+        })));
+      }
+      let messageData: any = {
+        id: newMessageId,
+        senderId: user.id,
+        recipientId: recipientId,
+        chatId: chatId,
+        content,
+        createdAt: serverTimestamp(),
+        status: 'sent',
+        isMe: true,
         isEdited: false,
-        isDeleted: false
+        isDeleted: false,
+        readBy: [user.id],
       };
-      
-      setMessages(prev => [...prev, newMessage]);
-      
-      updateChatPreview(activeChat.id, content);
-      
+      if (Array.isArray(attachmentData) && attachmentData.length > 0) {
+        messageData.attachments = attachmentData;
+      }
+      console.log('[useChat] Sending message to:', `chat_rooms/${chatId}/messages`, messageData, 'participants:', participants);
+      await addDoc(collection(db, 'chat_rooms', chatId, 'messages'), messageData);
+      // Update chat room preview (last message)
+      const chatRoomRef = doc(db, 'chat_rooms', chatId);
+      await updateDoc(chatRoomRef, {
+        'metadata.last_message': content,
+        last_message_at: new Date().toISOString(),
+      });
+      await stopTyping();
       return true;
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('Error sending message:', error, 'chatId:', chatId, 'participants:', participants);
       toast({
         title: "Error",
         description: "Failed to send message",
@@ -386,33 +315,6 @@ export const useChat = () => {
     typingTimeoutRef.current = setTimeout(() => {
       setUserTyping(null);
     }, 3000);
-  };
-  
-  const setupRealtimeSubscription = () => {
-    if (!user) return;
-    
-    const channel = supabase
-      .channel('chat-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `recipient_id=eq.${user.id}`
-        },
-        (payload) => {
-          const newMessage = payload.new;
-          // Handle new message
-        }
-      )
-      .subscribe();
-  };
-  
-  const cleanupRealtimeSubscription = () => {
-    if (channel) {
-      supabase.removeChannel(channel);
-    }
   };
   
   const editMessage = async (messageId: string, newContent: string) => {
@@ -512,7 +414,6 @@ export const useChat = () => {
       };
       
       setChats(prev => [newChat, ...prev]);
-      setActiveChat(newChat);
       
       return true;
     } catch (error) {
@@ -546,26 +447,54 @@ export const useChat = () => {
     }
   };
   
+  const startTyping = async () => {
+    if (!user || !chatId) return;
+    await setDoc(doc(db, 'chat_rooms', chatId, 'typing', user.id), { isTyping: true });
+    if (typingTimeout.current) clearTimeout(typingTimeout.current);
+    typingTimeout.current = setTimeout(stopTyping, 3000);
+  };
+  
+  const stopTyping = async () => {
+    if (!user || !chatId) return;
+    await setDoc(doc(db, 'chat_rooms', chatId, 'typing', user.id), { isTyping: false });
+  };
+  
+  const markAllMessagesAsRead = async () => {
+    if (!user || !chatId) return;
+    const q = query(
+      collection(db, 'chat_rooms', chatId, 'messages')
+    );
+    const snapshot = await getDocs(q);
+    snapshot.docs.forEach(async (msgDoc) => {
+      const data = msgDoc.data();
+      if (!data.readBy || !data.readBy.includes(user.id)) {
+        await updateDoc(msgDoc.ref, { readBy: [...(data.readBy || []), user.id] });
+      }
+    });
+  };
+  
   return {
     chats: filteredChats,
-    activeChat,
     messages,
     isLoading,
     userTyping,
     searchQuery,
     showUnreadOnly,
     sortBy,
-    setActiveChat,
-    sendMessage,
-    markChatAsRead,
-    indicateTyping,
     setSearchQuery,
     setShowUnreadOnly,
     setSortBy,
+    sendMessage,
+    markChatAsRead,
+    indicateTyping,
     editMessage,
     deleteMessage,
     addReaction,
     createGroupChat,
-    uploadAttachment
+    uploadAttachment,
+    typingUsers,
+    startTyping,
+    stopTyping,
+    markAllMessagesAsRead
   };
 };

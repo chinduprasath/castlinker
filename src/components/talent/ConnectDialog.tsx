@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -9,7 +8,7 @@ interface ConnectDialogProps {
   talent?: TalentProfile | null;
   isOpen: boolean;
   onClose: () => void;
-  onConnect?: (talent: TalentProfile) => boolean | Promise<boolean>;
+  onConnect?: (talent: TalentProfile, message: string) => boolean | Promise<boolean>;
 }
 
 export function ConnectDialog({ talent, isOpen, onClose, onConnect }: ConnectDialogProps) {
@@ -22,7 +21,7 @@ export function ConnectDialog({ talent, isOpen, onClose, onConnect }: ConnectDia
     setIsLoading(true);
     
     try {
-      await onConnect(talent);
+      await onConnect(talent, message);
       
       // Success
       setMessage('');

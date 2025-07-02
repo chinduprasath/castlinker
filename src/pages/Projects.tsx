@@ -30,6 +30,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { fetchProjects, createProject, updateProject } from '@/services/projectService';
 import { db } from '@/integrations/firebase/client';
 import { collection, deleteDoc, doc, addDoc } from 'firebase/firestore';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface Project {
   id: string;
@@ -65,6 +66,7 @@ const Projects = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { theme } = useTheme ? useTheme() : { theme: 'light' };
 
   useEffect(() => {
     const loadProjects = async () => {
@@ -76,7 +78,7 @@ const Projects = () => {
       setIsLoading(true);
       try {
         console.log('Fetching projects for user:', user.id);
-        const projectsData = await fetchProjects(user.id);
+        const projectsData = await fetchProjects(user.id, user.email);
         console.log('Fetched projects:', projectsData);
         setProjects(projectsData || []);
       } catch (error: any) {
@@ -153,7 +155,7 @@ const Projects = () => {
       setIsCreateModalOpen(false);
 
       // Refresh projects list
-      const updatedProjects = await fetchProjects(user.id);
+      const updatedProjects = await fetchProjects(user.id, user.email);
       setProjects(updatedProjects || []);
     } catch (error: any) {
       console.error('Error creating project:', error);
@@ -217,7 +219,7 @@ const Projects = () => {
       setEditModalOpen(false);
       setEditingProject(null);
       // Refresh projects list
-      const updatedProjects = await fetchProjects(user.id);
+      const updatedProjects = await fetchProjects(user.id, user.email);
       setProjects(updatedProjects || []);
     } catch (error: any) {
       toast({
@@ -233,6 +235,11 @@ const Projects = () => {
   const filteredProjects = projects.filter(project =>
     project.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Split projects into created and joined
+  const createdProjects = filteredProjects.filter(p => p.team_head_id === user.id);
+  const joinedProjects = filteredProjects.filter(p => p.team_head_id !== user.id);
+  const [activeTab, setActiveTab] = useState<'created' | 'joined'>('created');
 
   if (!user) {
     return (
@@ -273,24 +280,48 @@ const Projects = () => {
         </CardContent>
       </Card>
 
+      {/* Tabs for Created and Joined Projects */}
+      <div className="flex gap-4 mt-4 mb-2">
+        <button
+          className={`px-4 py-2 rounded-t font-semibold border transition-colors
+            ${activeTab === 'created'
+              ? `${theme === 'light' ? 'border-b-2 border-gold text-gold bg-white' : 'border-b-2 border-gold text-gold bg-[#181818]'} box-border`
+              : `${theme === 'light' ? 'border-b-2 border-transparent text-gray-500 bg-transparent' : 'border-b-2 border-transparent text-gray-400 bg-transparent'}`}
+          `}
+          onClick={() => setActiveTab('created')}
+        >
+          Created Projects
+        </button>
+        <button
+          className={`px-4 py-2 rounded-t font-semibold border transition-colors
+            ${activeTab === 'joined'
+              ? `${theme === 'light' ? 'border-b-2 border-gold text-gold bg-white' : 'border-b-2 border-gold text-gold bg-[#181818]'} box-border`
+              : `${theme === 'light' ? 'border-b-2 border-transparent text-gray-500 bg-transparent' : 'border-b-2 border-transparent text-gray-400 bg-transparent'}`}
+          `}
+          onClick={() => setActiveTab('joined')}
+        >
+          Joined Projects
+        </button>
+      </div>
+
       {isLoading ? (
         <div className="flex justify-center items-center py-12">
           <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-gold border-solid"></div>
         </div>
-      ) : filteredProjects.length === 0 ? (
-        <Card className="bg-card-gradient border-gold/10 p-8 text-center">
+      ) : (activeTab === 'created' ? createdProjects : joinedProjects).length === 0 ? (
+        <Card className={`${theme === 'light' ? 'bg-white text-gray-700' : 'bg-[#181818] text-gray-300'} border-gold/10 p-8 text-center`}>
           <div className="space-y-3">
-            <Film className="h-16 w-16 text-muted-foreground mx-auto" />
+            <Film className={`h-16 w-16 mx-auto ${theme === 'light' ? 'text-gray-300' : 'text-gray-600'}`} />
             <h3 className="text-xl font-medium">
-              {projects.length === 0 ? 'No projects yet' : 'No projects found'}
+              {(activeTab === 'created' ? createdProjects : joinedProjects).length === 0 ? `No ${activeTab === 'created' ? 'created' : 'joined'} projects yet` : 'No projects found'}
             </h3>
-            <p className="text-foreground/70">
-              {projects.length === 0 
-                ? 'Get started by creating your first project.' 
+            <p className={`${theme === 'light' ? 'text-gray-500' : 'text-gray-400'}` }>
+              {(activeTab === 'created' ? createdProjects : joinedProjects).length === 0 
+                ? `You have not ${activeTab === 'created' ? 'created' : 'joined'} any projects yet.`
                 : 'Try adjusting your search criteria.'
               }
             </p>
-            {projects.length === 0 && (
+            {activeTab === 'created' && createdProjects.length === 0 && (
               <Button onClick={() => setIsCreateModalOpen(true)} className="mt-4 bg-gold hover:bg-gold/90 text-black">
                 Create Project
               </Button>
@@ -299,39 +330,33 @@ const Projects = () => {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProjects.map(project => (
+          {(activeTab === 'created' ? createdProjects : joinedProjects).map(project => (
             <Card 
               key={project.id} 
-              className="bg-[#181818] border border-[#3a2e13] rounded-xl shadow-none cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-gold/30 text-white relative min-h-[180px]"
+              className={`${theme === 'light' ? 'bg-white text-gray-900 border border-gray-200' : 'bg-[#181818] text-white border border-[#3a2e13]'} rounded-xl shadow-none cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-gold/30 relative min-h-[180px]`}
               onClick={() => handleProjectClick(project.id)}
             >
               <div className="p-5 pb-4 h-full flex flex-col justify-between">
                 <div>
                   <div className="flex justify-between items-start mb-2">
                     <div>
-                      <div className="text-xl font-bold leading-tight mb-1 text-white">
-                        {project.name}
-                      </div>
-                      <div className="text-sm text-[#b3b3b3] mb-1">
-                        {new Date(project.created_at).toLocaleDateString()}
-                      </div>
+                      <div className={`text-xl font-bold leading-tight mb-1 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>{project.name}</div>
+                      <div className={`text-sm mb-1 ${theme === 'light' ? 'text-gray-500' : 'text-[#b3b3b3]'}`}>{new Date(project.created_at).toLocaleDateString()}</div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="px-3 py-1 rounded-full bg-[#3a2e13] text-[#e2b93b] text-xs font-medium ml-2 select-none">
+                      <span className={`px-3 py-1 rounded-full ${theme === 'light' ? 'bg-yellow-100 text-yellow-800' : 'bg-[#3a2e13] text-[#e2b93b]'} text-xs font-medium ml-2 select-none`}>
                         {project.current_status}
                       </span>
                     </div>
                   </div>
-                  <div className="text-[#b3b3b3] text-base mb-6 min-h-[24px]">
-                    {project.description || 'No description provided'}
-                  </div>
+                  <div className={`mb-6 min-h-[24px] text-base ${theme === 'light' ? 'text-gray-700' : 'text-[#b3b3b3]'}`}>{project.description || 'No description provided'}</div>
                 </div>
-                <div className="flex items-center justify-between pt-2 border-t border-[#232323] mt-auto">
-                  <div className="flex items-center gap-1 text-[#b3b3b3] text-sm">
+                <div className={`flex items-center justify-between pt-2 border-t mt-auto ${theme === 'light' ? 'border-gray-200' : 'border-[#232323]'}`}> 
+                  <div className={`flex items-center gap-1 text-sm ${theme === 'light' ? 'text-gray-500' : 'text-[#b3b3b3]'}`}> 
                     <Users className="h-4 w-4 mr-1" />
                     1
                   </div>
-                  <div className="flex items-center gap-1 text-[#b3b3b3] text-sm">
+                  <div className={`flex items-center gap-1 text-sm ${theme === 'light' ? 'text-gray-500' : 'text-[#b3b3b3]'}`}> 
                     <Clock className="h-4 w-4 mr-1" />
                     0 milestones
                   </div>

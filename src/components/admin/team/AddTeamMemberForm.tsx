@@ -20,6 +20,8 @@ interface AddTeamMemberFormProps {
   onSuccess?: () => void;
   onCancel: () => void;
   availableRoles: AdminRole[];
+  projectId: string;
+  projectName: string;
 }
 
 const DEFAULT_ROLES = [
@@ -31,10 +33,34 @@ const DEFAULT_ROLES = [
   { id: "hr", name: "HR" },
 ];
 
+const FILM_ROLES = [
+  "Actor",
+  "Director",
+  "Producer",
+  "Screenwriter",
+  "Cinematographer",
+  "Casting Director",
+  "Agent",
+  "Production Company",
+  "Editor",
+  "Sound Designer",
+  "Production Designer",
+  "Costume Designer",
+  "Makeup Artist",
+  "Stunt Coordinator",
+  "Visual Effects Artist",
+  "Music Composer",
+  "Art Director",
+  "Location Manager",
+  "Other"
+];
+
 const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({ 
   onSuccess, 
   onCancel,
-  availableRoles 
+  availableRoles,
+  projectId,
+  projectName
 }) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -46,6 +72,7 @@ const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({
   const [connectedUsers, setConnectedUsers] = useState<any[]>([]);
   const [selectedUserId, setSelectedUserId] = useState('');
   const { user } = useAuth();
+  const [roleOptions, setRoleOptions] = useState<string[]>(FILM_ROLES);
   
   // Merge database roles with default roles if needed
   useEffect(() => {
@@ -116,6 +143,24 @@ const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({
     }
   }, [selectedUserId, connectedUsers]);
   
+  useEffect(() => {
+    // Fetch roles from database (roles collection)
+    const fetchRoles = async () => {
+      try {
+        const rolesRef = collection(db, 'roles');
+        const snapshot = await getDocs(rolesRef);
+        const dbRoles = snapshot.docs.map(doc => doc.data().name).filter(Boolean);
+        if (dbRoles.length > 0) {
+          setRoleOptions(dbRoles);
+        }
+      } catch (err) {
+        // fallback to FILM_ROLES
+        setRoleOptions(FILM_ROLES);
+      }
+    };
+    fetchRoles();
+  }, []);
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -132,12 +177,16 @@ const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({
     try {
       setSubmitting(true);
       
-      await createTeamMember({
+      const memberData: any = {
         name,
         email,
-        password: generatePassword ? undefined : password,
-        roleId
-      });
+        roleId,
+        userId: selectedUserId
+      };
+      if (!generatePassword && password) {
+        memberData.password = password;
+      }
+      await createTeamMember(projectId, memberData, projectName, user?.id, user?.name);
       
       toast.success(`Team member ${name} created successfully`);
       
@@ -177,7 +226,7 @@ const AddTeamMemberForm: React.FC<AddTeamMemberFormProps> = ({
             <SelectValue placeholder="Select a role" />
           </SelectTrigger>
           <SelectContent>
-            {['Acting', 'Director', 'Screenwriter', 'Musician', 'Producer', 'Editor', 'Cinematographer'].map(role => (
+            {roleOptions.map(role => (
               <SelectItem key={role} value={role}>{role}</SelectItem>
             ))}
           </SelectContent>

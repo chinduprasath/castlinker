@@ -1,4 +1,3 @@
-
 import { useRef, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChatMessage } from "@/components/chat/ChatMessage";
@@ -30,10 +29,10 @@ const ChatMessageArea = ({
   }, [messages]);
 
   return (
-    <ScrollArea className="flex-1 p-6">
+    <ScrollArea className="flex-1 p-6 bg-white text-gray-400 dark:bg-[#181818] dark:text-gray-300 transition-colors">
       {isLoading ? (
         <div className="flex justify-center p-4">
-          <span className="text-gray-400">Loading messages...</span>
+          <span>Loading messages...</span>
         </div>
       ) : showChatRequest ? (
         <div className="flex justify-center items-center h-full">
@@ -45,16 +44,28 @@ const ChatMessageArea = ({
         </div>
       ) : messages.length === 0 ? (
         <div className="flex justify-center p-4">
-          <span className="text-gray-400">
+          <span>
             {chatRequestDeclined ? "You declined this chat request" : "No messages yet"}
           </span>
         </div>
       ) : (
         <div className="space-y-6">
-          {messages.map((message) => (
+          {messages.map((msg) => (
             <ChatMessage
-              key={message.id}
-              message={message}
+              key={msg.id}
+              message={{
+                ...msg,
+                sender_id: msg.senderId,
+                created_at: msg.createdAt
+                  ? (msg.createdAt.seconds
+                      ? new Date(msg.createdAt.seconds * 1000).toISOString()
+                      : msg.createdAt)
+                  : '',
+                type: 'text',
+                isMe: msg.isMe,
+                status: msg.status,
+                content: msg.content,
+              }}
               showAvatar={true}
               isLastInGroup={true}
             />

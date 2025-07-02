@@ -30,6 +30,13 @@ import { useNavigate } from "react-router-dom";
 import { dashboardData } from "@/utils/dummyData";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { collection, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
+import { db } from '@/integrations/firebase/client';
+import { fetchPostsByUser, fetchPosts, Post } from '@/services/postsService';
+import JobCard from '@/components/jobs/JobCard';
+import { Job } from '@/types/jobTypes';
+import { formatDate, formatSalary } from '@/components/jobs/utils/jobFormatters';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -51,6 +58,17 @@ const Dashboard = () => {
   const [upcomingEvents, setUpcomingEvents] = useState(dashboardData.upcomingEvents);
   const [loading, setLoading] = useState(true);
   const [totalPosts, setTotalPosts] = useState<number>(0);
+  const [applicationsCount, setApplicationsCount] = useState<number>(0);
+  const [connectionsCount, setConnectionsCount] = useState<number>(0);
+  const [profileLikes, setProfileLikes] = useState<number>(0);
+  const [recentJobs, setRecentJobs] = useState<any[]>([]);
+  const [loadingRecentJobs, setLoadingRecentJobs] = useState(true);
+  const [topPosts, setTopPosts] = useState<Post[]>([]);
+  const [loadingPosts, setLoadingPosts] = useState(true);
+  const [topNotifications, setTopNotifications] = useState<any[]>([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(true);
+  const [openPostDialog, setOpenPostDialog] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -72,6 +90,94 @@ const Dashboard = () => {
     
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchApplicationsCount = async () => {
+      const q = query(collection(db, 'jobApplications'), where('user_id', '==', user.id));
+      const snapshot = await getDocs(q);
+      setApplicationsCount(snapshot.size);
+    };
+    fetchApplicationsCount();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchConnectionsCount = async () => {
+      const q = query(collection(db, 'connection_requests'), where('status', '==', 'accepted'));
+      const snapshot = await getDocs(q);
+      const connections = snapshot.docs.filter(doc => {
+        const data = doc.data();
+        return data.requesterId === user.id || data.recipientId === user.id;
+      });
+      setConnectionsCount(connections.length);
+    };
+    fetchConnectionsCount();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchProfileLikes = async () => {
+      const q = query(collection(db, 'talent_profiles'), where('user_id', '==', user.id));
+      const snapshot = await getDocs(q);
+      if (!snapshot.empty) {
+        const data = snapshot.docs[0].data();
+        setProfileLikes(data.likes || 0);
+      }
+    };
+    fetchProfileLikes();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchUserPosts = async () => {
+      const posts = await fetchPostsByUser(user.id);
+      setTotalPosts(posts.length);
+    };
+    fetchUserPosts();
+  }, [user]);
+
+  useEffect(() => {
+    const fetchRecentJobs = async () => {
+      setLoadingRecentJobs(true);
+      const jobsRef = collection(db, 'film_jobs');
+      const q = query(jobsRef, where('status', '==', 'active'), orderBy('created_at', 'desc'), limit(3));
+      const snapshot = await getDocs(q);
+      const jobs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setRecentJobs(jobs);
+      setLoadingRecentJobs(false);
+    };
+    fetchRecentJobs();
+  }, []);
+
+  useEffect(() => {
+    const fetchTopPosts = async () => {
+      setLoadingPosts(true);
+      const posts = await fetchPosts();
+      setTopPosts(posts.slice(0, 3));
+      setLoadingPosts(false);
+    };
+    fetchTopPosts();
+  }, []);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const fetchTopNotifications = async () => {
+      setLoadingNotifications(true);
+      const notificationsRef = collection(db, 'notifications');
+      const q = query(
+        notificationsRef,
+        where('userId', '==', user.id),
+        orderBy('createdAt', 'desc'),
+        limit(5)
+      );
+      const snapshot = await getDocs(q);
+      const notifs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setTopNotifications(notifs);
+      setLoadingNotifications(false);
+    };
+    fetchTopNotifications();
+  }, [user?.id]);
 
   const handleNavigateToJobs = () => {
     navigate('/jobs');
@@ -102,6 +208,12 @@ const Dashboard = () => {
       ...prev, 
       applications: prev.applications + 1
     }));
+  };
+
+  const handlePostClick = (post: Post) => {
+    setSelectedPost(post);
+    setOpenPostDialog(true);
+    navigate(`/posts/${post.id}`);
   };
 
   return (
@@ -150,7 +262,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent className="px-4 pb-4">
               <div className="flex flex-col">
-                <div className="text-3xl font-bold">{stats.applications}</div>
+                <div className="text-3xl font-bold">{applicationsCount}</div>
                 <div className="flex items-center mt-1.5">
                   <span className="text-xs text-green-500 font-medium flex items-center">
                     <TrendingUp className="h-3 w-3 mr-1" /> +2
@@ -191,7 +303,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent className="px-4 pb-4">
               <div className="flex flex-col">
-                <div className="text-3xl font-bold">{stats.connections}</div>
+                <div className="text-3xl font-bold">{connectionsCount}</div>
                 <div className="flex items-center mt-1.5">
                   <span className="text-xs text-green-500 font-medium flex items-center">
                     <TrendingUp className="h-3 w-3 mr-1" /> +5
@@ -232,7 +344,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent className="px-4 pb-4">
               <div className="flex flex-col">
-                <div className="text-3xl font-bold">{stats.likes}</div>
+                <div className="text-3xl font-bold">{profileLikes}</div>
                 <div className="flex items-center mt-1.5">
                   <span className="text-xs text-green-500 font-medium flex items-center">
                     <TrendingUp className="h-3 w-3 mr-1" /> +12
@@ -294,9 +406,9 @@ const Dashboard = () => {
                   <Film className="h-5 w-5 text-gold" />
                 </div>
                 <div>
-                  <CardTitle className="text-xl">Recent Opportunities</CardTitle>
+                  <CardTitle className="text-xl">Recently Created Jobs</CardTitle>
                   <CardDescription className="mt-0.5">
-                    Casting calls that match your profile
+                    The latest opportunities posted on the platform
                   </CardDescription>
                 </div>
               </div>
@@ -312,7 +424,7 @@ const Dashboard = () => {
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            {loading ? (
+            {loadingRecentJobs ? (
               <div className="divide-y divide-border/10">
                 {[1, 2, 3].map((_, index) => (
                   <div key={index} className="p-4">
@@ -337,62 +449,15 @@ const Dashboard = () => {
               </div>
             ) : (
               <div className="divide-y divide-border/10">
-                {recentOpportunities.map((job) => (
-                  <div key={job.id} className="hover:bg-card/80 transition-colors p-4">
-                    <div className="flex items-start space-x-3">
-                      <div className="rounded-md bg-card flex-shrink-0 h-14 w-14 flex items-center justify-center border border-gold/20">
-                        <Film className="h-7 w-7 text-gold" />
-                      </div>
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-semibold text-base leading-tight">{job.title}</h3>
-                              {job.isNew && (
-                                <Badge variant="outline" className="bg-green-500/10 border-green-500/20 text-green-500 text-[10px] rounded-sm py-0 h-5">
-                                  New
-                                </Badge>
-                              )}
-                              {job.applied && (
-                                <Badge variant="outline" className="bg-blue-500/10 border-blue-500/20 text-blue-500 text-[10px] rounded-sm py-0 h-5">
-                                  Applied
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <MapPin className="h-3 w-3" />
-                                {job.location}
-                              </div>
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <Briefcase className="h-3 w-3" />
-                                {job.type}
-                              </div>
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <DollarSign className="h-3 w-3" />
-                                {job.pay}
-                              </div>
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <Clock className="h-3 w-3" />
-                                {job.posted}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <p className="text-sm text-muted-foreground line-clamp-2">{job.desc}</p>
-                        <div className="flex items-center justify-end gap-2 pt-1">
-                          <Button variant="outline" size="sm" className="h-8 border-gold/20 text-gold">Details</Button>
-                          <Button 
-                            size="sm" 
-                            className={`h-8 ${job.applied ? 'bg-green-500 hover:bg-green-600' : 'bg-gold hover:bg-gold/90'} text-black`}
-                            onClick={() => handleApplyToJob(job.id)}
-                            disabled={job.applied}
-                          >
-                            {job.applied ? 'Applied' : 'Apply'}
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
+                {recentJobs.map((job: Job) => (
+                  <div key={job.id} className="p-2">
+                    <JobCard
+                      job={job}
+                      isSaved={false}
+                      onSaveClick={() => {}}
+                      onViewDetailsClick={() => {}}
+                      onApplyClick={() => {}}
+                    />
                   </div>
                 ))}
               </div>
@@ -401,65 +466,41 @@ const Dashboard = () => {
         </Card>
         
         <div className="space-y-4">
+          {/* Top 3 Posts Card */}
           <Card className="border-blue-500/10 shadow-lg bg-card/60 backdrop-blur-sm overflow-hidden">
             <CardHeader className="px-4 py-4 border-b border-border/10 bg-gradient-to-r from-blue-500/5 to-transparent">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-full bg-blue-500/10 p-2">
-                    <MessageCircle className="h-5 w-5 text-blue-500" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-xl">Messages</CardTitle>
-                    <CardDescription className="mt-0.5">
-                      Your latest conversations
-                    </CardDescription>
-                  </div>
+              <div className="flex items-center gap-3">
+                <div className="rounded-full bg-blue-500/10 p-2">
+                  <Film className="h-5 w-5 text-blue-500" />
                 </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="text-xs gap-1 border-blue-500/20 text-blue-500 hover:text-blue-500/80 hover:bg-blue-500/10"
-                  onClick={handleNavigateToMessages}
-                >
-                  View all
-                  <ChevronRight className="h-3 w-3" />
-                </Button>
+                <div>
+                  <CardTitle className="text-xl">Recent Posts</CardTitle>
+                  <CardDescription className="mt-0.5">Top 3 most recent posts</CardDescription>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              {loading ? (
+              {loadingPosts ? (
                 <div className="divide-y divide-border/10">
-                  {[1, 2, 3].map((_, index) => (
-                    <div key={index} className="p-3">
-                      <div className="flex items-start space-x-3">
-                        <Skeleton className="h-10 w-10 rounded-full" />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <Skeleton className="h-4 w-24" />
-                            <Skeleton className="h-3 w-12" />
-                          </div>
-                          <Skeleton className="h-3 w-full mt-1.5" />
-                        </div>
-                      </div>
+                  {[1, 2, 3].map((_, idx) => (
+                    <div key={idx} className="p-4">
+                      <Skeleton className="h-5 w-3/4 mb-2" />
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="divide-y divide-border/10">
-                  {recentMessages.map((msg) => (
-                    <div key={msg.id} className="p-3 hover:bg-card/80 transition-colors group cursor-pointer" onClick={handleNavigateToMessages}>
-                      <div className="flex items-start space-x-3">
-                        <div className="rounded-full h-10 w-10 bg-blue-500/10 flex items-center justify-center border border-blue-500/20 group-hover:border-blue-500/40 transition-colors flex-shrink-0">
-                          <span className="text-xs font-medium text-blue-500">{msg.name.split(' ').map(n => n[0]).join('')}</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <p className="font-medium leading-none text-sm group-hover:text-blue-500 transition-colors">{msg.name}</p>
-                            <p className="text-[10px] text-muted-foreground">{msg.time}</p>
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{msg.msg}</p>
-                        </div>
+                  {topPosts.map(post => (
+                    <div
+                      key={post.id}
+                      className="p-4 flex items-center justify-between cursor-pointer hover:bg-blue-50/40 transition-colors"
+                      onClick={() => handlePostClick(post)}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-base text-foreground/90 truncate">{post.title}</div>
+                        <div className="text-sm text-muted-foreground line-clamp-2">{post.description}</div>
                       </div>
+                      <ArrowRight className="ml-4 flex-shrink-0 text-blue-500" />
                     </div>
                   ))}
                 </div>
@@ -467,83 +508,36 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
+          {/* Top 5 Notifications Card */}
           <Card className="border-gold/10 shadow-lg bg-card/60 backdrop-blur-sm overflow-hidden">
             <CardHeader className="px-4 py-4 border-b border-border/10 bg-gradient-to-r from-gold/5 to-transparent">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-full bg-gold/10 p-2">
-                    <Calendar className="h-5 w-5 text-gold" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-xl">Upcoming</CardTitle>
-                    <CardDescription className="mt-0.5">
-                      Your scheduled events
-                    </CardDescription>
-                  </div>
+              <div className="flex items-center gap-3">
+                <div className="rounded-full bg-gold/10 p-2">
+                  <Bell className="h-5 w-5 text-gold" />
                 </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="text-xs gap-1 border-gold/20 text-gold hover:text-gold/80 hover:bg-gold/10"
-                  onClick={handleNavigateToCalendar}
-                >
-                  Calendar
-                  <ChevronRight className="h-3 w-3" />
-                </Button>
+                <div>
+                  <CardTitle className="text-xl">Notifications</CardTitle>
+                  <CardDescription className="mt-0.5">Top 5 most recent notifications</CardDescription>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              {loading ? (
+              {loadingNotifications ? (
                 <div className="divide-y divide-border/10">
-                  {[1, 2].map((_, index) => (
-                    <div key={index} className="p-3">
-                      <div className="flex gap-2">
-                        <Skeleton className="w-14 h-16 rounded-md" />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between">
-                            <Skeleton className="h-5 w-40" />
-                            <Skeleton className="h-5 w-16" />
-                          </div>
-                          <Skeleton className="h-4 w-full mt-1" />
-                          <div className="flex items-center gap-3 mt-2">
-                            <Skeleton className="h-3 w-24" />
-                            <Skeleton className="h-3 w-20" />
-                          </div>
-                        </div>
-                      </div>
+                  {[1, 2, 3, 4, 5].map((_, idx) => (
+                    <div key={idx} className="p-4">
+                      <Skeleton className="h-5 w-3/4 mb-2" />
+                      <Skeleton className="h-4 w-1/2" />
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="divide-y divide-border/10">
-                  {upcomingEvents.map((event) => (
-                    <div key={event.id} className="p-3 hover:bg-card/80 transition-colors">
-                      <div className="flex gap-2">
-                        <div className="flex flex-col items-center justify-center bg-gold/5 p-2 rounded-md border border-gold/20 w-14 h-16 flex-shrink-0">
-                          <span className="text-xs font-medium text-gold">{event.date.split(' ')[0]}</span>
-                          <span className="text-xl font-bold">{event.date.split(' ')[1]}</span>
-                          <span className="text-[10px] text-muted-foreground">{event.day}</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between">
-                            <h3 className="font-medium text-sm">{event.title}</h3>
-                            <Badge variant="outline" className="bg-blue-500/10 border-blue-500/20 text-blue-500 text-[10px] rounded-sm py-0 h-5">
-                              {event.time}
-                            </Badge>
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-1">{event.subtitle}</p>
-                          <div className="flex items-center gap-3 mt-1.5">
-                            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                              <MapPin className="h-2.5 w-2.5" />
-                              {event.location}
-                            </div>
-                            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                              <Clock className="h-2.5 w-2.5" />
-                              {event.duration}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                  {topNotifications.map((notif) => (
+                    <div key={notif.id} className="p-4">
+                      <div className="font-semibold text-base text-foreground/90">{notif.title}</div>
+                      <div className="text-sm text-muted-foreground mb-1">{notif.message}</div>
+                      <div className="text-xs text-muted-foreground">{notif.createdAt && (notif.createdAt.toDate ? notif.createdAt.toDate().toLocaleString() : new Date(notif.createdAt).toLocaleString())}</div>
                     </div>
                   ))}
                 </div>
@@ -552,6 +546,17 @@ const Dashboard = () => {
           </Card>
         </div>
       </div>
+      <Dialog open={openPostDialog} onOpenChange={setOpenPostDialog}>
+        <DialogContent className="max-w-2xl">
+          {selectedPost && (
+            <div>
+              <div className="text-xl font-bold mb-2">{selectedPost.title}</div>
+              <div className="text-muted-foreground mb-4">{selectedPost.description}</div>
+              {/* Add more post details here as needed */}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -1,9 +1,10 @@
-
 import { Button } from "@/components/ui/button";
 import { MessageCircle, Share2, UserPlus, Globe, Twitter, Instagram, Linkedin, Youtube } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useTheme } from '@/contexts/ThemeContext';
 
 const ProfileHeader = () => {
+  const { theme } = useTheme();
   // In a real app, this would come from a profile context/API
   const profile = {
     name: "James Wilson",
@@ -28,19 +29,19 @@ const ProfileHeader = () => {
   };
 
   return (
-    <div className="rounded-xl bg-card-gradient border border-gold/10 overflow-hidden">
+    <div className={`rounded-xl border border-gold/10 overflow-hidden ${theme === 'light' ? 'bg-white' : 'bg-card-gradient'}`}>
       {/* Cover Image */}
       <div 
         className="h-48 bg-cover bg-center relative" 
         style={{ backgroundImage: `url(${profile.coverImage})` }}
       >
-        <div className="absolute inset-0 bg-gradient-to-t from-cinematic to-transparent"></div>
+        <div className={`absolute inset-0 ${theme === 'light' ? 'bg-gradient-to-t from-white/80 to-transparent' : 'bg-gradient-to-t from-cinematic to-transparent'}`}></div>
       </div>
       
       {/* Profile Info */}
       <div className="p-6 relative">
         {/* Avatar - positioned to overlap with cover */}
-        <Avatar className="h-28 w-28 border-4 border-card absolute -top-16 left-6">
+        <Avatar className={`h-28 w-28 border-4 absolute -top-16 left-6 ${theme === 'light' ? 'border-white' : 'border-card'}`}>
           <AvatarImage src={profile.avatar} alt={profile.name} />
           <AvatarFallback className="bg-cinematic-light text-2xl">
             {profile.name.charAt(0)}
@@ -66,7 +67,7 @@ const ProfileHeader = () => {
         {/* Profile Details */}
         <div className="mt-4">
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold">{profile.name}</h1>
+            <h1 className={`text-2xl font-bold ${theme === 'light' ? 'text-gray-900' : ''}`}>{profile.name}</h1>
             {profile.isVerified && (
               <span className="bg-gold/20 text-gold px-2 py-0.5 rounded-full text-xs font-medium">
                 Verified
@@ -80,8 +81,8 @@ const ProfileHeader = () => {
           </div>
           
           <div className="flex items-center gap-4 mt-2">
-            <p className="text-foreground/70">{profile.role}</p>
-            <p className="text-foreground/70">{profile.location}</p>
+            <p className={`text-foreground/70 ${theme === 'light' ? 'text-gray-700' : ''}`}>{profile.role}</p>
+            <p className={`text-foreground/70 ${theme === 'light' ? 'text-gray-700' : ''}`}>{profile.location}</p>
           </div>
           
           {/* Social Media Links */}
