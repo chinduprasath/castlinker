@@ -285,6 +285,13 @@ const App = () => {
                 </AppLayout>
               </PrivateRoute>
             } />
+            <Route path="/manage/jobs/:jobId" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <UserJobDetail />
+                </AppLayout>
+              </PrivateRoute>
+            } />
 
             {/* Project Routes */}
             <Route path="/projects" element={

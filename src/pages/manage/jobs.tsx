@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 import { fetchJobsByUser } from '@/services/jobsService';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -14,10 +15,9 @@ import { useToast } from '@/hooks/use-toast';
 
 const ManageJobsPage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedJob, setSelectedJob] = useState<any | null>(null);
-  const [showJobDialog, setShowJobDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editJob, setEditJob] = useState<any | null>(null);
   const { toast } = useToast();
@@ -40,12 +40,10 @@ const ManageJobsPage = () => {
   };
 
   const handleShowDetails = (job: any) => {
-    setSelectedJob(job);
-    setShowJobDialog(true);
+    navigate(`/manage/jobs/${job.id}`);
   };
 
   const handleEditJob = (job: any) => {
-    setShowJobDialog(false);
     setEditJob(job);
     setShowEditDialog(true);
   };
@@ -57,7 +55,6 @@ const ManageJobsPage = () => {
       setJobs(jobs.map(j => (j.id === jobId ? { ...j, ...jobData } : j)));
       setShowEditDialog(false);
       setEditJob(null);
-      setShowJobDialog(false);
     } else {
       toast({ title: 'Error', description: 'Failed to update job.', variant: 'destructive' });
     }
@@ -132,37 +129,6 @@ const ManageJobsPage = () => {
         </CardContent>
       </Card>
 
-      {/* Job Details Dialog */}
-      <Dialog open={showJobDialog} onOpenChange={setShowJobDialog}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Job Details</DialogTitle>
-            <DialogDescription>
-              {selectedJob && (
-                <div className="space-y-2 mt-2">
-                  <div><strong>Title:</strong> {selectedJob.title}</div>
-                  <div><strong>Company:</strong> {selectedJob.company}</div>
-                  <div><strong>Description:</strong> {selectedJob.description}</div>
-                  <div><strong>Category:</strong> {selectedJob.role_category || '-'}</div>
-                  <div><strong>Type:</strong> {selectedJob.job_type || '-'}</div>
-                  <div><strong>Experience Level:</strong> {selectedJob.experience_level || '-'}</div>
-                  <div><strong>Location:</strong> {selectedJob.location || '-'}</div>
-                  <div><strong>Location Type:</strong> {selectedJob.location_type || '-'}</div>
-                  <div><strong>Salary:</strong> {selectedJob.salary_min || '-'} - {selectedJob.salary_max || '-'} {selectedJob.salary_currency || ''} ({selectedJob.salary_period || ''})</div>
-                  <div><strong>Application Deadline:</strong> {selectedJob.application_deadline || '-'}</div>
-                  <div><strong>Status:</strong> {selectedJob.status || '-'}</div>
-                  <div><strong>Posted Date:</strong> {selectedJob.created_at ? new Date(selectedJob.created_at.seconds ? selectedJob.created_at.seconds * 1000 : selectedJob.created_at).toLocaleString() : '-'}</div>
-                </div>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Close</Button>
-            </DialogClose>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Edit Job Dialog */}
       {editJob && (
@@ -172,7 +138,6 @@ const ManageJobsPage = () => {
               onJobCreated={() => {
                 setShowEditDialog(false);
                 setEditJob(null);
-                setShowJobDialog(false);
               }}
               initialValues={editJob}
               onUpdate={handleUpdateJob}
