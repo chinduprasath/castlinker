@@ -292,6 +292,13 @@ const App = () => {
                 </AppLayout>
               </PrivateRoute>
             } />
+            <Route path="/manage/posts/:postId" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <UserPostDetail />
+                </AppLayout>
+              </PrivateRoute>
+            } />
 
             {/* Project Routes */}
             <Route path="/projects" element={

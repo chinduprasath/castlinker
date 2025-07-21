@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { MoreHorizontal, LinkIcon, MessageSquare, Check, X } from 'lucide-react';
+import { MoreHorizontal, LinkIcon, MessageSquare, Check, X, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Link } from 'react-router-dom';
@@ -109,6 +109,7 @@ const dummyPosts: Post[] = [
 
 const UserPostDetail: React.FC = () => {
   const { postId } = useParams<{ postId: string }>();
+  const navigate = useNavigate();
   const [post, setPost] = useState<Post | null>(null);
   const [filter, setFilter] = useState<'All' | 'New' | 'Selected' | 'Rejected'>('All');
 
@@ -166,6 +167,16 @@ const UserPostDetail: React.FC = () => {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
+      {/* Back Navigation */}
+      <Button
+        variant="ghost"
+        onClick={() => navigate('/manage')}
+        className="flex items-center gap-2 text-muted-foreground hover:text-foreground -ml-2"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        <span>Back to Manage</span>
+      </Button>
+
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Post Details</h1>
