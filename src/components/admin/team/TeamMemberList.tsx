@@ -36,6 +36,7 @@ interface TeamMemberListProps {
   roles?: AdminRole[];
   onRefresh?: () => void;
   canEditRoles?: boolean;
+  projectId?: string;
 }
 
 const TeamMemberList = ({ 
@@ -43,7 +44,8 @@ const TeamMemberList = ({
   loading, 
   roles: initialRoles,
   onRefresh,
-  canEditRoles = true
+  canEditRoles = true,
+  projectId = "admin-project"
 }: TeamMemberListProps) => {
   const [roles, setRoles] = useState<AdminRole[]>([]);
   const [rolesLoading, setRolesLoading] = useState(false);
@@ -89,7 +91,7 @@ const TeamMemberList = ({
     
     try {
       setIsSubmitting(true);
-      await updateTeamMemberRole(selectedMember.id, selectedRoleId);
+      await updateTeamMemberRole(projectId, selectedMember.id, selectedRoleId);
       toast.success(`${selectedMember.name}'s role has been updated`);
       setShowChangeRoleDialog(false);
       
@@ -108,7 +110,7 @@ const TeamMemberList = ({
     
     try {
       setIsSubmitting(true);
-      await deleteTeamMember(selectedMember.id);
+      await deleteTeamMember(projectId, selectedMember.id);
       toast.success(`${selectedMember.name} has been removed from the team`);
       setShowDeleteDialog(false);
       

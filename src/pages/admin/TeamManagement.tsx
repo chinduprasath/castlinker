@@ -25,7 +25,7 @@ const TeamManagement = () => {
     try {
       const [rolesData, membersData] = await Promise.all([
         fetchRoles(),
-        fetchTeamMembers()
+        fetchTeamMembers("admin-project") // Using a default project ID for admin context
       ]);
       
       setRoles(rolesData);
@@ -33,8 +33,9 @@ const TeamManagement = () => {
       if (Array.isArray(membersData)) {
         setTeamMembers(membersData);
       } else if (membersData && typeof membersData === 'object' && 'accepted' in membersData) {
-        // If it returns project-specific data, just use the accepted members
-        setTeamMembers(membersData.accepted || []);
+        // If it returns project-specific data, just use the members
+        const typedData = membersData as { accepted?: AdminTeamMember[] };
+        setTeamMembers(Array.isArray(typedData.accepted) ? typedData.accepted : []);
       } else {
         setTeamMembers([]);
       }
@@ -70,6 +71,7 @@ const TeamManagement = () => {
             loading={loading}
             roles={roles}
             onRefresh={loadData}
+            projectId="admin-project"
           />
         </CardContent>
       </Card>
@@ -79,6 +81,8 @@ const TeamManagement = () => {
         onClose={() => setShowAddMemberDialog(false)}
         onSuccess={loadData}
         availableRoles={roles}
+        projectId="admin-project"
+        projectName="Admin Team"
       />
     </div>
   );
