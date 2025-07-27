@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MapPin, Star, MessageCircle, Users, Search, Filter, Grid, List, Heart, Bookmark, Share, ArrowUpDown, X } from "lucide-react";
+import { MapPin, Star, MessageCircle, Users, Search, Filter, Grid, List, Heart, Bookmark, Share, ArrowUpDown, X, MoreVertical } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -17,6 +17,7 @@ import { MessageDialog } from "@/components/talent/MessageDialog";
 import { TalentProfile, PROFESSION_OPTIONS } from "@/types/talentTypes";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Drawer, DrawerTrigger, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter, DrawerClose } from "@/components/ui/drawer";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { db } from '@/integrations/firebase/client';
 import { addDoc, collection } from 'firebase/firestore';
 import useAuth from '@/hooks/useAuth';
@@ -330,9 +331,36 @@ const TalentDirectory = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 flex-shrink-0 ml-2">
-                    <Heart className={`h-4 w-4 ${theme === 'light' ? 'text-red-500' : 'text-red-500'}` } />
-                    <span className={`text-sm ${theme === 'light' ? 'text-gray-500' : 'text-gray-400'}`}>{talent.likes || 0}</span>
+                  <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                    <div className="flex items-center gap-1">
+                      <Heart className={`h-4 w-4 ${theme === 'light' ? 'text-red-500' : 'text-red-500'}` } />
+                      <span className={`text-sm ${theme === 'light' ? 'text-gray-500' : 'text-gray-400'}`}>{talent.likes || 0}</span>
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-32">
+                        <DropdownMenuItem onClick={() => { setSelectedTalent(talent); setIsMessageDialogOpen(true); }}>
+                          <MessageCircle className="mr-2 h-4 w-4" />
+                          Message
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Bookmark className="mr-2 h-4 w-4" />
+                          Save
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Share className="mr-2 h-4 w-4" />
+                          Share
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
 
@@ -364,31 +392,15 @@ const TalentDirectory = () => {
                   </div>
                 </div>
 
-                {/* Icon Row: Like, Save, Share */}
-                <div className="flex items-center justify-center gap-8 mt-3 mb-3">
-                  <button className="flex items-center gap-2 hover:text-red-500 transition-colors" title="Like">
-                    <Heart className="h-5 w-5" />
-                    <span className="text-xs font-medium">Like</span>
-                  </button>
-                  <button className="flex items-center gap-2 hover:text-yellow-500 transition-colors" title="Save">
-                    <Bookmark className="h-5 w-5" />
-                    <span className="text-xs font-medium">Save</span>
-                  </button>
-                  <button className="flex items-center gap-2 hover:text-blue-500 transition-colors" title="Share">
-                    <Share className="h-5 w-5" />
-                    <span className="text-xs font-medium">Share</span>
-                  </button>
-                </div>
-
-                {/* Bottom Action Buttons - Adjusted widths and colors */}
+                {/* Bottom Action Buttons - Like, Connect, View Profile */}
                 <div className="flex gap-2 mt-2">
                   <Button 
                     variant="outline" 
                     size="sm" 
                     className={`w-10 h-9 flex items-center justify-center p-0 min-w-0 ${theme === 'light' ? 'border-gray-300 text-gray-700 hover:bg-gray-100' : 'border-gray-600 text-white hover:bg-gray-800'}`}
-                    onClick={() => { setSelectedTalent(talent); setIsMessageDialogOpen(true); }}
+                    title="Like"
                   >
-                    <MessageCircle className="h-5 w-5" />
+                    <Heart className="h-5 w-5" />
                   </Button>
                   <Button 
                     variant="outline"
