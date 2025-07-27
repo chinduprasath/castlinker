@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, Star, MessageCircle, UserPlus, ExternalLink, Bookmark, X } from "lucide-react";
+import { MapPin, Star, MessageCircle, UserPlus, ExternalLink, Bookmark, X, ArrowLeft } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useTalentDirectory } from "@/hooks/useTalentDirectory";
 import { TalentProfile } from "@/types/talentTypes";
@@ -12,6 +12,7 @@ import { db } from '@/integrations/firebase/client';
 import { collection, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import useAuth from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 import { ConnectDialog } from "@/components/talent/ConnectDialog";
 import { MessageDialog } from "@/components/talent/MessageDialog";
 
@@ -40,6 +41,7 @@ const ManageTalentDirectory = () => {
   const { theme } = useTheme();
   const { talents } = useTalentDirectory();
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (user) {
@@ -258,6 +260,17 @@ const ManageTalentDirectory = () => {
     }`}>
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
+          <div className="flex items-center gap-4 mb-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/talent-directory')}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Directory
+            </Button>
+          </div>
           <h1 className={`text-4xl font-bold mb-2 ${
             theme === 'light' ? 'text-gray-900' : 'text-white'
           }`}>
@@ -271,9 +284,9 @@ const ManageTalentDirectory = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-8">
-            <TabsTrigger value="request-profiles">Request Profiles</TabsTrigger>
-            <TabsTrigger value="saved-profiles">Saved Profiles</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 mb-8 h-9">
+            <TabsTrigger value="request-profiles" className="text-sm">Requests</TabsTrigger>
+            <TabsTrigger value="saved-profiles" className="text-sm">Saved</TabsTrigger>
           </TabsList>
 
           <TabsContent value="request-profiles" className="space-y-6">
