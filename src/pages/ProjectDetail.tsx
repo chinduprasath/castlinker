@@ -100,7 +100,7 @@ const ProjectDetail = () => {
           description: 'The project you are looking for does not exist.',
           variant: 'destructive'
         });
-        navigate('/projects');
+        navigate('/collaborate');
         return;
       }
 
@@ -186,7 +186,7 @@ const ProjectDetail = () => {
     try {
       await deleteDoc(doc(db, 'projects', project.id));
       toast({ title: 'Project deleted', description: 'Project has been deleted.' });
-      navigate('/projects');
+      navigate('/collaborate');
     } catch (error: any) {
       toast({ title: 'Failed to delete project', description: error.message || 'Please try again later', variant: 'destructive' });
     }
@@ -246,7 +246,7 @@ const ProjectDetail = () => {
         <Button 
           variant="ghost" 
           size="icon" 
-          onClick={() => navigate('/projects')}
+          onClick={() => navigate('/collaborate')}
           className="rounded-full h-8 w-8"
         >
           <ArrowLeft className="h-4 w-4" />

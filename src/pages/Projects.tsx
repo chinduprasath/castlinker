@@ -188,7 +188,7 @@ const Projects = () => {
   };
 
   const handleProjectClick = (projectId: string) => {
-    navigate(`/projects/${projectId}`);
+    navigate(`/collaborate/${projectId}`);
   };
 
   const openEditModal = (project: Project) => {

@@ -75,7 +75,7 @@ const ProjectCreate = () => {
         description: 'Your project has been created successfully',
       });
 
-      navigate(`/projects/${projectData.id}`);
+      navigate(`/collaborate/${projectData.id}`);
     } catch (error: any) {
       console.error('Error creating project:', error);
       toast({
@@ -94,7 +94,7 @@ const ProjectCreate = () => {
         <Button 
           variant="ghost" 
           size="icon" 
-          onClick={() => navigate('/projects')}
+          onClick={() => navigate('/collaborate')}
           className="rounded-full h-8 w-8"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -169,7 +169,7 @@ const ProjectCreate = () => {
               <Button 
                 type="button" 
                 variant="outline" 
-                onClick={() => navigate('/projects')}
+                onClick={() => navigate('/collaborate')}
                 className="border-gold/20 hover:border-gold/40"
               >
                 Cancel

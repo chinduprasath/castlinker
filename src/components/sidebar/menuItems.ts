@@ -29,8 +29,8 @@ export const mainMenuItems: MenuItem[] = [
   },
   {
     icon: FolderKanban,
-    text: "Projects",
-    path: "/projects"
+    text: "Collaborate",
+    path: "/collaborate"
   },
   {
     icon: FileText,

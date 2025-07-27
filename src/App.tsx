@@ -300,15 +300,15 @@ const App = () => {
               </PrivateRoute>
             } />
 
-            {/* Project Routes */}
-            <Route path="/projects" element={
+            {/* Collaborate Routes */}
+            <Route path="/collaborate" element={
               <PrivateRoute>
                 <AppLayout>
                   <Projects />
                 </AppLayout>
               </PrivateRoute>
             } />
-            <Route path="/projects/:projectId" element={
+            <Route path="/collaborate/:projectId" element={
               <PrivateRoute>
                 <AppLayout>
                   <ProjectDetail />
