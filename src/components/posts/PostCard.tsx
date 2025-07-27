@@ -85,9 +85,9 @@ const PostCard = ({
   const eventDate = post.event_date ? new Date(post.event_date) : null;
   
   return (
-    <Card className="w-full h-full hover:shadow-md transition-shadow duration-200 flex flex-col relative">
+    <Card className="w-full hover:shadow-md transition-shadow duration-200 relative">
       {/* Top-right action buttons (Like and Share) */}
-      <div className="absolute top-2 right-2 flex flex-col gap-2 z-10">
+      <div className="absolute top-2 right-2 flex gap-2 z-10">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -134,157 +134,171 @@ const PostCard = ({
         </TooltipProvider>
       </div>
 
-      {/* Media Preview at the top if exists */}
-      {post.media_url ? (
-        <div className="w-full relative rounded-t-lg overflow-hidden">
-          {post.media_type === 'image' ? (
-            <img 
-              src={post.media_url} 
-              alt={post.title} 
-              className="w-full h-48 object-cover"
-            />
-          ) : post.media_type === 'video' ? (
-            <div className="relative w-full h-48 bg-black">
-              <video
-                src={post.media_url}
-                className="w-full h-full object-cover"
-                controls
-                poster={post.media_url + '?poster=true'}
-              />
+      {/* Horizontal layout: Image left, Content right */}
+      <div className="flex flex-col md:flex-row">
+        {/* Media section - left side on desktop */}
+        <div className="w-full md:w-1/3 relative">
+          {post.media_url ? (
+            <div className="relative rounded-t-lg md:rounded-l-lg md:rounded-tr-none overflow-hidden h-48 md:h-full min-h-[200px]">
+              {post.media_type === 'image' ? (
+                <img 
+                  src={post.media_url} 
+                  alt={post.title} 
+                  className="w-full h-full object-cover"
+                />
+              ) : post.media_type === 'video' ? (
+                <div className="relative w-full h-full bg-black">
+                  <video
+                    src={post.media_url}
+                    className="w-full h-full object-cover"
+                    controls
+                    poster={post.media_url + '?poster=true'}
+                  />
+                </div>
+              ) : null}
             </div>
-          ) : null}
-        </div>
-      ) : (
-        <div className="w-full h-48 bg-muted flex items-center justify-center rounded-t-lg">
-          <div className="text-center text-muted-foreground">
-            {post.media_type === 'image' ? (
-              <>
-                <Image className="h-10 w-10 mx-auto mb-2 opacity-40" />
-                <p>No image provided</p>
-              </>
-            ) : post.media_type === 'video' ? (
-              <>
-                <Film className="h-10 w-10 mx-auto mb-2 opacity-40" />
-                <p>No video provided</p>
-              </>
-            ) : (
-              <>
-                <Image className="h-10 w-10 mx-auto mb-2 opacity-40" />
-                <p>No media provided</p>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-      
-      <CardHeader className={cn("pb-2")}>
-        <div className="flex justify-between items-start">
-          <div>
-            <h3 className="text-xl font-semibold">{post.title}</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              Posted by {post.creator_name || 'Anonymous'} 
-              {post.creator_profession && <span> • {post.creator_profession}</span>}
-            </p>
-          </div>
-          <Badge variant="outline" className="bg-primary/10 text-primary">
-            {post.category}
-          </Badge>
-        </div>
-      </CardHeader>
-      
-      <CardContent className="pb-2 space-y-3 flex-1">
-        <p className="text-sm text-foreground/80">
-          {truncatedDescription}
-          {post.description.length > MAX_DESCRIPTION_LENGTH && (
-            <Button 
-              variant="link" 
-              className="p-0 h-auto text-xs"
-              onClick={() => setIsExpanded(!isExpanded)}
-            >
-              {isExpanded ? 'Read Less' : 'Read More'}
-            </Button>
+          ) : (
+            <div className="w-full h-48 md:h-full min-h-[200px] bg-muted flex items-center justify-center rounded-t-lg md:rounded-l-lg md:rounded-tr-none">
+              <div className="text-center text-muted-foreground">
+                {post.media_type === 'image' ? (
+                  <>
+                    <Image className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                    <p className="text-sm">No image</p>
+                  </>
+                ) : post.media_type === 'video' ? (
+                  <>
+                    <Film className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                    <p className="text-sm">No video</p>
+                  </>
+                ) : (
+                  <>
+                    <Image className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                    <p className="text-sm">No media</p>
+                  </>
+                )}
+              </div>
+            </div>
           )}
-        </p>
-
-        {/* Event date if exists */}
-        {eventDate && (
-          <div className="flex items-center text-xs text-muted-foreground">
-            <CalendarIcon className="h-3.5 w-3.5 mr-1.5" />
-            <span>Event date: {format(eventDate, 'MMM dd, yyyy')}</span>
-          </div>
-        )}
-        
-        {/* Location if exists */}
-        {hasLocation && (
-          <div className="flex items-center text-xs text-muted-foreground">
-            <MapPin className="h-3.5 w-3.5 mr-1.5" />
-            <span>
-              {[
-                post.place, 
-                post.location, 
-                post.pincode
-              ].filter(Boolean).join(', ')}
-            </span>
-          </div>
-        )}
-
-        {/* External URL if exists */}
-        {post.external_url && (
-          <div className="flex items-center text-xs">
-            <Link2 className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
-            <a 
-              href={post.external_url} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-primary hover:underline truncate max-w-[250px]"
-            >
-              {post.external_url.replace(/^https?:\/\//, '')}
-            </a>
-          </div>
-        )}
-        
-        <div className="flex flex-wrap gap-2 mt-3">
-          {post.tags && post.tags.map((tag, index) => (
-            <Badge key={index} variant="secondary" className="text-xs">
-              {tag}
-            </Badge>
-          ))}
         </div>
-        
-        <div className="flex items-center text-xs text-muted-foreground mt-2">
-          <span>{formattedDate}</span>
-          <div className="flex items-center ml-4">
-            <Users className="h-3 w-3 mr-1" />
-            <span>{applicationCount} applied</span>
-          </div>
-        </div>
-      </CardContent>
-      
-      <CardFooter className="pt-2 flex items-center justify-between mt-auto">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="flex items-center gap-1.5"
-          onClick={() => onViewDetails(post)}
-        >
-          <Eye className="h-4 w-4" />
-          <span>View Details</span>
-        </Button>
+
+        {/* Content section - right side on desktop */}
+        <div className="flex-1 flex flex-col">
+          <CardHeader className="pb-2">
+            <div className="flex justify-between items-start">
+              <div className="flex-1 pr-4">
+                <h3 className="text-lg font-semibold line-clamp-2">{post.title}</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Posted by {post.creator_name || 'Anonymous'} 
+                  {post.creator_profession && <span> • {post.creator_profession}</span>}
+                </p>
+              </div>
+              <Badge variant="outline" className="bg-primary/10 text-primary shrink-0">
+                {post.category}
+              </Badge>
+            </div>
+          </CardHeader>
+          
+          <CardContent className="pb-2 space-y-2 flex-1">
+            <p className="text-sm text-foreground/80 line-clamp-3">
+              {truncatedDescription}
+              {post.description.length > MAX_DESCRIPTION_LENGTH && (
+                <Button 
+                  variant="link" 
+                  className="p-0 h-auto text-xs ml-1"
+                  onClick={() => setIsExpanded(!isExpanded)}
+                >
+                  {isExpanded ? 'Less' : 'More'}
+                </Button>
+              )}
+            </p>
+
+            {/* Event date if exists */}
+            {eventDate && (
+              <div className="flex items-center text-xs text-muted-foreground">
+                <CalendarIcon className="h-3 w-3 mr-1" />
+                <span>Event: {format(eventDate, 'MMM dd, yyyy')}</span>
+              </div>
+            )}
             
-        {user && (
-          <Button 
-            size="sm" 
-            className="bg-gold hover:bg-gold/90 text-black dark:text-black"
-            disabled={isApplied}
-            onClick={(e) => {
-              e.stopPropagation();
-              onApply(post.id);
-            }}
-          >
-            {isApplied ? 'Applied' : 'Apply Now'}
-          </Button>
-        )}
-      </CardFooter>
+            {/* Location if exists */}
+            {hasLocation && (
+              <div className="flex items-center text-xs text-muted-foreground">
+                <MapPin className="h-3 w-3 mr-1" />
+                <span className="truncate">
+                  {[post.place, post.location, post.pincode].filter(Boolean).join(', ')}
+                </span>
+              </div>
+            )}
+
+            {/* External URL if exists */}
+            {post.external_url && (
+              <div className="flex items-center text-xs">
+                <Link2 className="h-3 w-3 mr-1 text-muted-foreground" />
+                <a 
+                  href={post.external_url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline truncate"
+                >
+                  {post.external_url.replace(/^https?:\/\//, '')}
+                </a>
+              </div>
+            )}
+            
+            {/* Tags */}
+            {post.tags && post.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {post.tags.slice(0, 3).map((tag, index) => (
+                  <Badge key={index} variant="secondary" className="text-xs">
+                    {tag}
+                  </Badge>
+                ))}
+                {post.tags.length > 3 && (
+                  <Badge variant="secondary" className="text-xs">
+                    +{post.tags.length - 3}
+                  </Badge>
+                )}
+              </div>
+            )}
+          </CardContent>
+          
+          <CardFooter className="pt-2 flex items-center justify-between">
+            <div className="flex items-center text-xs text-muted-foreground gap-3">
+              <span>{formattedDate}</span>
+              <div className="flex items-center">
+                <Users className="h-3 w-3 mr-1" />
+                <span>{applicationCount}</span>
+              </div>
+            </div>
+            
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex items-center gap-1"
+                onClick={() => onViewDetails(post)}
+              >
+                <Eye className="h-3 w-3" />
+                <span className="hidden sm:inline">Details</span>
+              </Button>
+                  
+              {user && (
+                <Button 
+                  size="sm" 
+                  className="bg-gold hover:bg-gold/90 text-black dark:text-black"
+                  disabled={isApplied}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onApply(post.id);
+                  }}
+                >
+                  {isApplied ? 'Applied' : 'Apply'}
+                </Button>
+              )}
+            </div>
+          </CardFooter>
+        </div>
+      </div>
     </Card>
   );
 };
