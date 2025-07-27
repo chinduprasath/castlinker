@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MoreHorizontal, Users, Pencil, Trash, Eye } from 'lucide-react';
+import { MoreHorizontal, Users, Pencil, Trash, Eye, Bookmark } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import JobCreateForm from '@/components/jobs/JobCreateForm';
 import { updateJob, deleteJob } from '@/services/jobsService';
@@ -281,35 +281,84 @@ const ManageJobsPage = () => {
         </TabsContent>
 
         <TabsContent value="saved">
-          <div className="space-y-4">
-            {jobsLoading ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="animate-spin h-8 w-8 border-4 border-gold border-t-transparent rounded-full"></div>
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Job ID</TableHead>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Company</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Location</TableHead>
+                      <TableHead>Posted Date</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Applications</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {jobsLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={9} className="text-center py-8">Loading...</TableCell>
+                      </TableRow>
+                    ) : savedJobsData.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={9} className="text-center py-8">
+                          <div className="text-muted-foreground">
+                            <Bookmark className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                            <p className="text-lg font-medium">No saved jobs yet</p>
+                            <p className="text-sm">Jobs you save will appear here</p>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      savedJobsData.map((job, idx) => (
+                        <TableRow key={job.id}>
+                          <TableCell className="font-medium">
+                            <button
+                              className="text-blue-600 hover:underline cursor-pointer bg-transparent border-none p-0"
+                              onClick={() => handleViewJobDetails(job)}
+                              style={{ background: 'none' }}
+                            >
+                              {formatJobId(job.id, idx)}
+                            </button>
+                          </TableCell>
+                          <TableCell>{job.title}</TableCell>
+                          <TableCell>{job.company || '-'}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{(job as any).category || '-'}</Badge>
+                          </TableCell>
+                          <TableCell>{job.location || '-'}</TableCell>
+                          <TableCell>{job.created_at ? new Date(typeof job.created_at === 'string' ? job.created_at : (job.created_at as any).seconds * 1000).toISOString().slice(0, 10) : '-'}</TableCell>
+                          <TableCell>
+                            <Badge variant="default">active</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              <Users className="h-4 w-4" />
+                              <span>0</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex gap-2 justify-end">
+                              <Button size="icon" variant="ghost" onClick={() => handleViewJobDetails(job)}>
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button size="icon" variant="ghost" className="text-red-500 hover:text-red-600" onClick={() => handleRemoveSavedJob(job.id)}>
+                                <Trash className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
               </div>
-            ) : savedJobsData.length === 0 ? (
-              <Card className="p-8 text-center">
-                <div className="space-y-3">
-                  <h3 className="text-xl font-medium">No saved jobs</h3>
-                  <p className="text-foreground/70">You haven't saved any jobs yet. Browse the jobs page to find opportunities that interest you.</p>
-                  <Button className="mt-4 bg-gold hover:bg-gold/90 text-black" asChild>
-                    <a href="/jobs">Browse Jobs</a>
-                  </Button>
-                </div>
-              </Card>
-            ) : (
-              <div className="grid gap-4">
-                {savedJobsData.map(job => (
-                  <SavedJobCard
-                    key={job.id}
-                    job={job}
-                    onRemove={handleRemoveSavedJob}
-                    onViewDetails={handleViewJobDetails}
-                    onApply={handleApplyForJob}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 
