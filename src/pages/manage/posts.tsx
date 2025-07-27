@@ -374,34 +374,92 @@ const ManagePostsPage = () => {
         </TabsContent>
         
         <TabsContent value="liked">
-          {likedPostsLoading ? (
-            <div className="flex justify-center items-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
-          ) : likedPostsList.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <div className="text-muted-foreground">
-                  <Heart className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg font-medium">No liked posts yet</p>
-                  <p className="text-sm">Posts you like will appear here</p>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {likedPostsList.map((post) => (
-                <LikedPostCard
-                  key={post.id}
-                  post={post}
-                  onViewDetails={handleViewLikedPostDetails}
-                  onApply={handleApplyToLikedPost}
-                  onUnlike={handleUnlikePost}
-                  isApplied={appliedToLikedPosts[post.id]}
-                />
-              ))}
-            </div>
-          )}
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Post ID</TableHead>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Date Posted</TableHead>
+                      <TableHead>Likes</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {likedPostsLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8">Loading...</TableCell>
+                      </TableRow>
+                    ) : likedPostsList.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8">
+                          <div className="text-muted-foreground">
+                            <Heart className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                            <p className="text-lg font-medium">No liked posts yet</p>
+                            <p className="text-sm">Posts you like will appear here</p>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : likedPostsList.map((post, idx) => (
+                      <TableRow key={post.id}>
+                        <TableCell className="font-medium">
+                          <button
+                            className="text-blue-600 hover:underline cursor-pointer bg-transparent border-none p-0"
+                            onClick={() => handleViewLikedPostDetails(post.id)}
+                            style={{ background: 'none' }}
+                          >
+                            {formatPostId(idx)}
+                          </button>
+                        </TableCell>
+                        <TableCell>{post.title}</TableCell>
+                        <TableCell><Badge variant="secondary">{post.category}</Badge></TableCell>
+                        <TableCell>
+                          <Badge variant="default">Active</Badge>
+                        </TableCell>
+                        <TableCell>{post.created_at ? new Date(post.created_at).toLocaleDateString() : ''}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <span>{post.like_count || 0}</span>
+                            <Button 
+                              size="icon" 
+                              variant="ghost" 
+                              onClick={() => handleUnlikePost(post.id)}
+                              className="text-red-500 hover:text-red-600"
+                            >
+                              <Heart className="h-4 w-4 fill-current" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex gap-2 justify-end">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleViewLikedPostDetails(post.id)}
+                            >
+                              View
+                            </Button>
+                            <Button 
+                              size="sm"
+                              onClick={() => handleApplyToLikedPost(post.id)}
+                              disabled={appliedToLikedPosts[post.id]}
+                              className="bg-yellow-600 hover:bg-yellow-700 text-white"
+                            >
+                              {appliedToLikedPosts[post.id] ? 'Applied' : 'Apply'}
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 
