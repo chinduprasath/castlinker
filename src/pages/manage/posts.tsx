@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { fetchPostsByUser, Post, getApplicationsForPost, deletePost, updatePost, togglePostLike, checkIfLiked, getLikeCountForPost } from '@/services/postsService';
+import { fetchPostsByUser, Post, getApplicationsForPost, deletePost, updatePost, togglePostLike, checkIfLiked, getLikeCountForPost, fetchLikedPostsByUser, checkIfApplied, applyToPost } from '@/services/postsService';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import CreatePostDialog from '@/components/posts/CreatePostDialog';
+import { LikedPostCard } from '@/components/posts/LikedPostCard';
 
 const ManagePostsPage = () => {
   const { user } = useAuth();
@@ -29,6 +30,9 @@ const ManagePostsPage = () => {
   const [editPost, setEditPost] = useState<Post | null>(null);
   const [likedPosts, setLikedPosts] = useState<{ [postId: string]: boolean }>({});
   const [likeCounts, setLikeCounts] = useState<{ [postId: string]: number }>({});
+  const [likedPostsList, setLikedPostsList] = useState<Post[]>([]);
+  const [likedPostsLoading, setLikedPostsLoading] = useState(true);
+  const [appliedToLikedPosts, setAppliedToLikedPosts] = useState<{ [postId: string]: boolean }>({});
 
   useEffect(() => {
     const loadPosts = async () => {
@@ -92,6 +96,29 @@ const ManagePostsPage = () => {
     loadAppliedPosts();
   }, [user]);
 
+  useEffect(() => {
+    const loadLikedPosts = async () => {
+      if (!user) return;
+      setLikedPostsLoading(true);
+      try {
+        const likedPosts = await fetchLikedPostsByUser(user.id);
+        setLikedPostsList(likedPosts);
+        
+        // Check application status for liked posts
+        const appliedMap: { [postId: string]: boolean } = {};
+        for (const post of likedPosts) {
+          appliedMap[post.id] = await checkIfApplied(post.id, user.id);
+        }
+        setAppliedToLikedPosts(appliedMap);
+      } catch (error) {
+        console.error('Error fetching liked posts:', error);
+      } finally {
+        setLikedPostsLoading(false);
+      }
+    };
+    loadLikedPosts();
+  }, [user]);
+
   const handleShowDetails = async (post: Post) => {
     setEditPost(null);
     setSelectedPost(post);
@@ -148,6 +175,67 @@ const ManagePostsPage = () => {
     setLikeCounts((prev) => ({ ...prev, [post.id]: newCount }));
   };
 
+  const handleViewLikedPostDetails = (postId: string) => {
+    const post = likedPostsList.find(p => p.id === postId);
+    if (post) {
+      handleShowDetails(post);
+    }
+  };
+
+  const handleApplyToLikedPost = async (postId: string) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to apply for this opportunity.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (appliedToLikedPosts[postId]) {
+      toast({
+        title: "Already Applied",
+        description: "You have already applied for this opportunity.",
+      });
+      return;
+    }
+
+    try {
+      const application = await applyToPost(postId, user.id);
+      if (application) {
+        toast({
+          title: "Application Submitted",
+          description: "Your application has been successfully submitted.",
+        });
+        setAppliedToLikedPosts(prev => ({ ...prev, [postId]: true }));
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to submit application. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleUnlikePost = async (postId: string) => {
+    if (!user) return;
+    try {
+      await togglePostLike(postId, user.id);
+      setLikedPostsList(prev => prev.filter(post => post.id !== postId));
+      toast({
+        title: "Post Unliked",
+        description: "The post has been removed from your liked posts.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to unlike post. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const formatPostId = (index: number) => {
     return `PD-${(index + 1).toString().padStart(6, '0')}`;
   };
@@ -160,6 +248,7 @@ const ManagePostsPage = () => {
         <TabsList className="mb-6">
           <TabsTrigger value="created">Created</TabsTrigger>
           <TabsTrigger value="applied">Applied</TabsTrigger>
+          <TabsTrigger value="liked">Liked Posts</TabsTrigger>
         </TabsList>
         
         <TabsContent value="created">
@@ -282,6 +371,37 @@ const ManagePostsPage = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+        
+        <TabsContent value="liked">
+          {likedPostsLoading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : likedPostsList.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <div className="text-muted-foreground">
+                  <Heart className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p className="text-lg font-medium">No liked posts yet</p>
+                  <p className="text-sm">Posts you like will appear here</p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {likedPostsList.map((post) => (
+                <LikedPostCard
+                  key={post.id}
+                  post={post}
+                  onViewDetails={handleViewLikedPostDetails}
+                  onApply={handleApplyToLikedPost}
+                  onUnlike={handleUnlikePost}
+                  isApplied={appliedToLikedPosts[post.id]}
+                />
+              ))}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
 

@@ -400,3 +400,43 @@ export const getLikeCountForPost = async (postId: string) => {
     return 0;
   }
 };
+
+export const fetchLikedPostsByUser = async (userId: string) => {
+  try {
+    // First, get all post IDs that the user has liked
+    const likesRef = collection(db, 'postLikes');
+    const likesQuery = query(likesRef, where('user_id', '==', userId));
+    const likesSnapshot = await getDocs(likesQuery);
+    
+    if (likesSnapshot.empty) {
+      return [];
+    }
+    
+    const likedPostIds = likesSnapshot.docs.map(doc => doc.data().post_id);
+    
+    // Then fetch the actual posts
+    const posts: Post[] = [];
+    for (const postId of likedPostIds) {
+      try {
+        const postDoc = await getDoc(doc(db, 'posts', postId));
+        if (postDoc.exists()) {
+          const data = postDoc.data();
+          posts.push({
+            id: postDoc.id,
+            ...data,
+            created_at: convertTimestamp(data.created_at),
+            updated_at: convertTimestamp(data.updated_at)
+          } as Post);
+        }
+      } catch (error) {
+        console.error(`Error fetching liked post ${postId}:`, error);
+      }
+    }
+    
+    // Sort by like date (most recent first)
+    return posts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  } catch (error) {
+    console.error("Error fetching liked posts:", error);
+    return [];
+  }
+};
