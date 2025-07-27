@@ -86,7 +86,7 @@ const PostCard = ({
                 variant="outline" 
                 size="icon"
                 className={cn(
-                  "rounded-full bg-background/80 backdrop-blur-sm border-muted w-8 h-8",
+                  "rounded-full w-8 h-8 border-muted/40",
                   isLiked && "text-red-500 border-red-500"
                 )}
                 onClick={(e) => {
@@ -109,7 +109,7 @@ const PostCard = ({
               <Button
                 variant="outline"
                 size="icon"
-                className="rounded-full bg-background/80 backdrop-blur-sm border-muted w-8 h-8"
+                className="rounded-full w-8 h-8 border-muted/40"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleShare();
@@ -228,6 +228,21 @@ const PostCard = ({
                     <span className="truncate">
                       {[post.place, post.location, post.pincode].filter(Boolean).join(', ')}
                     </span>
+                  </div>
+                )}
+
+                {/* External URL if exists */}
+                {post.external_url && (
+                  <div className="flex items-center text-xs">
+                    <Link2 className="h-3 w-3 mr-1 text-muted-foreground shrink-0" />
+                    <a 
+                      href={post.external_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline truncate"
+                    >
+                      {post.external_url.replace(/^https?:\/\//, '')}
+                    </a>
                   </div>
                 )}
               </div>
