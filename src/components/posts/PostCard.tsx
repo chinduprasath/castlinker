@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
@@ -22,8 +21,6 @@ interface PostCardProps {
   onViewDetails: (post: Post) => void;
 }
 
-const MAX_DESCRIPTION_LENGTH = 150;
-
 const PostCard = ({ 
   post, 
   isApplied, 
@@ -37,12 +34,6 @@ const PostCard = ({
   const { user } = useAuth();
   const [isExpanded, setIsExpanded] = useState(false);
   
-  const truncatedDescription = post.description.length > MAX_DESCRIPTION_LENGTH && !isExpanded
-    ? `${post.description.substring(0, MAX_DESCRIPTION_LENGTH)}...`
-    : post.description;
-    
-  const formattedDate = format(new Date(post.created_at), 'MMM dd, yyyy');
-
   const handleShare = () => {
     const postUrl = `${window.location.origin}/posts/${post.id}`;
     
@@ -85,7 +76,7 @@ const PostCard = ({
   const eventDate = post.event_date ? new Date(post.event_date) : null;
   
   return (
-    <Card className="w-full hover:shadow-md transition-shadow duration-200 relative">
+    <Card className="w-full h-[280px] hover:shadow-md transition-shadow duration-200 relative overflow-hidden">
       {/* Top-right action buttons (Like and Share) */}
       <div className="absolute top-2 right-2 flex gap-2 z-10">
         <TooltipProvider>
@@ -95,7 +86,7 @@ const PostCard = ({
                 variant="outline" 
                 size="icon"
                 className={cn(
-                  "rounded-full bg-background/80 backdrop-blur-sm border-muted",
+                  "rounded-full bg-background/80 backdrop-blur-sm border-muted w-8 h-8",
                   isLiked && "text-red-500 border-red-500"
                 )}
                 onClick={(e) => {
@@ -103,7 +94,7 @@ const PostCard = ({
                   onLike(post.id);
                 }}
               >
-                <Heart className={cn("h-4 w-4", isLiked && "fill-red-500")} />
+                <Heart className={cn("h-3 w-3", isLiked && "fill-red-500")} />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="left">
@@ -118,13 +109,13 @@ const PostCard = ({
               <Button
                 variant="outline"
                 size="icon"
-                className="rounded-full bg-background/80 backdrop-blur-sm border-muted"
+                className="rounded-full bg-background/80 backdrop-blur-sm border-muted w-8 h-8"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleShare();
                 }}
               >
-                <Share2 className="h-4 w-4" />
+                <Share2 className="h-3 w-3" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="left">
@@ -135,11 +126,11 @@ const PostCard = ({
       </div>
 
       {/* Horizontal layout: Image left, Content right */}
-      <div className="flex flex-col md:flex-row">
-        {/* Media section - left side on desktop */}
-        <div className="w-full md:w-1/3 relative">
+      <div className="flex h-full">
+        {/* Media section - left side */}
+        <div className="w-2/5 relative">
           {post.media_url ? (
-            <div className="relative rounded-t-lg md:rounded-l-lg md:rounded-tr-none overflow-hidden h-48 md:h-full min-h-[200px]">
+            <div className="relative h-full overflow-hidden">
               {post.media_type === 'image' ? (
                 <img 
                   src={post.media_url} 
@@ -158,22 +149,22 @@ const PostCard = ({
               ) : null}
             </div>
           ) : (
-            <div className="w-full h-48 md:h-full min-h-[200px] bg-muted flex items-center justify-center rounded-t-lg md:rounded-l-lg md:rounded-tr-none">
+            <div className="w-full h-full bg-muted flex items-center justify-center">
               <div className="text-center text-muted-foreground">
                 {post.media_type === 'image' ? (
                   <>
-                    <Image className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                    <p className="text-sm">No image</p>
+                    <Image className="h-6 w-6 mx-auto mb-1 opacity-40" />
+                    <p className="text-xs">No image</p>
                   </>
                 ) : post.media_type === 'video' ? (
                   <>
-                    <Film className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                    <p className="text-sm">No video</p>
+                    <Film className="h-6 w-6 mx-auto mb-1 opacity-40" />
+                    <p className="text-xs">No video</p>
                   </>
                 ) : (
                   <>
-                    <Image className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                    <p className="text-sm">No media</p>
+                    <Image className="h-6 w-6 mx-auto mb-1 opacity-40" />
+                    <p className="text-xs">No media</p>
                   </>
                 )}
               </div>
@@ -181,90 +172,87 @@ const PostCard = ({
           )}
         </div>
 
-        {/* Content section - right side on desktop */}
-        <div className="flex-1 flex flex-col">
-          <CardHeader className="pb-2">
+        {/* Content section - right side */}
+        <div className="flex-1 flex flex-col h-full">
+          <CardHeader className="pb-2 px-4 pt-3">
             <div className="flex justify-between items-start">
-              <div className="flex-1 pr-4">
-                <h3 className="text-lg font-semibold line-clamp-2">{post.title}</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Posted by {post.creator_name || 'Anonymous'} 
+              <div className="flex-1 pr-2">
+                <h3 className="text-base font-semibold line-clamp-1 leading-tight">{post.title}</h3>
+                <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                  {post.creator_name || 'Anonymous'} 
                   {post.creator_profession && <span> • {post.creator_profession}</span>}
                 </p>
               </div>
-              <Badge variant="outline" className="bg-primary/10 text-primary shrink-0">
+              <Badge variant="outline" className="bg-primary/10 text-primary text-xs px-2 py-0.5 shrink-0">
                 {post.category}
               </Badge>
             </div>
           </CardHeader>
           
-          <CardContent className="pb-2 space-y-2 flex-1">
-            <p className="text-sm text-foreground/80 line-clamp-3">
-              {truncatedDescription}
-              {post.description.length > MAX_DESCRIPTION_LENGTH && (
-                <Button 
-                  variant="link" 
-                  className="p-0 h-auto text-xs ml-1"
-                  onClick={() => setIsExpanded(!isExpanded)}
-                >
-                  {isExpanded ? 'Less' : 'More'}
-                </Button>
-              )}
-            </p>
-
-            {/* Event date if exists */}
-            {eventDate && (
-              <div className="flex items-center text-xs text-muted-foreground">
-                <CalendarIcon className="h-3 w-3 mr-1" />
-                <span>Event: {format(eventDate, 'MMM dd, yyyy')}</span>
-              </div>
-            )}
-            
-            {/* Location if exists */}
-            {hasLocation && (
-              <div className="flex items-center text-xs text-muted-foreground">
-                <MapPin className="h-3 w-3 mr-1" />
-                <span className="truncate">
-                  {[post.place, post.location, post.pincode].filter(Boolean).join(', ')}
-                </span>
-              </div>
-            )}
-
-            {/* External URL if exists */}
-            {post.external_url && (
-              <div className="flex items-center text-xs">
-                <Link2 className="h-3 w-3 mr-1 text-muted-foreground" />
-                <a 
-                  href={post.external_url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline truncate"
-                >
-                  {post.external_url.replace(/^https?:\/\//, '')}
-                </a>
-              </div>
-            )}
-            
-            {/* Tags */}
-            {post.tags && post.tags.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {post.tags.slice(0, 3).map((tag, index) => (
-                  <Badge key={index} variant="secondary" className="text-xs">
-                    {tag}
-                  </Badge>
-                ))}
-                {post.tags.length > 3 && (
-                  <Badge variant="secondary" className="text-xs">
-                    +{post.tags.length - 3}
-                  </Badge>
+          <CardContent className="px-4 pb-2 flex-1 flex flex-col justify-between min-h-0">
+            <div className="space-y-2">
+              <div className="text-sm text-foreground/80">
+                {!isExpanded ? (
+                  <div className="line-clamp-2 leading-relaxed">
+                    {post.description}
+                  </div>
+                ) : (
+                  <div className="text-sm leading-relaxed max-h-20 overflow-y-auto">
+                    {post.description}
+                  </div>
+                )}
+                {post.description.length > 100 && (
+                  <Button 
+                    variant="link" 
+                    className="p-0 h-auto text-xs text-primary"
+                    onClick={() => setIsExpanded(!isExpanded)}
+                  >
+                    {isExpanded ? 'Read Less' : 'Read More'}
+                  </Button>
                 )}
               </div>
-            )}
+
+              <div className="space-y-1">
+                {/* Event date if exists */}
+                {eventDate && (
+                  <div className="flex items-center text-xs text-muted-foreground">
+                    <CalendarIcon className="h-3 w-3 mr-1 shrink-0" />
+                    <span className="truncate">Event: {format(eventDate, 'MMM dd')}</span>
+                  </div>
+                )}
+                
+                {/* Location if exists */}
+                {hasLocation && (
+                  <div className="flex items-center text-xs text-muted-foreground">
+                    <MapPin className="h-3 w-3 mr-1 shrink-0" />
+                    <span className="truncate">
+                      {[post.place, post.location, post.pincode].filter(Boolean).join(', ')}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Tags */}
+              {post.tags && post.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {post.tags.slice(0, 2).map((tag, index) => (
+                    <Badge key={index} variant="secondary" className="text-xs px-2 py-0">
+                      {tag}
+                    </Badge>
+                  ))}
+                  {post.tags.length > 2 && (
+                    <Badge variant="secondary" className="text-xs px-2 py-0">
+                      +{post.tags.length - 2}
+                    </Badge>
+                  )}
+                </div>
+              )}
+            </div>
           </CardContent>
           
-          <CardFooter className="pt-2 flex items-center justify-between">
+          <CardFooter className="px-4 pb-3 pt-2 flex items-center justify-between mt-auto">
             <div className="flex items-center text-xs text-muted-foreground gap-3">
-              <span>{formattedDate}</span>
+              <span>{format(new Date(post.created_at), 'MMM dd')}</span>
               <div className="flex items-center">
                 <Users className="h-3 w-3 mr-1" />
                 <span>{applicationCount}</span>
@@ -275,17 +263,17 @@ const PostCard = ({
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="flex items-center gap-1"
+                className="text-xs px-2 py-1 h-7"
                 onClick={() => onViewDetails(post)}
               >
-                <Eye className="h-3 w-3" />
-                <span className="hidden sm:inline">Details</span>
+                <Eye className="h-3 w-3 mr-1" />
+                Details
               </Button>
                   
               {user && (
                 <Button 
                   size="sm" 
-                  className="bg-gold hover:bg-gold/90 text-black dark:text-black"
+                  className="bg-gold hover:bg-gold/90 text-black text-xs px-3 py-1 h-7"
                   disabled={isApplied}
                   onClick={(e) => {
                     e.stopPropagation();
