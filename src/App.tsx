@@ -65,6 +65,7 @@ import UserJobDetail from '@/pages/UserJobDetail';
 import UserPostDetail from '@/pages/UserPostDetail';
 import ManagePostsPage from '@/pages/manage/posts';
 import ManageJobsPage from '@/pages/manage/jobs';
+import ManageTalentDirectoryPage from '@/pages/manage/talent-directory';
 
 // Guards
 import PrivateRoute from '@/components/auth/PrivateRoute';
@@ -296,6 +297,13 @@ const App = () => {
               <PrivateRoute>
                 <AppLayout>
                   <UserPostDetail />
+                </AppLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/manage/talent-directory" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <ManageTalentDirectoryPage />
                 </AppLayout>
               </PrivateRoute>
             } />

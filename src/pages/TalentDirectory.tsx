@@ -23,6 +23,7 @@ import { addDoc, collection } from 'firebase/firestore';
 import useAuth from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Popover } from '@headlessui/react';
+import { useNavigate } from 'react-router-dom';
 
 const TalentDirectory = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -44,6 +45,7 @@ const TalentDirectory = () => {
   const { talents } = useTalentDirectory();
   const { theme } = useTheme();
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -163,6 +165,12 @@ const TalentDirectory = () => {
               Discover and connect with talented film industry professionals from around the world.
             </p>
           </div>
+          <Button
+            onClick={() => navigate('/manage/talent-directory')}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground"
+          >
+            Manage Directory
+          </Button>
         </div>
 
         {/* Search and Filter Bar */}
