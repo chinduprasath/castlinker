@@ -6,7 +6,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Users, Pencil, Trash } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { MoreHorizontal, Users, Pencil, Trash, Eye } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import JobCreateForm from '@/components/jobs/JobCreateForm';
 import { updateJob, deleteJob } from '@/services/jobsService';
@@ -17,7 +18,9 @@ const ManageJobsPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [jobs, setJobs] = useState<any[]>([]);
+  const [appliedJobs, setAppliedJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [appliedLoading, setAppliedLoading] = useState(true);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editJob, setEditJob] = useState<any | null>(null);
   const { toast } = useToast();
@@ -31,6 +34,35 @@ const ManageJobsPage = () => {
       setLoading(false);
     };
     loadJobs();
+  }, [user]);
+
+  useEffect(() => {
+    const loadAppliedJobs = async () => {
+      if (!user) return;
+      setAppliedLoading(true);
+      // Mock data for applied jobs - in real implementation, this would fetch from a service
+      const mockAppliedJobs = [
+        {
+          id: 'job-1',
+          title: 'Senior Frontend Developer',
+          company: 'Tech Corp',
+          location: 'San Francisco, CA',
+          applied_date: new Date('2024-01-15'),
+          application_status: 'Interview',
+        },
+        {
+          id: 'job-2',
+          title: 'UI/UX Designer',
+          company: 'Design Studio',
+          location: 'New York, NY',
+          applied_date: new Date('2024-01-10'),
+          application_status: 'Pending',
+        },
+      ];
+      setAppliedJobs(mockAppliedJobs);
+      setAppliedLoading(false);
+    };
+    loadAppliedJobs();
   }, [user]);
 
   const formatJobId = (id: string, idx: number) => {
@@ -72,63 +104,140 @@ const ManageJobsPage = () => {
 
   return (
     <div className="container mx-auto py-6">
-      <h1 className="text-3xl font-bold mb-6">Your Job Listings</h1>
-      <Card>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Job ID</TableHead>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Company</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Posted Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Applications</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8">Loading...</TableCell>
-                  </TableRow>
-                ) : jobs.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8">No jobs found.</TableCell>
-                  </TableRow>
-                ) : jobs.map((job, idx) => (
-                  <TableRow key={job.id}>
-                    <TableCell className="font-medium">
-                      <button
-                        className="text-blue-600 hover:underline cursor-pointer bg-transparent border-none p-0"
-                        onClick={() => handleShowDetails(job)}
-                        style={{ background: 'none' }}
-                      >
-                        {formatJobId(job.id, idx)}
-                      </button>
-                    </TableCell>
-                    <TableCell>{job.title}</TableCell>
-                    <TableCell>{job.company || '-'}</TableCell>
-                    <TableCell>{job.category || '-'}</TableCell>
-                    <TableCell>{job.location || '-'}</TableCell>
-                    <TableCell>{job.created_at ? new Date(job.created_at.seconds ? job.created_at.seconds * 1000 : job.created_at).toISOString().slice(0, 10) : '-'}</TableCell>
-                    <TableCell><Badge variant="secondary">{job.status || 'active'}</Badge></TableCell>
-                    <TableCell className="text-center"><Users className="w-4 h-4 inline-block mr-1 align-middle" />{job.applications_count || 0}</TableCell>
-                    <TableCell className="text-right">
-                      <Button size="icon" variant="ghost" onClick={() => handleEditJob(job)}><Pencil className="w-4 h-4" /></Button>
-                      <Button size="icon" variant="ghost" onClick={() => handleDeleteJob(job)}><Trash className="w-4 h-4 text-red-500" /></Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+      <h1 className="text-3xl font-bold mb-6">Manage Your Jobs</h1>
+      <Tabs defaultValue="created" className="w-full">
+        <TabsList>
+          <TabsTrigger value="created">Created</TabsTrigger>
+          <TabsTrigger value="applied">Applied</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="created">
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Job ID</TableHead>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Company</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Location</TableHead>
+                      <TableHead>Posted Date</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Applications</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {loading ? (
+                      <TableRow>
+                        <TableCell colSpan={9} className="text-center py-8">Loading...</TableCell>
+                      </TableRow>
+                    ) : jobs.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={9} className="text-center py-8">No jobs found.</TableCell>
+                      </TableRow>
+                    ) : jobs.map((job, idx) => (
+                      <TableRow key={job.id}>
+                        <TableCell className="font-medium">
+                          <button
+                            className="text-blue-600 hover:underline cursor-pointer bg-transparent border-none p-0"
+                            onClick={() => handleShowDetails(job)}
+                            style={{ background: 'none' }}
+                          >
+                            {formatJobId(job.id, idx)}
+                          </button>
+                        </TableCell>
+                        <TableCell>{job.title}</TableCell>
+                        <TableCell>{job.company || '-'}</TableCell>
+                        <TableCell>{job.category || '-'}</TableCell>
+                        <TableCell>{job.location || '-'}</TableCell>
+                        <TableCell>{job.created_at ? new Date(job.created_at.seconds ? job.created_at.seconds * 1000 : job.created_at).toISOString().slice(0, 10) : '-'}</TableCell>
+                        <TableCell><Badge variant="secondary">{job.status || 'active'}</Badge></TableCell>
+                        <TableCell className="text-center"><Users className="w-4 h-4 inline-block mr-1 align-middle" />{job.applications_count || 0}</TableCell>
+                        <TableCell className="text-right">
+                          <Button size="icon" variant="ghost" onClick={() => handleEditJob(job)}><Pencil className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="ghost" onClick={() => handleDeleteJob(job)}><Trash className="w-4 h-4 text-red-500" /></Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
+        <TabsContent value="applied">
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Job ID</TableHead>
+                      <TableHead>Job Title</TableHead>
+                      <TableHead>Company</TableHead>
+                      <TableHead>Location</TableHead>
+                      <TableHead>Applied Date</TableHead>
+                      <TableHead>Application Status</TableHead>
+                      <TableHead className="text-right">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {appliedLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8">Loading...</TableCell>
+                      </TableRow>
+                    ) : appliedJobs.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8">No applied jobs found.</TableCell>
+                      </TableRow>
+                    ) : appliedJobs.map((job, idx) => (
+                      <TableRow key={job.id}>
+                        <TableCell className="font-medium">
+                          <button
+                            className="text-blue-600 hover:underline cursor-pointer bg-transparent border-none p-0"
+                            onClick={() => navigate(`/jobs/${job.id}`)}
+                            style={{ background: 'none' }}
+                          >
+                            {formatJobId(job.id, idx)}
+                          </button>
+                        </TableCell>
+                        <TableCell>{job.title}</TableCell>
+                        <TableCell>{job.company}</TableCell>
+                        <TableCell>{job.location}</TableCell>
+                        <TableCell>{job.applied_date.toISOString().slice(0, 10)}</TableCell>
+                        <TableCell>
+                          <Badge variant={
+                            job.application_status === 'Interview' ? 'default' :
+                            job.application_status === 'Pending' ? 'secondary' :
+                            job.application_status === 'Selected' ? 'default' :
+                            'destructive'
+                          }>
+                            {job.application_status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => navigate(`/jobs/${job.id}`)}
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            View Job
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Edit Job Dialog */}
       {editJob && (
