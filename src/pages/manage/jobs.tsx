@@ -13,6 +13,10 @@ import JobCreateForm from '@/components/jobs/JobCreateForm';
 import { updateJob, deleteJob } from '@/services/jobsService';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
+import { useJobsData } from '@/hooks/useJobsData';
+import SavedJobCard from '@/components/jobs/SavedJobCard';
+import JobDetail from '@/components/jobs/JobDetail';
+import JobApplicationForm from '@/components/jobs/JobApplicationForm';
 
 const ManageJobsPage = () => {
   const { user } = useAuth();
@@ -23,7 +27,19 @@ const ManageJobsPage = () => {
   const [appliedLoading, setAppliedLoading] = useState(true);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editJob, setEditJob] = useState<any | null>(null);
+  const [selectedJob, setSelectedJob] = useState<any | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isApplicationOpen, setIsApplicationOpen] = useState(false);
   const { toast } = useToast();
+  
+  // Use jobs data hook for saved jobs functionality
+  const { 
+    jobs: allJobs, 
+    savedJobs, 
+    toggleSaveJob, 
+    applyForJob,
+    isLoading: jobsLoading 
+  } = useJobsData();
 
   useEffect(() => {
     const loadJobs = async () => {
@@ -102,6 +118,31 @@ const ManageJobsPage = () => {
     }
   };
 
+  const handleRemoveSavedJob = async (jobId: string) => {
+    await toggleSaveJob(jobId);
+  };
+
+  const handleViewJobDetails = (job: any) => {
+    setSelectedJob(job);
+    setIsDetailOpen(true);
+  };
+
+  const handleApplyForJob = (job: any) => {
+    setSelectedJob(job);
+    setIsApplicationOpen(true);
+  };
+
+  const handleJobApplication = async (jobId: string, application: any) => {
+    const success = await applyForJob(jobId, application);
+    if (success) {
+      setIsApplicationOpen(false);
+    }
+    return success;
+  };
+
+  // Get saved jobs data
+  const savedJobsData = allJobs.filter(job => savedJobs.includes(job.id));
+
   return (
     <div className="container mx-auto py-6">
       <h1 className="text-3xl font-bold mb-6">Manage Your Jobs</h1>
@@ -109,6 +150,7 @@ const ManageJobsPage = () => {
         <TabsList>
           <TabsTrigger value="created">Created</TabsTrigger>
           <TabsTrigger value="applied">Applied</TabsTrigger>
+          <TabsTrigger value="saved">Saved</TabsTrigger>
         </TabsList>
         
         <TabsContent value="created">
@@ -237,6 +279,38 @@ const ManageJobsPage = () => {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="saved">
+          <div className="space-y-4">
+            {jobsLoading ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="animate-spin h-8 w-8 border-4 border-gold border-t-transparent rounded-full"></div>
+              </div>
+            ) : savedJobsData.length === 0 ? (
+              <Card className="p-8 text-center">
+                <div className="space-y-3">
+                  <h3 className="text-xl font-medium">No saved jobs</h3>
+                  <p className="text-foreground/70">You haven't saved any jobs yet. Browse the jobs page to find opportunities that interest you.</p>
+                  <Button className="mt-4 bg-gold hover:bg-gold/90 text-black" asChild>
+                    <a href="/jobs">Browse Jobs</a>
+                  </Button>
+                </div>
+              </Card>
+            ) : (
+              <div className="grid gap-4">
+                {savedJobsData.map(job => (
+                  <SavedJobCard
+                    key={job.id}
+                    job={job}
+                    onRemove={handleRemoveSavedJob}
+                    onViewDetails={handleViewJobDetails}
+                    onApply={handleApplyForJob}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </TabsContent>
       </Tabs>
 
       {/* Edit Job Dialog */}
@@ -253,6 +327,28 @@ const ManageJobsPage = () => {
             />
           </DialogContent>
         </Dialog>
+      )}
+
+      {/* Job Detail Modal */}
+      {selectedJob && (
+        <JobDetail
+          job={selectedJob}
+          isSaved={savedJobs.includes(selectedJob.id)}
+          onToggleSave={handleRemoveSavedJob}
+          onApply={() => handleApplyForJob(selectedJob)}
+          isOpen={isDetailOpen}
+          onClose={() => setIsDetailOpen(false)}
+        />
+      )}
+
+      {/* Job Application Form */}
+      {selectedJob && (
+        <JobApplicationForm
+          job={selectedJob}
+          isOpen={isApplicationOpen}
+          onClose={() => setIsApplicationOpen(false)}
+          onSubmit={(application) => handleJobApplication(selectedJob.id, application)}
+        />
       )}
     </div>
   );
