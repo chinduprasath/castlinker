@@ -177,7 +177,7 @@ const PostCard = ({
           <CardHeader className="pb-2 px-4 pt-3">
             <div className="space-y-1">
               <h3 className="text-base font-semibold line-clamp-1 leading-tight">{post.title}</h3>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
                 <p className="text-xs text-muted-foreground line-clamp-1">
                   {post.creator_name || 'Anonymous'} 
                   {post.creator_profession && <span> • {post.creator_profession}</span>}
