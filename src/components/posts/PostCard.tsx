@@ -175,17 +175,17 @@ const PostCard = ({
         {/* Content section - right side */}
         <div className="flex-1 flex flex-col h-full">
           <CardHeader className="pb-2 px-4 pt-3">
-            <div className="flex justify-between items-start">
-              <div className="flex-1 pr-2">
-                <h3 className="text-base font-semibold line-clamp-1 leading-tight">{post.title}</h3>
-                <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+            <div className="space-y-1">
+              <h3 className="text-base font-semibold line-clamp-1 leading-tight">{post.title}</h3>
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-muted-foreground line-clamp-1">
                   {post.creator_name || 'Anonymous'} 
                   {post.creator_profession && <span> • {post.creator_profession}</span>}
                 </p>
+                <Badge variant="outline" className="bg-primary/10 text-primary text-xs px-2 py-0.5 shrink-0">
+                  {post.category}
+                </Badge>
               </div>
-              <Badge variant="outline" className="bg-primary/10 text-primary text-xs px-2 py-0.5 shrink-0">
-                {post.category}
-              </Badge>
             </div>
           </CardHeader>
           
