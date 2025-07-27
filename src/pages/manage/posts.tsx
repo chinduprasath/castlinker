@@ -5,7 +5,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Pencil, Trash, Heart } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { MoreHorizontal, Pencil, Trash, Heart, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -15,7 +16,9 @@ import CreatePostDialog from '@/components/posts/CreatePostDialog';
 const ManagePostsPage = () => {
   const { user } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
+  const [appliedPosts, setAppliedPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [appliedLoading, setAppliedLoading] = useState(true);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [showDialog, setShowDialog] = useState(false);
   const { toast } = useToast();
@@ -50,6 +53,43 @@ const ManagePostsPage = () => {
       setLoading(false);
     };
     loadPosts();
+  }, [user]);
+
+  useEffect(() => {
+    const loadAppliedPosts = async () => {
+      if (!user) return;
+      setAppliedLoading(true);
+      try {
+        // This would need to be implemented in postsService to fetch posts user applied to
+        // For now, using dummy data structure
+        const dummyAppliedPosts = [
+          {
+            id: 'applied-1',
+            postId: 'PD-000001',
+            title: 'Looking for Voice Over Artist',
+            category: 'Voice Acting',
+            status: 'Active',
+            dateApplied: '2024-01-15',
+            applicationStatus: 'Pending'
+          },
+          {
+            id: 'applied-2', 
+            postId: 'PD-000002',
+            title: 'Film Audition - Lead Role',
+            category: 'Acting',
+            status: 'Closed',
+            dateApplied: '2024-01-10',
+            applicationStatus: 'Rejected'
+          }
+        ];
+        setAppliedPosts(dummyAppliedPosts);
+      } catch (error) {
+        console.error('Error fetching applied posts:', error);
+      } finally {
+        setAppliedLoading(false);
+      }
+    };
+    loadAppliedPosts();
   }, [user]);
 
   const handleShowDetails = async (post: Post) => {
@@ -115,61 +155,135 @@ const ManagePostsPage = () => {
   return (
     <div className="container mx-auto py-6">
       <h1 className="text-3xl font-bold mb-6">Your Posts</h1>
-      <Card>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Post ID</TableHead>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Date Posted</TableHead>
-                  <TableHead>Likes</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8">Loading...</TableCell>
-                  </TableRow>
-                ) : posts.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8">No posts found.</TableCell>
-                  </TableRow>
-                ) : posts.map((post, idx) => (
-                  <TableRow key={post.id}>
-                    <TableCell className="font-medium">
-                      <button
-                        className="text-blue-600 hover:underline cursor-pointer bg-transparent border-none p-0"
-                        onClick={() => handleShowDetails(post)}
-                        style={{ background: 'none' }}
-                      >
-                        {formatPostId(idx)}
-                      </button>
-                    </TableCell>
-                    <TableCell>{post.title}</TableCell>
-                    <TableCell><Badge variant="secondary">{post.category}</Badge></TableCell>
-                    <TableCell>{'Active'}</TableCell>
-                    <TableCell>{post.created_at ? new Date(post.created_at).toLocaleDateString() : ''}</TableCell>
-                    <TableCell>{likeCounts[post.id] ?? 0}
-                      <Button size="icon" variant="ghost" onClick={() => handleToggleLike(post)}>
-                        <Heart className={likedPosts[post.id] ? 'fill-red-500 text-red-500' : ''} />
-                      </Button>
-                    </TableCell>
-                    <TableCell className="text-right flex gap-2 justify-end">
-                      <Button size="icon" variant="ghost" onClick={() => handleEditPost(post)}><Pencil className="w-4 h-4" /></Button>
-                      <Button size="icon" variant="ghost" onClick={() => handleDeletePost(post)}><Trash className="w-4 h-4 text-red-500" /></Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+      
+      <Tabs defaultValue="created" className="w-full">
+        <TabsList className="mb-6">
+          <TabsTrigger value="created">Created</TabsTrigger>
+          <TabsTrigger value="applied">Applied</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="created">
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Post ID</TableHead>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Date Posted</TableHead>
+                      <TableHead>Likes</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {loading ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8">Loading...</TableCell>
+                      </TableRow>
+                    ) : posts.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8">No posts found.</TableCell>
+                      </TableRow>
+                    ) : posts.map((post, idx) => (
+                      <TableRow key={post.id}>
+                        <TableCell className="font-medium">
+                          <button
+                            className="text-blue-600 hover:underline cursor-pointer bg-transparent border-none p-0"
+                            onClick={() => handleShowDetails(post)}
+                            style={{ background: 'none' }}
+                          >
+                            {formatPostId(idx)}
+                          </button>
+                        </TableCell>
+                        <TableCell>{post.title}</TableCell>
+                        <TableCell><Badge variant="secondary">{post.category}</Badge></TableCell>
+                        <TableCell>{'Active'}</TableCell>
+                        <TableCell>{post.created_at ? new Date(post.created_at).toLocaleDateString() : ''}</TableCell>
+                        <TableCell>{likeCounts[post.id] ?? 0}
+                          <Button size="icon" variant="ghost" onClick={() => handleToggleLike(post)}>
+                            <Heart className={likedPosts[post.id] ? 'fill-red-500 text-red-500' : ''} />
+                          </Button>
+                        </TableCell>
+                        <TableCell className="text-right flex gap-2 justify-end">
+                          <Button size="icon" variant="ghost" onClick={() => handleEditPost(post)}><Pencil className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="ghost" onClick={() => handleDeletePost(post)}><Trash className="w-4 h-4 text-red-500" /></Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="applied">
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Post ID</TableHead>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Date Applied</TableHead>
+                      <TableHead>Application Status</TableHead>
+                      <TableHead className="text-right">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {appliedLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8">Loading...</TableCell>
+                      </TableRow>
+                    ) : appliedPosts.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8">No applied posts found.</TableCell>
+                      </TableRow>
+                    ) : appliedPosts.map((application) => (
+                      <TableRow key={application.id}>
+                        <TableCell className="font-medium">
+                          <Link to={`/posts/${application.id}`} className="text-blue-600 hover:underline">
+                            {application.postId}
+                          </Link>
+                        </TableCell>
+                        <TableCell>{application.title}</TableCell>
+                        <TableCell><Badge variant="secondary">{application.category}</Badge></TableCell>
+                        <TableCell>
+                          <Badge variant={application.status === 'Active' ? 'default' : 'secondary'}>
+                            {application.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{new Date(application.dateApplied).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant={
+                              application.applicationStatus === 'Pending' ? 'outline' :
+                              application.applicationStatus === 'Shortlisted' ? 'default' : 'destructive'
+                            }
+                          >
+                            {application.applicationStatus}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button size="icon" variant="ghost">
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Edit Post Dialog (standalone, not nested) */}
       {editPost && (
