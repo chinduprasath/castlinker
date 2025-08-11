@@ -20,6 +20,7 @@ import Contact from '@/pages/Contact';
 import Dashboard from '@/pages/Dashboard';
 import Jobs from '@/pages/Jobs';
 import Posts from '@/pages/Posts';
+import Posts2 from '@/pages/Posts2';
 import PostDetail from '@/pages/PostDetail';
 import Profile from '@/pages/Profile';
 import Settings from '@/pages/Settings';
@@ -206,6 +207,13 @@ const App = () => {
               <PrivateRoute>
                 <AppLayout>
                   <Posts />
+                </AppLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/posts2" element={
+              <PrivateRoute>
+                <AppLayout>
+                  <Posts2 />
                 </AppLayout>
               </PrivateRoute>
             } />
