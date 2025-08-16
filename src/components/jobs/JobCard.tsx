@@ -23,6 +23,7 @@ const JobCard = ({
   onApplyClick 
 }: JobCardProps) => {
   const { user } = useAuth();
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const isFeatured = job.is_featured;
   const isRemote = job.location_type === 'Remote';
   
@@ -83,7 +84,31 @@ const JobCard = ({
             </div>
           </div>
           
-          <p className="text-xs sm:text-sm line-clamp-2 break-words overflow-hidden max-w-full">{job.description}</p>
+          <div className="space-y-1">
+            <p 
+              className={`text-xs sm:text-sm break-words overflow-wrap-break-word ${
+                isDescriptionExpanded ? '' : 'line-clamp-2'
+              }`}
+              style={{ 
+                wordBreak: 'break-word',
+                overflowWrap: 'break-word',
+                hyphens: 'auto'
+              }}
+            >
+              {job.description}
+            </p>
+            {job.description && job.description.length > 150 && (
+              <button
+                className="text-xs text-gold hover:text-gold/80 underline"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsDescriptionExpanded(!isDescriptionExpanded);
+                }}
+              >
+                {isDescriptionExpanded ? 'Show Less' : 'Show More'}
+              </button>
+            )}
+          </div>
           
           {job.requirements && job.requirements.length > 0 && (
             <div className="flex flex-wrap gap-1 sm:gap-2">
