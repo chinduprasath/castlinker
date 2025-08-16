@@ -28,7 +28,7 @@ import {
   MapPin,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import CreatePostDialog from "@/components/posts/CreatePostDialog";
+import CreatePostFormNew from "@/components/posts/CreatePostFormNew";
 import { toast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
@@ -442,11 +442,14 @@ const Posts = () => {
         </>
       )}
 
-      <CreatePostDialog 
-        isOpen={showCreateDialog} 
-        onClose={() => setShowCreateDialog(false)}
-        onSubmit={handleCreatePostSubmit}
-      />
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <CreatePostFormNew 
+            onClose={() => setShowCreateDialog(false)}
+            onSubmit={handleCreatePostSubmit}
+          />
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>
         <AlertDialogContent>

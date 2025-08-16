@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import JobListingHeader from "@/components/jobs/JobListingHeader";
 import JobFiltersComponent from "@/components/jobs/JobFilters";
 import JobResults from "@/components/jobs/JobResults";
-import JobCreateForm from "@/components/jobs/JobCreateForm";
+import JobCreateFormNew from "@/components/jobs/JobCreateFormNew";
 
 const Jobs = () => {
   const { user } = useAuth();
@@ -68,7 +68,7 @@ const Jobs = () => {
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                <JobCreateForm onJobCreated={handleJobCreated} />
+                <JobCreateFormNew onJobCreated={handleJobCreated} />
               </DialogContent>
             </Dialog>
             <Button

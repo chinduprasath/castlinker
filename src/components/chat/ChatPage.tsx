@@ -6,6 +6,7 @@ import ChatSidebar from './ChatSidebar';
 import ChatHeader from './ChatHeader';
 import ChatMessageArea from './ChatMessageArea';
 import ChatInputBar from './ChatInputBar';
+import ChatTabs from './ChatTabs';
 
 interface ChatRoom {
   id: string;
@@ -20,6 +21,7 @@ interface ChatRoom {
 
 export const ChatPage: React.FC = () => {
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [rooms, setRooms] = useState<ChatRoom[]>([
     { 
       id: '1', 
@@ -109,13 +111,20 @@ export const ChatPage: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-gray-100">
-      <ChatSidebar
-        chats={rooms}
-        activeChat={activeChat}
-        onChatSelect={(chat) => setSelectedRoom(chat.id)}
-        searchQuery=""
-        onSearchChange={() => {}}
-      />
+      <div className="w-80 border-r bg-white">
+        <ChatTabs 
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+        >
+          <ChatSidebar
+            chats={rooms}
+            activeChat={activeChat}
+            onChatSelect={(chat) => setSelectedRoom(chat.id)}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+          />
+        </ChatTabs>
+      </div>
       <div className="flex-1 flex flex-col">
         {!selectedRoom ? (
           <div className="flex items-center justify-center h-full">

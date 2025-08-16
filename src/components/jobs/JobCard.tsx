@@ -83,7 +83,7 @@ const JobCard = ({
             </div>
           </div>
           
-          <p className="text-xs sm:text-sm line-clamp-2">{job.description}</p>
+          <p className="text-xs sm:text-sm line-clamp-2 break-words">{job.description}</p>
           
           {job.requirements && job.requirements.length > 0 && (
             <div className="flex flex-wrap gap-1 sm:gap-2">

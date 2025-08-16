@@ -237,7 +237,7 @@ function ShowcaseCard({
   );
 }
 
-export default function Posts2() {
+export default function Reels() {
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -253,7 +253,7 @@ export default function Posts2() {
 
   // Basic SEO
   useEffect(() => {
-    document.title = "Posts2 – Talent Showcase Feed";
+    document.title = "Reels – Talent Showcase Feed";
     const meta = document.querySelector('meta[name="description"]');
     if (meta) meta.setAttribute("content", "Discover and showcase cine talents: writers, actors, singers, designers and more. Browse media previews and engage with posts.");
 
@@ -261,7 +261,7 @@ export default function Posts2() {
     if (!rel) {
       const link = document.createElement("link");
       link.setAttribute("rel", "canonical");
-      link.setAttribute("href", window.location.origin + "/posts2");
+      link.setAttribute("href", window.location.origin + "/reels");
       document.head.appendChild(link);
     }
   }, []);

@@ -40,8 +40,8 @@ export const mainMenuItems: MenuItem[] = [
   },
   {
     icon: Clapperboard,
-    text: "Posts2",
-    path: "/posts2"
+    text: "Reels",
+    path: "/reels"
   },
   {
     icon: Users,
