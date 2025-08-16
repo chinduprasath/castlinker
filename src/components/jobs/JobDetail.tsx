@@ -57,32 +57,38 @@ const JobDetail = ({ job, isSaved, onToggleSave, onApply, isOpen, onClose }: Job
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto max-w-[95vw] p-3 sm:p-6">
-        <DialogHeader>
-          <JobDetailHeader 
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] max-w-[95vw] p-0 flex flex-col">
+        <div className="flex-shrink-0 p-3 sm:p-6 pb-0">
+          <DialogHeader>
+            <JobDetailHeader 
+              job={job} 
+              isSaved={isSaved} 
+              onToggleSave={onToggleSave} 
+              onShare={handleShare} 
+            />
+            <JobMetadata job={job} />
+          </DialogHeader>
+        </div>
+        
+        <div className="flex-1 overflow-y-auto px-3 sm:px-6">
+          <JobDetailTabs 
             job={job} 
-            isSaved={isSaved} 
-            onToggleSave={onToggleSave} 
-            onShare={handleShare} 
+            activeTab={activeTab} 
+            setActiveTab={setActiveTab} 
+            onApply={onApply} 
           />
-          <JobMetadata job={job} />
-        </DialogHeader>
+        </div>
         
-        <JobDetailTabs 
-          job={job} 
-          activeTab={activeTab} 
-          setActiveTab={setActiveTab} 
-          onApply={onApply} 
-        />
-        
-        <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0 mt-4">
-          <JobDetailFooter 
-            jobId={job.id} 
-            isSaved={isSaved} 
-            onToggleSave={onToggleSave} 
-            onApplyTab={() => setActiveTab("apply")} 
-          />
-        </DialogFooter>
+        <div className="flex-shrink-0 p-3 sm:p-6 pt-0">
+          <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0 mt-4">
+            <JobDetailFooter 
+              jobId={job.id} 
+              isSaved={isSaved} 
+              onToggleSave={onToggleSave} 
+              onApplyTab={() => setActiveTab("apply")} 
+            />
+          </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
