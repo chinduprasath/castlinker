@@ -5,25 +5,39 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Heart, MessageCircle, Share2, Eye, Verified, Filter, Bookmark, MoreVertical, Play, Pause, FileText } from "lucide-react";
+import { Heart, MessageCircle, Share2, Eye, Verified, Filter, Bookmark, MoreVertical, Play, Pause, FileText, User, Music, Video, Image, File } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { Post, fetchPosts, togglePostLike, checkIfLiked } from "@/services/postsService";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { Link } from "react-router-dom";
+import { ProfileModal } from "@/components/reels/ProfileModal";
+import { ImageModal } from "@/components/reels/ImageModal";
+import { VideoModal } from "@/components/reels/VideoModal";
+import { DocumentModal } from "@/components/reels/DocumentModal";
+import { AudioModal } from "@/components/reels/AudioModal";
+import { dummyReelsData } from "@/utils/dummyReelsData";
+
+const MEDIA_TYPE_OPTIONS = [
+  { label: "All", value: "all", icon: Filter },
+  { label: "Images", value: "image", icon: Image },
+  { label: "Videos", value: "video", icon: Video },
+  { label: "Documents", value: "document", icon: File },
+  { label: "Scripts", value: "script", icon: FileText },
+  { label: "Audio", value: "audio", icon: Music },
+];
 
 const CATEGORY_OPTIONS = [
   "All",
-  "Writers",
-  "Actors",
-  "Singers",
-  "Designers",
-  "Directors",
-  "Editors",
-  "Producers",
-  "Cinematographers",
+  "Photography",
+  "Fashion", 
+  "Cinematography",
+  "Performance",
+  "Education",
+  "Writing",
+  "Music",
+  "Behind the Scenes",
 ];
 
 const SORT_OPTIONS = [
@@ -33,38 +47,39 @@ const SORT_OPTIONS = [
   { label: "Trending", value: "trending" },
 ];
 
-function MediaPreview({ post }: { post: Post }) {
+function MediaPreview({ 
+  post, 
+  onMediaClick 
+}: { 
+  post: Post;
+  onMediaClick: () => void;
+}) {
   const [hover, setHover] = useState(false);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  useEffect(() => {
-    if (post.media_type === "video" && videoRef.current) {
-      if (hover) {
-        videoRef.current.muted = true;
-        videoRef.current.play().catch(() => {});
-      } else {
-        videoRef.current.pause();
-        videoRef.current.currentTime = 0;
-      }
-    }
-    if (post.media_type === "audio" && audioRef.current) {
-      if (hover) {
-        audioRef.current.play().catch(() => {});
-      } else {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
-      }
-    }
-  }, [hover, post.media_type]);
 
   const type = (post.media_type || "").toLowerCase();
 
+  const handleAudioToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (isAudioPlaying) {
+      audio.pause();
+      setIsAudioPlaying(false);
+    } else {
+      audio.play();
+      setIsAudioPlaying(true);
+    }
+  };
+
   return (
     <div
-      className="relative aspect-video w-full overflow-hidden rounded-md bg-muted"
+      className="relative aspect-video w-full overflow-hidden rounded-md bg-muted cursor-pointer"
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
+      onClick={onMediaClick}
     >
       {post.media_url ? (
         type === "image" ? (
@@ -75,25 +90,40 @@ function MediaPreview({ post }: { post: Post }) {
             className="h-full w-full object-cover"
           />
         ) : type === "video" ? (
-          <video
-            ref={videoRef}
-            src={post.media_url}
-            className="h-full w-full object-cover"
-            preload="metadata"
-            playsInline
-          />
+          <div className="relative h-full w-full">
+            <img
+              src={post.media_url}
+              alt={post.title}
+              className="h-full w-full object-cover"
+            />
+            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+              <div className="rounded-full bg-white/90 p-3">
+                <Play className="h-6 w-6 text-black ml-1" />
+              </div>
+            </div>
+          </div>
         ) : type === "audio" ? (
-          <div className="flex h-full w-full items-center justify-center p-4">
-            <audio ref={audioRef} src={post.media_url} preload="none" />
-            <Button size="sm" variant="secondary" className="gap-2">
-              {hover ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-              {hover ? "Pause" : "Preview"}
+          <div className="flex h-full w-full items-center justify-center p-4 bg-gradient-to-br from-primary/10 to-primary/30">
+            <audio 
+              ref={audioRef} 
+              src={post.media_url} 
+              preload="none"
+              onEnded={() => setIsAudioPlaying(false)}
+            />
+            <Button 
+              size="lg" 
+              variant="secondary" 
+              className="gap-2 rounded-full"
+              onClick={handleAudioToggle}
+            >
+              {isAudioPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+              {isAudioPlaying ? "Pause" : "Play"}
             </Button>
           </div>
-        ) : type === "document" ? (
-          <div className="flex h-full w-full flex-col items-center justify-center text-muted-foreground">
-            <FileText className="mb-2 h-8 w-8" />
-            <span className="text-xs">Document</span>
+        ) : type === "document" || type === "script" ? (
+          <div className="flex h-full w-full flex-col items-center justify-center text-muted-foreground bg-gradient-to-br from-muted to-muted/50">
+            <FileText className="mb-2 h-12 w-12" />
+            <span className="text-sm font-medium">{type === "script" ? "Script" : "Document"}</span>
           </div>
         ) : (
           <img
@@ -117,10 +147,14 @@ function ShowcaseCard({
   post,
   liked,
   onToggleLike,
+  onViewProfile,
+  onMediaClick,
 }: {
   post: Post;
   liked: boolean;
   onToggleLike: (postId: string) => void;
+  onViewProfile: () => void;
+  onMediaClick: () => void;
 }) {
   const creatorName = post.creator_name || "Anonymous";
   const creatorRole = post.creator_profession || "Talent";
@@ -133,10 +167,10 @@ function ShowcaseCard({
     <Card className="group flex h-full flex-col overflow-hidden">
       <CardContent className="p-3">
         <div className="space-y-3">
-          <MediaPreview post={post} />
+          <MediaPreview post={post} onMediaClick={onMediaClick} />
 
           <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <h3 className="line-clamp-1 text-sm font-semibold">{post.title}</h3>
               <div className="mt-1 flex items-center gap-2">
                 <Avatar className="h-6 w-6">
@@ -157,12 +191,6 @@ function ShowcaseCard({
                   )}
                 </div>
               </div>
-            </div>
-
-            <div className="shrink-0">
-              <Badge variant="outline" className="text-[10px]">
-                {post.category}
-              </Badge>
             </div>
           </div>
 
@@ -195,8 +223,14 @@ function ShowcaseCard({
             </div>
 
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" className="h-7 px-2 text-xs" asChild>
-                <Link to={`/posts/${post.id}`}>View Details</Link>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-7 px-2 text-xs"
+                onClick={onViewProfile}
+              >
+                <User className="h-3 w-3 mr-1" />
+                View Profile
               </Button>
 
               <DropdownMenu>
@@ -218,18 +252,8 @@ function ShowcaseCard({
             </div>
           </div>
 
-          <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
+          <div className="mt-2 flex items-center justify-end text-[11px] text-muted-foreground">
             <span>{format(new Date(post.created_at), "MMM dd, yyyy")}</span>
-            {post.external_url && (
-              <a
-                href={post.external_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="truncate text-primary underline-offset-2 hover:underline"
-              >
-                External link
-              </a>
-            )}
           </div>
         </div>
       </CardContent>
@@ -246,10 +270,18 @@ export default function Reels() {
   const [error, setError] = useState<string | null>(null);
 
   const [search, setSearch] = useState("");
+  const [mediaType, setMediaType] = useState("all");
   const [category, setCategory] = useState("All");
   const [sortBy, setSortBy] = useState("latest");
   const [visibleCount, setVisibleCount] = useState(12);
   const [likedMap, setLikedMap] = useState<Record<string, boolean>>({});
+
+  // Modal states
+  const [selectedProfile, setSelectedProfile] = useState<any>(null);
+  const [selectedImage, setSelectedImage] = useState<{ url: string; title: string } | null>(null);
+  const [selectedVideo, setSelectedVideo] = useState<{ url: string; title: string } | null>(null);
+  const [selectedDocument, setSelectedDocument] = useState<{ url: string; title: string; type: 'document' | 'script' } | null>(null);
+  const [selectedAudio, setSelectedAudio] = useState<{ url: string; title: string } | null>(null);
 
   // Basic SEO
   useEffect(() => {
@@ -271,7 +303,8 @@ export default function Reels() {
       setLoading(true);
       setError(null);
       try {
-        const data = await fetchPosts();
+        // Use dummy data instead of fetchPosts for demo
+        const data = dummyReelsData;
         setPosts(data);
         // Preload likes for current user
         if (user?.id) {
@@ -294,13 +327,14 @@ export default function Reels() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     let arr = posts.filter((p) => {
+      const inMediaType = mediaType === "all" || (p.media_type || "").toLowerCase() === mediaType;
       const inCat = category === "All" || (p.category || "").toLowerCase().includes(category.toLowerCase());
       const inSearch =
         !q ||
         (p.title || "").toLowerCase().includes(q) ||
         (p.description || "").toLowerCase().includes(q) ||
         (p.creator_name || "").toLowerCase().includes(q);
-      return inCat && inSearch;
+      return inMediaType && inCat && inSearch;
     });
 
     switch (sortBy) {
@@ -322,7 +356,7 @@ export default function Reels() {
         arr = arr.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     }
     return arr;
-  }, [posts, search, category, sortBy]);
+  }, [posts, search, mediaType, category, sortBy]);
 
   const visiblePosts = filtered.slice(0, visibleCount);
 
@@ -338,6 +372,43 @@ export default function Reels() {
       // revert on error
       setLikedMap({ ...likedMap, [postId]: prev });
       toast({ title: "Failed", description: "Could not update like.", variant: "destructive" });
+    }
+  };
+
+  const handleViewProfile = (post: Post) => {
+    setSelectedProfile({
+      name: post.creator_name || "Anonymous",
+      profession: post.creator_profession || "Talent",
+      verified: (post as any).creator_verified || false,
+      bio: "Passionate creator dedicated to producing high-quality content and connecting with audiences through meaningful storytelling.",
+      location: "Los Angeles, CA",
+      joinDate: "January 2023",
+      followers: Math.floor(Math.random() * 5000) + 1000,
+      following: Math.floor(Math.random() * 1000) + 100,
+      posts: Math.floor(Math.random() * 50) + 10,
+      likes: Math.floor(Math.random() * 10000) + 1000,
+    });
+  };
+
+  const handleMediaClick = (post: Post) => {
+    const type = (post.media_type || "").toLowerCase();
+    
+    switch (type) {
+      case "image":
+        setSelectedImage({ url: post.media_url || "", title: post.title });
+        break;
+      case "video":
+        setSelectedVideo({ url: post.media_url || "", title: post.title });
+        break;
+      case "document":
+        setSelectedDocument({ url: post.media_url || "", title: post.title, type: "document" });
+        break;
+      case "script":
+        setSelectedDocument({ url: post.media_url || "", title: post.title, type: "script" });
+        break;
+      case "audio":
+        setSelectedAudio({ url: post.media_url || "", title: post.title });
+        break;
     }
   };
 
@@ -378,11 +449,30 @@ export default function Reels() {
             </div>
           </div>
           <div className="flex w-full gap-2 sm:w-auto">
+            <Select value={mediaType} onValueChange={setMediaType}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Media Type" />
+              </SelectTrigger>
+              <SelectContent className="bg-background border">
+                {MEDIA_TYPE_OPTIONS.map((option) => {
+                  const Icon = option.icon;
+                  return (
+                    <SelectItem key={option.value} value={option.value}>
+                      <div className="flex items-center gap-2">
+                        <Icon className="h-4 w-4" />
+                        {option.label}
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+
             <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger className="w-[160px]">
+              <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-background border">
                 {CATEGORY_OPTIONS.map((c) => (
                   <SelectItem key={c} value={c}>
                     {c}
@@ -392,10 +482,10 @@ export default function Reels() {
             </Select>
 
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-[160px]">
+              <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-background border">
                 {SORT_OPTIONS.map((s) => (
                   <SelectItem key={s.value} value={s.value}>
                     {s.label}
@@ -413,7 +503,14 @@ export default function Reels() {
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {visiblePosts.map((post) => (
-              <ShowcaseCard key={post.id} post={post} liked={!!likedMap[post.id]} onToggleLike={handleToggleLike} />
+              <ShowcaseCard 
+                key={post.id} 
+                post={post} 
+                liked={!!likedMap[post.id]} 
+                onToggleLike={handleToggleLike}
+                onViewProfile={() => handleViewProfile(post)}
+                onMediaClick={() => handleMediaClick(post)}
+              />
             ))}
           </div>
         )}
@@ -426,6 +523,52 @@ export default function Reels() {
           </div>
         )}
       </section>
+
+      {/* Modals */}
+      {selectedProfile && (
+        <ProfileModal
+          isOpen={!!selectedProfile}
+          onClose={() => setSelectedProfile(null)}
+          profile={selectedProfile}
+        />
+      )}
+
+      {selectedImage && (
+        <ImageModal
+          isOpen={!!selectedImage}
+          onClose={() => setSelectedImage(null)}
+          imageUrl={selectedImage.url}
+          title={selectedImage.title}
+        />
+      )}
+
+      {selectedVideo && (
+        <VideoModal
+          isOpen={!!selectedVideo}
+          onClose={() => setSelectedVideo(null)}
+          videoUrl={selectedVideo.url}
+          title={selectedVideo.title}
+        />
+      )}
+
+      {selectedDocument && (
+        <DocumentModal
+          isOpen={!!selectedDocument}
+          onClose={() => setSelectedDocument(null)}
+          documentUrl={selectedDocument.url}
+          title={selectedDocument.title}
+          type={selectedDocument.type}
+        />
+      )}
+
+      {selectedAudio && (
+        <AudioModal
+          isOpen={!!selectedAudio}
+          onClose={() => setSelectedAudio(null)}
+          audioUrl={selectedAudio.url}
+          title={selectedAudio.title}
+        />
+      )}
     </main>
   );
 }
