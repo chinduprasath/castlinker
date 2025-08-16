@@ -28,7 +28,10 @@ export const dummyReelsData: Post[] = [
     creator_profession: "Fashion Photographer",
     category: "Fashion",
     like_count: 89,
-    created_at: "2024-01-14T15:20:00Z"
+    created_at: "2024-01-14T15:20:00Z",
+    updated_at: "2024-01-14T15:20:00Z",
+    created_by: "user-2",
+    tags: ["fashion", "editorial", "photography"]
   },
 
   // Videos
@@ -42,7 +45,10 @@ export const dummyReelsData: Post[] = [
     creator_profession: "Filmmaker",
     category: "Cinematography",
     like_count: 256,
-    created_at: "2024-01-13T09:15:00Z"
+    created_at: "2024-01-13T09:15:00Z",
+    updated_at: "2024-01-13T09:15:00Z",
+    created_by: "user-3",
+    tags: ["film", "cinematography", "short-film"]
   },
   {
     id: "vid-2",
@@ -54,7 +60,10 @@ export const dummyReelsData: Post[] = [
     creator_profession: "Dancer",
     category: "Performance",
     like_count: 178,
-    created_at: "2024-01-12T14:45:00Z"
+    created_at: "2024-01-12T14:45:00Z",
+    updated_at: "2024-01-12T14:45:00Z",
+    created_by: "user-4",
+    tags: ["dance", "performance", "contemporary"]
   },
 
   // Documents
@@ -68,7 +77,10 @@ export const dummyReelsData: Post[] = [
     creator_profession: "Producer",
     category: "Education",
     like_count: 67,
-    created_at: "2024-01-11T11:30:00Z"
+    created_at: "2024-01-11T11:30:00Z",
+    updated_at: "2024-01-11T11:30:00Z",
+    created_by: "user-5",
+    tags: ["education", "filmmaking", "guide"]
   },
   {
     id: "doc-2",
@@ -80,7 +92,10 @@ export const dummyReelsData: Post[] = [
     creator_profession: "Acting Coach",
     category: "Education",
     like_count: 43,
-    created_at: "2024-01-10T16:20:00Z"
+    created_at: "2024-01-10T16:20:00Z",
+    updated_at: "2024-01-10T16:20:00Z",
+    created_by: "user-6",
+    tags: ["acting", "workshop", "education"]
   },
 
   // Scripts
@@ -94,7 +109,10 @@ export const dummyReelsData: Post[] = [
     creator_profession: "Screenwriter",
     category: "Writing",
     like_count: 92,
-    created_at: "2024-01-09T13:10:00Z"
+    created_at: "2024-01-09T13:10:00Z",
+    updated_at: "2024-01-09T13:10:00Z",
+    created_by: "user-7",
+    tags: ["screenplay", "script", "writing"]
   },
   {
     id: "script-2",
@@ -106,7 +124,10 @@ export const dummyReelsData: Post[] = [
     creator_profession: "Writer",
     category: "Writing",
     like_count: 76,
-    created_at: "2024-01-08T20:30:00Z"
+    created_at: "2024-01-08T20:30:00Z",
+    updated_at: "2024-01-08T20:30:00Z",
+    created_by: "user-8",
+    tags: ["script", "dialogue", "writing"]
   },
 
   // Audio
@@ -120,7 +141,10 @@ export const dummyReelsData: Post[] = [
     creator_profession: "Singer-Songwriter",
     category: "Music",
     like_count: 134,
-    created_at: "2024-01-07T18:45:00Z"
+    created_at: "2024-01-07T18:45:00Z",
+    updated_at: "2024-01-07T18:45:00Z",
+    created_by: "user-9",
+    tags: ["music", "acoustic", "original"]
   },
   {
     id: "audio-2",
@@ -132,7 +156,10 @@ export const dummyReelsData: Post[] = [
     creator_profession: "Podcast Host",
     category: "Education",
     like_count: 58,
-    created_at: "2024-01-06T12:00:00Z"
+    created_at: "2024-01-06T12:00:00Z",
+    updated_at: "2024-01-06T12:00:00Z",
+    created_by: "user-10",
+    tags: ["podcast", "education", "film"]
   },
 
   // Additional mixed content
@@ -146,7 +173,10 @@ export const dummyReelsData: Post[] = [
     creator_profession: "Cinematographer", 
     category: "Photography",
     like_count: 156,
-    created_at: "2024-01-05T14:20:00Z"
+    created_at: "2024-01-05T14:20:00Z",
+    updated_at: "2024-01-05T14:20:00Z",
+    created_by: "user-11",
+    tags: ["photography", "behind-the-scenes", "film"]
   },
   {
     id: "vid-3",
@@ -158,6 +188,9 @@ export const dummyReelsData: Post[] = [
     creator_profession: "Production Designer",
     category: "Behind the Scenes",
     like_count: 203,
-    created_at: "2024-01-04T09:30:00Z"
+    created_at: "2024-01-04T09:30:00Z",
+    updated_at: "2024-01-04T09:30:00Z",
+    created_by: "user-12",
+    tags: ["timelapse", "construction", "film"]
   }
 ];

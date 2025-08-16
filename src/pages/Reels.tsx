@@ -196,6 +196,7 @@ function ShowcaseCard({
 
           <p className="line-clamp-2 text-xs text-foreground/80">{post.description}</p>
 
+          {/* Icons Row */}
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-1">
@@ -218,42 +219,42 @@ function ShowcaseCard({
               </div>
               <div className="flex items-center gap-1">
                 <Share2 className="h-4 w-4" />
-                <span>Share</span>
+                <span>{Math.floor(Math.random() * 20) + 5}</span>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="h-7 px-2 text-xs"
-                onClick={onViewProfile}
-              >
-                <User className="h-3 w-3 mr-1" />
-                View Profile
-              </Button>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-7 w-7">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem className="gap-2">
-                    <Bookmark className="h-4 w-4" />
-                    Save Post
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="gap-2">
-                    Report/Flag
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-7 w-7">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem className="gap-2">
+                  <Bookmark className="h-4 w-4" />
+                  Save Post
+                </DropdownMenuItem>
+                <DropdownMenuItem className="gap-2">
+                  Report/Flag
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
-          <div className="mt-2 flex items-center justify-end text-[11px] text-muted-foreground">
-            <span>{format(new Date(post.created_at), "MMM dd, yyyy")}</span>
+          {/* Bottom Row: Date and View Profile Button */}
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">
+              {format(new Date(post.created_at), "MMM dd, yyyy")}
+            </span>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-7 px-3 text-xs"
+              onClick={onViewProfile}
+            >
+              <User className="h-3 w-3 mr-1" />
+              View Profile
+            </Button>
           </div>
         </div>
       </CardContent>
