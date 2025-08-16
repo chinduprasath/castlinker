@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Heart, MessageCircle, Share2, Eye, Verified, Filter, Bookmark, MoreVertical, Play, Pause, FileText, User, Music, Video, Image, File } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { useAuth } from "@/hooks/useAuth";
 import { Post, fetchPosts, togglePostLike, checkIfLiked } from "@/services/postsService";
 import { format } from "date-fns";
@@ -274,8 +275,10 @@ export default function Reels() {
   const [mediaType, setMediaType] = useState("all");
   const [category, setCategory] = useState("All");
   const [sortBy, setSortBy] = useState("latest");
-  const [visibleCount, setVisibleCount] = useState(12);
+  const [currentPage, setCurrentPage] = useState(1);
   const [likedMap, setLikedMap] = useState<Record<string, boolean>>({});
+
+  const POSTS_PER_PAGE = 12;
 
   // Modal states
   const [selectedProfile, setSelectedProfile] = useState<any>(null);
@@ -359,7 +362,15 @@ export default function Reels() {
     return arr;
   }, [posts, search, mediaType, category, sortBy]);
 
-  const visiblePosts = filtered.slice(0, visibleCount);
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, mediaType, category, sortBy]);
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filtered.length / POSTS_PER_PAGE);
+  const startIndex = (currentPage - 1) * POSTS_PER_PAGE;
+  const visiblePosts = filtered.slice(startIndex, startIndex + POSTS_PER_PAGE);
 
   const handleToggleLike = async (postId: string) => {
     if (!user?.id) {
@@ -516,11 +527,63 @@ export default function Reels() {
           </div>
         )}
 
-        {visibleCount < filtered.length && (
-          <div className="mt-6 flex justify-center">
-            <Button variant="secondary" onClick={() => setVisibleCount((v) => v + 12)}>
-              Load more
-            </Button>
+        {totalPages > 1 && (
+          <div className="mt-8 flex justify-center">
+            <Pagination>
+              <PaginationContent>
+                {currentPage > 1 && (
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setCurrentPage(currentPage - 1);
+                      }}
+                    />
+                  </PaginationItem>
+                )}
+                
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  
+                  return (
+                    <PaginationItem key={pageNum}>
+                      <PaginationLink
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setCurrentPage(pageNum);
+                        }}
+                        isActive={currentPage === pageNum}
+                      >
+                        {pageNum}
+                      </PaginationLink>
+                    </PaginationItem>
+                  );
+                })}
+                
+                {currentPage < totalPages && (
+                  <PaginationItem>
+                    <PaginationNext 
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setCurrentPage(currentPage + 1);
+                      }}
+                    />
+                  </PaginationItem>
+                )}
+              </PaginationContent>
+            </Pagination>
           </div>
         )}
       </section>
