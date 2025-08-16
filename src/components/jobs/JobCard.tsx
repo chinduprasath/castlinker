@@ -33,17 +33,17 @@ const JobCard = ({
       }`}
       onClick={() => onViewDetailsClick(job)}
     >
-      <CardContent className="p-0">
+      <CardContent className="p-0 overflow-hidden">
         {isFeatured && (
           <div className="bg-gold/10 py-1 px-3 sm:px-4">
             <span className="text-gold text-xs font-medium">Featured Opportunity</span>
           </div>
         )}
-        <div className="p-3 sm:p-4 space-y-2 sm:space-y-4">
+        <div className="p-3 sm:p-4 space-y-2 sm:space-y-4 overflow-hidden">
           <div className="flex justify-between items-start">
-            <div className="pr-2">
-              <h3 className="font-bold text-lg sm:text-xl leading-tight">{job.title}</h3>
-              <p className="text-sm text-muted-foreground">{job.company}</p>
+            <div className="pr-2 min-w-0 flex-1 overflow-hidden">
+              <h3 className="font-bold text-lg sm:text-xl leading-tight truncate">{job.title}</h3>
+              <p className="text-sm text-muted-foreground truncate">{job.company}</p>
             </div>
             <Button
               variant="ghost"
@@ -83,7 +83,7 @@ const JobCard = ({
             </div>
           </div>
           
-          <p className="text-xs sm:text-sm line-clamp-2 break-words">{job.description}</p>
+          <p className="text-xs sm:text-sm line-clamp-2 break-words overflow-hidden max-w-full">{job.description}</p>
           
           {job.requirements && job.requirements.length > 0 && (
             <div className="flex flex-wrap gap-1 sm:gap-2">
