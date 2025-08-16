@@ -428,7 +428,7 @@ export default function Reels() {
     return (
       <main className="container mx-auto max-w-7xl p-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {Array.from({ length: 8 }).map((_, i) => (
+          {Array.from({ length: 12 }).map((_, i) => (
             <Card key={i} className="h-72 animate-pulse" />
           ))}
         </div>
