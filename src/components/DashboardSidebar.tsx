@@ -11,9 +11,16 @@ import { useState } from 'react';
 interface DashboardSidebarProps {
   onToggle?: () => void;
   isCollapsed?: boolean;
+  isOpen?: boolean;
+  isMobile?: boolean;
 }
 
-const DashboardSidebar = ({ onToggle, isCollapsed: propIsCollapsed }: DashboardSidebarProps) => {
+const DashboardSidebar = ({ 
+  onToggle, 
+  isCollapsed: propIsCollapsed, 
+  isOpen = true, 
+  isMobile = false 
+}: DashboardSidebarProps) => {
   const location = useLocation();
   const [localIsCollapsed, setLocalIsCollapsed] = useState(false);
   
@@ -33,17 +40,29 @@ const DashboardSidebar = ({ onToggle, isCollapsed: propIsCollapsed }: DashboardS
   };
 
   return (
-    <div 
-      className={`
-        fixed top-0 left-0 h-full z-30
-        border-r border-gold/15
-        transition-all duration-300 ease-in-out
-        bg-gradient-to-b from-background to-background/90
-        backdrop-blur-lg shadow-xl
-        rounded-r-2xl
-        ${isCollapsed ? 'w-[70px]' : 'w-[250px]'}
-      `}
-    >
+    <>
+      {/* Mobile Overlay */}
+      {isMobile && isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={handleToggle}
+        />
+      )}
+      
+      <div 
+        className={`
+          fixed top-0 left-0 h-full z-50
+          border-r border-gold/15
+          transition-all duration-300 ease-in-out
+          bg-gradient-to-b from-background to-background/90
+          backdrop-blur-lg shadow-xl
+          ${isMobile ? 'rounded-r-2xl' : 'rounded-r-2xl'}
+          ${isMobile 
+            ? `${isOpen ? 'translate-x-0' : '-translate-x-full'} w-[280px]`
+            : `${isCollapsed ? 'w-[70px]' : 'w-[250px]'}`
+          }
+        `}
+      >
       <div className="flex flex-col h-full">
         <SidebarHeader isCollapsed={isCollapsed} onToggle={handleToggle} />
 
@@ -82,6 +101,7 @@ const DashboardSidebar = ({ onToggle, isCollapsed: propIsCollapsed }: DashboardS
         <SidebarFooter isCollapsed={isCollapsed} />
       </div>
     </div>
+    </>
   );
 };
 
