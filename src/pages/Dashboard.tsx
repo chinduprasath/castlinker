@@ -217,7 +217,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-4 pr-1">
       <div className="flex justify-between items-center mb-6">
         <div className="flex flex-col space-y-1">
           <div>
@@ -234,7 +234,7 @@ const Dashboard = () => {
         <Button variant="outline" onClick={() => navigate('/manage')}>Manage</Button>
       </div>
 
-      <div className="grid gap-3 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {loading ? (
           <Card className="border-gold/10 shadow-lg bg-card/60 backdrop-blur-sm">
             <CardHeader className="pb-2 pt-4 px-4">

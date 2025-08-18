@@ -4,7 +4,7 @@ import { useLocation } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import DashboardSidebar from '@/components/DashboardSidebar';
 import { useAuth } from '@/contexts/AuthContext';
-import ResponsiveHeader from '@/components/ResponsiveHeader';
+import TopBar from '@/components/TopBar';
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -14,7 +14,6 @@ interface AppLayoutProps {
 
 const AppLayout = ({ children }: AppLayoutProps) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   const { user } = useAuth();
   const isMobile = useIsMobile();
@@ -41,23 +40,17 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   // Special case for landing page - show navbar but with different styling
   const isLandingPage = location.pathname === '/';
 
-  // Auto collapse sidebar on mobile, hide it entirely
+  // Auto collapse sidebar on mobile
   useEffect(() => {
     if (isMobile) {
       setSidebarCollapsed(true);
-      setSidebarOpen(false);
     } else {
       setSidebarCollapsed(false);
-      setSidebarOpen(true);
     }
   }, [isMobile]);
 
   const toggleSidebar = () => {
-    if (isMobile) {
-      setSidebarOpen(!sidebarOpen);
-    } else {
-      setSidebarCollapsed(!sidebarCollapsed);
-    }
+    setSidebarCollapsed(!sidebarCollapsed);
   };
 
   return (
@@ -66,31 +59,22 @@ const AppLayout = ({ children }: AppLayoutProps) => {
       {(showNavbar || isLandingPage && !user) && <Navbar />}
       
       {showSidebar ? (
-        <div className="flex min-h-screen w-full relative">
-          <DashboardSidebar 
-            onToggle={toggleSidebar} 
-            isCollapsed={sidebarCollapsed}
-            isOpen={sidebarOpen}
-            isMobile={isMobile}
-          />
+        <div className="flex min-h-screen w-full">
+          <DashboardSidebar onToggle={toggleSidebar} isCollapsed={sidebarCollapsed} />
           <div className={`flex-1 transition-all duration-300 ease-in-out ${
-            isMobile 
-              ? 'ml-0' 
-              : sidebarCollapsed 
-                ? 'ml-[70px]' 
-                : 'ml-[250px]'
+            sidebarCollapsed 
+              ? 'ml-[70px]' 
+              : 'ml-[250px]'
           }`}>
-            {showTopBar && <ResponsiveHeader onToggleSidebar={toggleSidebar} />}
-            <main className="p-4 sm:p-6 max-w-[2000px] mx-auto overflow-x-hidden">
-              <div className="space-y-4 sm:space-y-6">
-                {children}
-              </div>
+            {showTopBar && <TopBar />}
+            <main className="p-2 sm:p-4 md:p-6 max-w-[2000px] mx-auto overflow-x-hidden">
+              {children}
             </main>
           </div>
         </div>
       ) : (
         <div className="max-w-[2000px] mx-auto">
-          {showTopBar && <ResponsiveHeader onToggleSidebar={toggleSidebar} showMenuButton={false} />}
+          {showTopBar && <TopBar />}
           <div className={`${showNavbar ? "pt-16" : ""}`}>
             <main className="p-2 sm:p-4 md:p-6">
               {children}
