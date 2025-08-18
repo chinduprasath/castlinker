@@ -95,11 +95,11 @@ const ResponsiveHeader = ({ onToggleSidebar, showMenuButton = true }: Responsive
 
         {/* Right - Actions */}
         <div className="flex items-center gap-2">
-          {/* Mobile Search Button */}
+          {/* Search Button */}
           <Button 
             variant="ghost" 
             size="icon" 
-            className="md:hidden hover:bg-gold/10 rounded-xl"
+            className="hover:bg-gold/10 rounded-xl"
             onClick={() => setIsSearchOpen(true)}
           >
             <Search className="h-4 w-4" />

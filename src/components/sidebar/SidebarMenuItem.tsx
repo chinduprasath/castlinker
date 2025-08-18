@@ -2,6 +2,7 @@
 import { Link } from 'react-router-dom';
 import { LucideIcon } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface SidebarMenuItemProps {
   icon: LucideIcon;
@@ -12,9 +13,11 @@ interface SidebarMenuItemProps {
 }
 
 const SidebarMenuItem = ({ icon: Icon, text, path, isActive, isCollapsed }: SidebarMenuItemProps) => {
+  const isMobile = useIsMobile();
+
   return (
     <div className="relative">
-      {isCollapsed ? (
+      {isCollapsed && !isMobile ? (
         <TooltipProvider delayDuration={100}>
           <Tooltip>
             <TooltipTrigger asChild>

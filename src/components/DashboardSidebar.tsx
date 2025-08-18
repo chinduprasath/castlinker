@@ -58,7 +58,7 @@ const DashboardSidebar = ({
           backdrop-blur-lg shadow-xl
           ${isMobile ? 'rounded-r-2xl' : 'rounded-r-2xl'}
           ${isMobile 
-            ? `${isOpen ? 'translate-x-0' : '-translate-x-full'} w-[280px]`
+            ? `${isOpen ? 'translate-x-0' : '-translate-x-full'} w-[220px]`
             : `${isCollapsed ? 'w-[70px]' : 'w-[250px]'}`
           }
         `}
