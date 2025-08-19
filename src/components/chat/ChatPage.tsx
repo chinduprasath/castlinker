@@ -118,6 +118,8 @@ export const ChatPage: React.FC = () => {
         >
           <ChatSidebar
             chats={rooms}
+            connectedUsers={[]}
+            groups={[]}
             activeChat={activeChat}
             onChatSelect={(chat) => setSelectedRoom(chat.id)}
             searchQuery={searchQuery}

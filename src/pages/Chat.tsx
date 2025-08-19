@@ -39,6 +39,8 @@ const Chat = () => {
   const [chatRoomUsers, setChatRoomUsers] = useState<Record<string, { name: string; avatar: string }>>({});
   const [activeChat, setActiveChat] = useState<SidebarChat | null>(null);
   const [connectionRequests, setConnectionRequests] = useState([]);
+  const [connectedUsers, setConnectedUsers] = useState([]);
+  const [groups, setGroups] = useState([]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchTerm = useDebounce(searchQuery, 300);
@@ -81,6 +83,82 @@ const Chat = () => {
       setConnectionRequests(requests);
     };
     fetchRequests();
+  }, [user]);
+
+  // Fetch connected users
+  useEffect(() => {
+    if (!user) return;
+    const fetchConnectedUsers = async () => {
+      try {
+        // Find all accepted connections where user is requester or recipient
+        const connectionsRef = collection(db, 'connection_requests');
+        const q = query(connectionsRef, where('status', '==', 'accepted'));
+        const snapshot = await getDocs(q);
+        const connections = snapshot.docs.map(doc => doc.data());
+        
+        // Get user IDs of connected users
+        const connectedIds = connections
+          .filter(c => c.requesterId === user.id || c.recipientId === user.id)
+          .map(c => (c.requesterId === user.id ? c.recipientId : c.requesterId));
+        
+        if (connectedIds.length === 0) {
+          setConnectedUsers([]);
+          return;
+        }
+        
+        // Fetch user details for connected users
+        const usersRef = collection(db, 'users');
+        const usersSnap = await getDocs(usersRef);
+         const users = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+         const connectedUsersData = users
+           .filter(u => connectedIds.includes(u.id))
+           .map((userData: any) => ({
+             id: userData.id,
+             name: userData.full_name || userData.name || 'Unknown User',
+             avatar: userData.avatar_url || userData.avatar || '/placeholder.svg',
+             online: false, // Could be enhanced with real-time presence
+             role: userData.role || ''
+           }));
+        
+        setConnectedUsers(connectedUsersData);
+      } catch (error) {
+        console.error('Error fetching connected users:', error);
+        setConnectedUsers([]);
+      }
+    };
+    fetchConnectedUsers();
+  }, [user]);
+
+  // Fetch groups (for future implementation)
+  useEffect(() => {
+    if (!user) return;
+    const fetchGroups = async () => {
+      try {
+        const q = query(
+          collection(db, 'chat_rooms'),
+          where('participants', 'array-contains', user.id),
+          where('type', '==', 'group')
+        );
+        const snapshot = await getDocs(q);
+        const groupsData = snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            name: data.name || 'Group Chat',
+            lastMessage: data.metadata?.last_message || '',
+            lastMessageTime: data.last_message_at ? new Date(data.last_message_at).toLocaleString() : '',
+            unread: 0,
+            avatar: '/placeholder.svg',
+            memberCount: data.participants?.length || 0
+          };
+        });
+        setGroups(groupsData);
+      } catch (error) {
+        console.error('Error fetching groups:', error);
+        setGroups([]);
+      }
+    };
+    fetchGroups();
   }, [user]);
 
   // Fetch chat rooms from Firestore for the current user
@@ -220,6 +298,8 @@ const Chat = () => {
     <div className="flex h-[calc(100vh-120px)] bg-white text-gray-900 dark:bg-[#181818] dark:text-white min-h-screen">
       <ChatSidebar 
         chats={sidebarChats}
+        connectedUsers={connectedUsers}
+        groups={groups}
         activeChat={activeChat}
         onChatSelect={setActiveChat}
         searchQuery={searchQuery}
