@@ -116,22 +116,22 @@ const ChatSidebar = ({
         {isChat && (
           <div className="mt-1">
             <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2 flex-1 min-w-0">
-                <span className="text-sm text-gray-500 dark:text-gray-300 truncate">
-                  {user.lastMessage || 'No messages yet'}
-                </span>
+              <span className="text-sm text-gray-500 dark:text-gray-300 truncate flex-1 pr-2">
+                {user.lastMessage || 'No messages yet'}
+              </span>
+              <div className="flex items-center gap-2 flex-shrink-0">
                 {user.memberCount && (
-                  <div className="flex items-center gap-1 text-xs text-gray-400 flex-shrink-0">
+                  <div className="flex items-center gap-1 text-xs text-gray-400">
                     <Users size={12} />
                     <span>{user.memberCount}</span>
                   </div>
                 )}
+                {user.unread > 0 && (
+                  <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-medium bg-gold text-black rounded-full">
+                    {user.unread}
+                  </span>
+                )}
               </div>
-              {user.unread > 0 && (
-                <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-medium bg-gold text-black rounded-full flex-shrink-0 ml-2">
-                  {user.unread}
-                </span>
-              )}
             </div>
           </div>
         )}
@@ -147,23 +147,14 @@ const ChatSidebar = ({
     <div className="w-96 border-r border-gray-200 dark:border-[#232323] bg-white dark:bg-[#232323] flex flex-col rounded-xl border border-gray-100 dark:border-[#232323]">
       <div className="p-4 border-b border-gray-200 dark:border-[#232323] bg-white dark:bg-[#232323] flex justify-between items-center">
         <h2 className="text-xl font-semibold text-yellow-600 dark:text-yellow-400">Messages</h2>
-        <div className="flex gap-2">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="text-gold dark:text-yellow-400 hover:bg-gold/10 dark:hover:bg-yellow-900 rounded-full"
-            onClick={() => setShowCreateGroup(true)}
-          >
-            <Plus size={20} />
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="text-gold dark:text-yellow-400 hover:bg-gold/10 dark:hover:bg-yellow-900 rounded-full"
-          >
-            <Filter size={20} />
-          </Button>
-        </div>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="text-gold dark:text-yellow-400 hover:bg-gold/10 dark:hover:bg-yellow-900 rounded-full"
+          onClick={() => setShowCreateGroup(true)}
+        >
+          <Plus size={20} />
+        </Button>
       </div>
       
       <div className="p-4 bg-white dark:bg-[#232323] border-b border-gray-200 dark:border-[#232323]">
