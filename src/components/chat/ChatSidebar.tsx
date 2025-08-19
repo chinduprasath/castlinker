@@ -43,9 +43,9 @@ interface ChatSidebarProps {
 }
 
 const ChatSidebar = ({
-  chats,
-  connectedUsers,
-  groups,
+  chats = [],
+  connectedUsers = [],
+  groups = [],
   activeChat,
   onChatSelect,
   searchQuery,
@@ -53,11 +53,13 @@ const ChatSidebar = ({
 }: ChatSidebarProps) => {
   const [activeTab, setActiveTab] = useState("all");
 
-  // Filter function for search
+  // Filter function for search with safety checks
   const filterItems = (items: any[], searchQuery: string) => {
-    if (!searchQuery) return items;
-    return items.filter(item => 
-      item.name.toLowerCase().includes(searchQuery.toLowerCase())
+    // Ensure items is always an array
+    const safeItems = items || [];
+    if (!searchQuery) return safeItems;
+    return safeItems.filter(item => 
+      item?.name?.toLowerCase().includes(searchQuery.toLowerCase())
     );
   };
 
