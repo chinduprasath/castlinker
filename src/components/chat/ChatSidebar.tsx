@@ -102,35 +102,41 @@ const ChatSidebar = ({
         )}
       </div>
       <div className="flex-1 min-w-0 text-gray-900 dark:text-white">
-        <div className="flex justify-between items-center">
-          <h3 className={`font-medium truncate 
+        <div className="flex justify-between items-start">
+          <h3 className={`font-bold truncate 
             ${activeChat?.id === user.id ? 'text-yellow-700 dark:text-yellow-400' : 'text-gray-900 dark:text-white'}`}
           >
             {user.name}
           </h3>
           {isChat && user.lastMessageTime && (
-            <span className="text-xs text-gray-500">{user.lastMessageTime}</span>
+            <span className="text-xs text-gray-500 flex-shrink-0 ml-2">{user.lastMessageTime}</span>
           )}
         </div>
+        
         {isChat && (
-          <>
-            <div className="flex items-center gap-1 mt-1">
-              {user.unread > 0 && (
-                <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-medium bg-gold text-black rounded-full">
-                  {user.unread}
+          <div className="mt-1">
+            <div className="text-sm text-gray-500 dark:text-gray-300 truncate pr-2">
+              {user.lastMessage || 'No messages yet'}
+            </div>
+            <div className="flex justify-between items-center mt-2">
+              <div className="flex items-center gap-2">
+                {user.unread > 0 && (
+                  <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-medium bg-gold text-black rounded-full">
+                    {user.unread}
+                  </span>
+                )}
+              </div>
+              {user.memberCount && (
+                <span className="text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full">
+                  {user.memberCount} members
                 </span>
               )}
             </div>
-            <div className="mt-2 text-xs truncate w-full text-gray-500 dark:text-gray-300">
-              {user.lastMessage}
-            </div>
-          </>
+          </div>
         )}
-        {user.role && (
-          <span className="text-xs text-gray-500">{user.role}</span>
-        )}
-        {user.memberCount && (
-          <span className="text-xs text-gray-500">{user.memberCount} members</span>
+        
+        {user.role && !user.memberCount && (
+          <span className="text-xs text-gray-500 mt-1">{user.role}</span>
         )}
       </div>
     </div>
