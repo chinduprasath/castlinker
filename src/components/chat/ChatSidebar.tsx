@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Plus, Filter, Search } from "lucide-react";
+import { Plus, Filter, Search, Users } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CreateGroupDialog from "./CreateGroupDialog";
@@ -115,20 +115,21 @@ const ChatSidebar = ({
         
         {isChat && (
           <div className="mt-1">
-            <div className="text-sm text-gray-500 dark:text-gray-300 truncate pr-2">
-              {user.lastMessage || 'No messages yet'}
-            </div>
-            <div className="flex justify-between items-center mt-2">
-              <div className="flex items-center gap-2">
-                {user.unread > 0 && (
-                  <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-medium bg-gold text-black rounded-full">
-                    {user.unread}
-                  </span>
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <span className="text-sm text-gray-500 dark:text-gray-300 truncate">
+                  {user.lastMessage || 'No messages yet'}
+                </span>
+                {user.memberCount && (
+                  <div className="flex items-center gap-1 text-xs text-gray-400 flex-shrink-0">
+                    <Users size={12} />
+                    <span>{user.memberCount}</span>
+                  </div>
                 )}
               </div>
-              {user.memberCount && (
-                <span className="text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full">
-                  {user.memberCount} members
+              {user.unread > 0 && (
+                <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-medium bg-gold text-black rounded-full flex-shrink-0 ml-2">
+                  {user.unread}
                 </span>
               )}
             </div>
