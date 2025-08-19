@@ -5,6 +5,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Plus, Filter, Search } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import CreateGroupDialog from "./CreateGroupDialog";
+import { toast } from "sonner";
 
 interface ChatSidebarProps {
   chats: Array<{
@@ -40,6 +42,7 @@ interface ChatSidebarProps {
   onChatSelect: (chat: any) => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  onCreateGroup?: (groupName: string, members: string[]) => void;
 }
 
 const ChatSidebar = ({
@@ -50,8 +53,10 @@ const ChatSidebar = ({
   onChatSelect,
   searchQuery,
   onSearchChange,
+  onCreateGroup,
 }: ChatSidebarProps) => {
   const [activeTab, setActiveTab] = useState("all");
+  const [showCreateGroup, setShowCreateGroup] = useState(false);
 
   // Filter function for search with safety checks
   const filterItems = (items: any[], searchQuery: string) => {
@@ -66,6 +71,13 @@ const ChatSidebar = ({
   const filteredConnectedUsers = filterItems(connectedUsers, searchQuery);
   const filteredChats = filterItems(chats, searchQuery);
   const filteredGroups = filterItems(groups, searchQuery);
+
+  const handleCreateGroup = (groupName: string, members: string[]) => {
+    if (onCreateGroup) {
+      onCreateGroup(groupName, members);
+      toast.success(`Group "${groupName}" created successfully!`);
+    }
+  };
 
   const renderUserItem = (user: any, isChat = false) => (
     <div 
@@ -133,6 +145,7 @@ const ChatSidebar = ({
             variant="ghost" 
             size="icon" 
             className="text-gold dark:text-yellow-400 hover:bg-gold/10 dark:hover:bg-yellow-900 rounded-full"
+            onClick={() => setShowCreateGroup(true)}
           >
             <Plus size={20} />
           </Button>
@@ -213,6 +226,13 @@ const ChatSidebar = ({
           </TabsContent>
         </div>
       </Tabs>
+
+      <CreateGroupDialog
+        open={showCreateGroup}
+        onOpenChange={setShowCreateGroup}
+        onCreateGroup={handleCreateGroup}
+        connectedUsers={connectedUsers}
+      />
     </div>
   );
 };

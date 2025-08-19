@@ -291,6 +291,21 @@ const Chat = () => {
     }
   };
 
+  const handleCreateGroup = (groupName: string, members: string[]) => {
+    const newGroup = {
+      id: `group_${Date.now()}`,
+      name: groupName,
+      lastMessage: "Group created",
+      lastMessageTime: "now",
+      unread: 0,
+      avatar: `/api/placeholder/40/40`,
+      memberCount: members.length + 1, // +1 for the current user
+      members: members,
+      type: 'group'
+    };
+    setGroups(prev => [...prev, newGroup]);
+  };
+
   // Determine if the selected chat is a connection request
   const isConnectionRequest = activeChat && 'type' in activeChat && activeChat.type === 'connection_request';
 
@@ -304,6 +319,7 @@ const Chat = () => {
         onChatSelect={setActiveChat}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        onCreateGroup={handleCreateGroup}
       />
       
       <div className="flex-1 flex flex-col bg-white rounded-xl border border-gray-100">
